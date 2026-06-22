@@ -1,0 +1,68 @@
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+xavier-staff/
+.python-version
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+._*
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.swp
+
+# ===== Secrets =====
+.env
+.env.local
+mcp/mcp.json
+!mcp/mcp.json.template
+
+# ===== Generated / runtime data =====
+# Docker volumes
+data/qdrant/
+data/postgres/
+data/webui/
+
+# Recordings (audio is large and personal)
+data/recordings/*
+!data/recordings/.gitkeep
+
+# Library: keep the category folders, ignore their contents and processed dumps
+data/library/ibm/*
+data/library/research/*
+data/library/personal/*
+data/library/admin/*
+data/library/inbox/*
+data/library/_indexed/
+data/library/_errors/
+data/library/test-docs/
+!data/library/*/.gitkeep
+
+# Models: ignore weights (they're downloaded by the installer) but keep folder
+models/whisper/*.bin
+models/whisper.cpp/
+
+# Logs
+logs/*
+!logs/.gitkeep
+
+# Vault (personal notes — never commit)
+vault/*/
+!vault/*/.gitkeep
+
+# ===== Project artifacts =====
+*.log
+chief-of-staff-*.pptx
+requirements.frozen.txt

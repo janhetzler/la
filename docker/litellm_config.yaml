@@ -1,0 +1,141 @@
+# Chief of Staff — LiteLLM proxy configuration
+#
+# Routes:
+# - Local Ollama models (Granite primary, Mistral/Gemma/Guardian as alternatives)
+# - Agent endpoints (FastAPI on port 8002, OpenAI-compatible)
+#
+# The master key 'sk-cos-local-dev' is intentional: this proxy listens only on
+# localhost (via Docker), so the key is never exposed beyond your machine.
+# Change it if you want — just keep it in sync with .env and start.sh.
+
+model_list:
+  # ===== Primary Granite models (used by the agents) =====
+
+  - model_name: granite-tiny
+    litellm_params:
+      model: ollama/ibm/granite4:tiny-h
+      api_base: http://host.docker.internal:11434
+    model_info:
+      description: "Primary — Granite 4 tiny-h (7B MoE hybrid), used by all agents"
+
+  - model_name: granite-micro
+    litellm_params:
+      model: ollama/ibm/granite4:micro-h
+      api_base: http://host.docker.internal:11434
+    model_info:
+      description: "Fast — Granite 4 micro-h (3B hybrid), classification, short outputs"
+
+  - model_name: granite-guardian
+    litellm_params:
+      model: ollama/ibm/granite3.2-guardian:3b
+      api_base: http://host.docker.internal:11434
+    model_info:
+      description: "Safety classifier — optional, used for content moderation experiments"
+
+  - model_name: granite-embed
+    litellm_params:
+      model: ollama/granite-embedding:30m
+      api_base: http://host.docker.internal:11434
+    model_info:
+      description: "Embeddings for RAG (384-dim, multilingual)"
+      mode: embedding
+
+  # ===== Alternative open-weight models =====
+  # Available in Open WebUI's model picker for direct chat / comparison.
+  # The 6 agents themselves use Granite — these are for experimentation.
+  # Pull with: ollama pull mistral && ollama pull gemma3:4b
+
+  - model_name: mistral
+    litellm_params:
+      model: ollama/mistral
+      api_base: http://host.docker.internal:11434
+    model_info:
+      description: "Mistral 7B — strong multilingual baseline, useful for comparison"
+
+  - model_name: gemma
+    litellm_params:
+      model: ollama/gemma3:4b
+      api_base: http://host.docker.internal:11434
+    model_info:
+      description: "Google Gemma 3 (4B) — small and fast alternative"
+
+  # ===== Agent endpoints (FastAPI server on port 8002) =====
+  # Each LangGraph agent is exposed through LiteLLM as a "model" so it
+  # shows up in the Open WebUI picker just like the raw models above.
+
+  - model_name: agent-chief-of-staff
+    litellm_params:
+      model: openai/agent-chief-of-staff
+      api_base: http://host.docker.internal:8002/v1
+      api_key: dummy
+    model_info:
+      description: "Chief of Staff — orchestrator, routes to the right specialist"
+
+  - model_name: agent-researcher
+    litellm_params:
+      model: openai/agent-researcher
+      api_base: http://host.docker.internal:8002/v1
+      api_key: dummy
+    model_info:
+      description: "Researcher — searches Qdrant RAG + Tavily web"
+
+  - model_name: agent-comms
+    litellm_params:
+      model: openai/agent-comms
+      api_base: http://host.docker.internal:8002/v1
+      api_key: dummy
+    model_info:
+      description: "Comms — drafts emails, messages, short reports"
+
+  - model_name: agent-notes
+    litellm_params:
+      model: openai/agent-notes
+      api_base: http://host.docker.internal:8002/v1
+      api_key: dummy
+    model_info:
+      description: "Notes — explores the Obsidian vault"
+
+  - model_name: agent-code
+    litellm_params:
+      model: openai/agent-code
+      api_base: http://host.docker.internal:8002/v1
+      api_key: dummy
+    model_info:
+      description: "Code — programming Q&A + light GitHub issue management"
+
+  - model_name: agent-handoff
+    litellm_params:
+      model: openai/agent-handoff
+      api_base: http://host.docker.internal:8002/v1
+      api_key: dummy
+    model_info:
+      description: "Handoff — prepares enriched prompts for Claude.ai / ChatGPT"
+
+  - model_name: agent-meeting
+    litellm_params:
+      model: openai/agent-meeting
+      api_base: http://host.docker.internal:8002/v1
+      api_key: dummy
+    model_info:
+      description: "Meeting — pilots audio recording from chat (start/stop/status)"
+
+
+# ===== Logical task aliases (router pattern) =====
+# Agents can call "task-general" or "task-fast" without hardcoding the model.
+router_settings:
+  model_group_alias:
+    task-general: granite-tiny
+    task-fast: granite-micro
+    task-safety: granite-guardian
+    task-embed: granite-embed
+
+
+# ===== Proxy settings =====
+general_settings:
+  master_key: sk-cos-local-dev
+  database_url: "postgresql://cos:cos_local_dev@host.docker.internal:5432/chief_of_staff"
+
+litellm_settings:
+  drop_params: true
+  set_verbose: false
+  json_logs: true
