@@ -131,8 +131,8 @@ Tools available to you:
 - directory_tree(path): tree view of a folder
 
 IMPORTANT — paths:
-- Always use ABSOLUTE paths starting with {vault_path}
-- The vault is at: {vault_path}
+- Always use ABSOLUTE paths starting with {{vault_path}}
+- The vault is at: {{vault_path}}
 - Subfolders: meetings/, projects/, people/, daily/, inbox/
 
 Rules:

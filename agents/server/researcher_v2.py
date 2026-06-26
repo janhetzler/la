@@ -163,7 +163,7 @@ Search strategy:
 2. Targeted questions ("in my work documents", "in my research papers") → search_by_category with the right category
 3. Recent web information → tavily_search
 4. Specific URL analysis → tavily_extract
-5. Project filesystem exploration → list_directory with an absolute path starting at {project_root}/
+5. Project filesystem exploration → list_directory with an absolute path starting at {{project_root}}/
 
 General rules:
 - Use ONE tool per question, unless absolutely necessary
