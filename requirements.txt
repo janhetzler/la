@@ -1,27 +1,37 @@
-# Chief of Staff — dépendances Python
-# Généré automatiquement via scripts/build_requirements.py
-# Ne pas éditer à la main, relancer le script si besoin.
+# Chief of Staff — Python Dependencies
+# Fork: janhetzler/la
+# Basis: xaviervasques/chief-of-staff
+# Angepasst für: llama-server, ChromaDB, Arize Phoenix
 
-docling==2.91.0
-python-dotenv==1.2.2
+# --- Core Framework ---
 fastapi==0.136.1
 httpx==0.28.1
+pydantic==2.12.5
+python-dotenv==1.2.2
+numpy==2.4.4
+tqdm==4.67.3
+
+# --- LangChain / LangGraph ---
 langchain==1.2.15
 langchain-core==1.3.2
 langchain-mcp-adapters==0.2.2
-langchain-ollama==1.1.0
 langchain-openai==1.2.1
 langgraph==1.1.10
+
+# --- LlamaIndex / RAG ---
 llama-index-core==0.14.21
 llama-index-embeddings-litellm==0.5.0
-llama-index-vector-stores-qdrant==0.10.0
 llama-index-workflows==2.20.0
 llama-index-instrumentation==0.5.0
-numpy==2.4.4
-pydantic==2.12.5
-qdrant-client==1.17.1
-sounddevice==0.5.5
-soundfile==0.13.1
-torch==2.11.0
-tqdm==4.67.3
-transformers==5.6.2
+
+# --- Vektordatenbank ---
+chromadb
+llama-index-vector-stores-chroma
+
+# --- Dokumenten-Parsing ---
+docling==2.91.0
+
+# --- Observability ---
+arize-phoenix
+openinference-instrumentation-langchain
+openinference-instrumentation-llama-index
