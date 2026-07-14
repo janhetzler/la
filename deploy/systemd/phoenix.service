@@ -1,0 +1,14 @@
+[Unit]
+Description=Arize Phoenix Observability
+After=network.target
+
+[Service]
+User=nonroot
+ExecStart=/app/venv/bin/python3 -m phoenix.server.main serve \
+  --host 127.0.0.1 \
+  --port 6006
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

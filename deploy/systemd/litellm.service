@@ -1,0 +1,16 @@
+[Unit]
+Description=LiteLLM Proxy Gateway
+After=network.target
+
+[Service]
+User=nonroot
+WorkingDirectory=/app/workspace
+ExecStart=/app/venv/bin/litellm \
+  --config /app/workspace/docker/litellm_config_janhet.yaml \
+  --host 127.0.0.1 \
+  --port 4000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
