@@ -24,7 +24,7 @@ def init_phoenix():
             set_global_tracer_provider=True,
         )
         from openinference.instrumentation.langchain import LangChainInstrumentor
-        LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+        LangChainInstrumentor().instrument(tracer_provider=tracer_provider, skip_dep_check=True)
         print(f"Phoenix Tracing aktiv → {PHOENIX_HOST}")
         return tracer_provider
     except Exception as e:
