@@ -318,3 +318,35 @@ journalctl -u chief-agent -f
 # PHOENIX_COLLECTOR_ENDPOINT muss gesetzt sein VOR dem Import
 export PHOENIX_COLLECTOR_ENDPOINT=http://127.0.0.1:6006/v1/traces
 ```
+
+---
+
+## Bekannte Probleme und Fixes
+
+### Phoenix: LangChain Instrumentierung schlägt fehl
+
+**Fehler:**
+```
+TypeError: 'NoneType' object is not iterable
+```
+
+**Ursache:** Pakete mit ungültigen Metadaten (z.B. pydantic) verursachen einen Fehler
+in `get_dependency_conflicts()` von opentelemetry-instrumentation.
+
+**Fix:** Bereits in `telemetry.py` eingebaut:
+```python
+LangChainInstrumentor().instrument(
+    tracer_provider=tracer_provider,
+    skip_dep_check=True  # ← dieser Parameter löst das Problem
+)
+```
+
+Kein manueller Eingriff nötig — `git pull` und neu starten reicht.
+
+### Headroom: Falsches Paket
+
+`pip install headroom` installiert ein falsches Terminal-Tool.
+Das richtige Paket heißt:
+```bash
+pip install "headroom-ai[proxy]"
+```
