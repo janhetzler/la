@@ -154,3 +154,14 @@ Original project: [xaviervasques/chief-of-staff](https://github.com/xaviervasque
 ## License
 
 MIT
+
+---
+
+## Dokumentation
+
+| Datei | Inhalt |
+|-------|--------|
+| [docs/INSTALL_JANHET.md](docs/INSTALL_JANHET.md) | Schritt-für-Schritt Installation (11 Schritte) |
+| [JANHET_SETUP.md](JANHET_SETUP.md) | Technische Setup-Dokumentation + Testergebnisse |
+| [tests/TEST_RESULTS.md](tests/TEST_RESULTS.md) | Aktuelle Testergebnisse |
+| [BUGS.md](BUGS.md) | Bekannte Probleme |
