@@ -2,15 +2,15 @@
   "mcpServers": {
     "git": {
       "command": "python3",
-      "args": ["-m", "mcp_server_git", "--repository", "/home/user/chief/la"],
+      "args": ["-m", "mcp_server_git", "--repository", "."],
       "transport": "stdio",
-      "description": "Git Repository Tools: log, status, diff, branch, commit"
+      "description": "Git Repository Tools: log, status, diff, branch, commit, show"
     },
     "fetch": {
       "command": "python3",
       "args": ["-m", "mcp_server_fetch"],
       "transport": "stdio",
-      "description": "Web Content Fetching"
+      "description": "Web Content Fetching und URL Abruf"
     }
   }
 }
