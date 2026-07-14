@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
 import config
+from tool_formatter import format_tools_for_model, detect_model_family
 
 
 # ===== Charge le .env (GITHUB_TOKEN, TAVILY_API_KEY) =====
@@ -92,3 +93,12 @@ if __name__ == "__main__":
             print(f"   - {t.name}")
 
     asyncio.run(main())
+
+def get_tools_system_prompt(tools: list, model_name: str = None) -> str | None:
+    """
+    Gibt den nativen System-Prompt für Tools zurück.
+    Nutze dies statt bind_tools() für Modelle die kein OpenAI Format sprechen.
+    None = OpenAI pass-through (bind_tools reicht).
+    """
+    model = model_name or getattr(config, "DEFAULT_LLM", "")
+    return format_tools_for_model(tools, model_name=model)
