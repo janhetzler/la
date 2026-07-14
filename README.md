@@ -86,26 +86,25 @@ python3 scripts/chat.py
 
 ## Test results (Claude container — Granite 4.0-H 350m)
 
-Validated end-to-end on a 1-core Intel Xeon @ 2.1 GHz, 4 GB RAM:
+Validated end-to-end on a 1-core Intel Xeon @ 2.1 GHz, 4 GB RAM  
+Full test suite:  — detailed results: 
 
-| Component | Status |
-|-----------|--------|
-| llama-server | ✓ |
-| LiteLLM routing | ✓ |
-| Phoenix observability | ✓ |
-| FastAPI Agent Server | ✓ |
-| Supervisor routing | ✓ |
-| Comms Agent | ✓ |
-| Researcher Agent | ✓ |
-| Code Agent | ✓ |
-| ChromaDB write/read | ✓ |
-| LiteLLM request logging | ✓ (5 POST requests logged) |
+| Component | Status | Detail |
+|-----------|--------|--------|
+| llama-server :8080 | ✓ | Granite 350m, ~25 t/s |
+| Headroom Proxy :8787 | ✓ | 24 Requests verarbeitet |
+| LiteLLM :4000 | ✓ | Phoenix Callbacks aktiv |
+| Phoenix :6006 | ✓ | Traces empfangen (POST 200 OK) |
+| Agent Server :8002 | ✓ | 6/6 Tests OK |
+| Supervisor Routing | ✓ | Korrekt per Sprache/Intent |
+| Comms Agent | ✓ | E-Mail generiert, 21.5s |
+| Code Agent | ✓ | Python Funktion korrekt, 24.1s |
+| Researcher Agent | ✓ | LangGraph erklärt, 33.4s |
+| Notes Agent | ✓ | Notiz gespeichert, 22.9s |
+| Handoff Agent | ✓ | Prompt aufbereitet, 32.5s |
+| ChromaDB | ✓ | 3 Dokumente, write/read OK |
 
-Routing correctly identifies language and delegates:
-- German input → `researcher`
-- English/code input → appropriate agent
-
-Response time: 20–30s per call on 1-core Xeon. Expected 5–10s on janhet EPYC with 4 cores.
+Response time: 21–33s per call on 1-core Xeon. Expected 5–10s on janhet EPYC with 4 cores.
 
 ---
 
