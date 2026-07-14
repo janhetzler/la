@@ -25,6 +25,7 @@ def init_phoenix():
         tracer_provider = register(
             project_name="chief-of-staff",
             endpoint=f"{PHOENIX_HOST}/v1/traces",
+            set_global_tracer_provider=True,
         )
         LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
         logger.info(f"Phoenix Tracing aktiv → {PHOENIX_HOST}")
