@@ -350,3 +350,35 @@ Das richtige Paket heißt:
 ```bash
 pip install "headroom-ai[proxy]"
 ```
+
+---
+
+## Tool-Calling: Modell-natives Format
+
+LangChain `bind_tools()` sendet Tools im OpenAI-Format. Granite, Qwen
+und andere Modelle erwarten ihr eigenes Format. Der `tool_formatter.py`
+löst das generisch.
+
+**Wie es funktioniert:**
+
+```python
+from tool_formatter import format_tools_for_model
+
+# Gibt nativen System-Prompt zurück statt bind_tools()
+system = format_tools_for_model(tools, model_name="granite-tiny")
+# → <tools>...</tools> XML für Granite
+# → <tools>...</tools> ChatML für Qwen  
+# → None für OpenAI-kompatible Modelle (pass-through)
+```
+
+**Unterstützte Modell-Familien:**
+
+| Familie | Erkennung | Format |
+|---------|-----------|--------|
+| granite | granite, ibm | `<tools>` XML + `<tool_call>` |
+| qwen    | qwen | ChatML `<tools>` |
+| llama   | llama, meta | JSON function |
+| default | alles andere | OpenAI pass-through |
+
+**Neues Modell hinzufügen:** `MODEL_FAMILIES` und `FORMATTERS`
+in `tool_formatter.py` erweitern — kein anderer Code ändern nötig.
