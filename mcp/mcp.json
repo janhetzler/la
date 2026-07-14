@@ -6,7 +6,7 @@
         "-m",
         "mcp_server_git",
         "--repository",
-        "/home/user/chief/la"
+        "/home/claude/la"
       ],
       "transport": "stdio",
       "description": "Git Repository Tools: log, status, diff, branch, commit, show"

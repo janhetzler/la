@@ -114,3 +114,20 @@ cd agents/server && uvicorn server:app --host 127.0.0.1 --port 8002
 # 5. Test Suite ausführen
 python3 tests/test_stack.py
 ```
+
+---
+
+## MCP Test Ergebnisse (2026-07-15)
+
+| Test | Status | Detail |
+|------|--------|--------|
+| mcp-server-git startet | ✓ | 12 Tools verfügbar |
+| mcp-server-fetch startet | ✓ | 1 Tool verfügbar |
+| Tools laden durch Researcher Agent | ✓ | 13 MCP Tools geladen |
+| git_log direkter Aufruf | ✓ | Commit History korrekt |
+| git_status direkter Aufruf | ✓ | Branch Status korrekt |
+| Tool-Call durch Modell | ⚠️ | 350m zu klein — 4B auf janhet nötig |
+
+**Wichtig:** mcp.json Pfad muss absolut sein:
+- Testumgebung: 
+- janhet: 
