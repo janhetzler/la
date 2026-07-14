@@ -15,8 +15,8 @@ from dotenv import load_dotenv
 from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
-from langchain_ollama import ChatOllama
-from qdrant_client import QdrantClient
+from langchain_openai import ChatOpenAI
+import chromadb
 
 import config
 from project_context import PROJECT_CONTEXT
@@ -38,9 +38,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 # ===== LLM (Granite tiny-h via Ollama) =====
-llm = ChatOllama(
-    base_url="http://localhost:11434",
-    model="ibm/granite4:tiny-h",
+llm = ChatOpenAI(
+    base_url="http://localhost:4000/v1",
+    api_key="sk-cos-local-dev",
+    model="granite-tiny",
     temperature=0,
 )
 
@@ -72,8 +73,11 @@ def search_local_documents(query: str, top_k: int = 5) -> str:
 
     output = []
     for i, r in enumerate(results, 1):
+        meta = r.get("metadata", {})
+        source = meta.get("source", meta.get("filename", "unknown"))
+        category = meta.get("category", "unknown")
         output.append(
-            f"[{i}] {r['source']} (category: {r['category']}, score: {r['score']:.2f})\n"
+            f"[{i}] {source} (category: {category}, score: {r['score']:.2f})\n"
             f"{r['text'][:500]}"
         )
     return "\n\n---\n\n".join(output)
@@ -112,8 +116,10 @@ def search_by_category(query: str, category: str, top_k: int = 5) -> str:
 
     output = []
     for i, r in enumerate(results, 1):
+        meta = r.get("metadata", {})
+        source = meta.get("source", meta.get("filename", "unknown"))
         output.append(
-            f"[{i}] {r['source']} (score: {r['score']:.2f})\n"
+            f"[{i}] {source} (score: {r['score']:.2f})\n"
             f"{r['text'][:500]}"
         )
     return "\n\n---\n\n".join(output)

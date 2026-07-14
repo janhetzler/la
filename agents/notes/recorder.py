@@ -1,4 +1,14 @@
 """
+DISABLED on janhet — no audio hardware available.
+Original: captures microphone + BlackHole for meeting transcription.
+Re-enable on Mac with sounddevice + soundfile installed.
+"""
+import sys
+print('recorder.py is disabled on janhet (no audio hardware)')
+sys.exit(0)
+
+# --- original code below (disabled) ---
+"""
 Audio recorder for meetings.
 
 Captures the microphone (your voice) and BlackHole (the others) in parallel,

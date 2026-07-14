@@ -15,8 +15,8 @@ import httpx
 from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
-from langchain_ollama import ChatOllama
-from qdrant_client import QdrantClient
+from langchain_openai import ChatOpenAI
+import chromadb
 
 import config
 from project_context import PROJECT_CONTEXT
@@ -30,9 +30,10 @@ VAULT_PATH = PROJECT_ROOT / "vault"
 
 
 # Granite tiny-h, deterministic for tool calls
-llm = ChatOllama(
-    base_url="http://localhost:11434",
-    model="ibm/granite4:tiny-h",
+llm = ChatOpenAI(
+    base_url="http://localhost:4000/v1",
+    api_key="sk-cos-local-dev",
+    model="granite-tiny",
     temperature=0,
 )
 
@@ -66,31 +67,26 @@ def search_meetings(query: str, top_k: int = 5) -> str:
     """
     try:
         query_vec = _embed_query(query)
-        client = QdrantClient(url=config.QDRANT_URL)
-        results = client.query_points(
-            collection_name=config.QDRANT_COLLECTION,
-            query=query_vec,
-            limit=top_k,
-            with_payload=True,
-        ).points
+        client = chromadb.PersistentClient(path=config.CHROMA_PATH)
+        collection = client.get_or_create_collection(name=config.CHROMA_COLLECTION)
+        results = collection.query(
+            query_embeddings=[query_vec],
+            n_results=top_k,
+            where={"category": "notes"},
+            include=["documents", "distances", "metadatas"],
+        )
 
-        # Filter Python-side to keep only meetings
         meetings = []
-        for p in results:
-            payload = p.payload or {}
-            meta_type = payload.get("type", "")
-            source = payload.get("source", "")
-            if meta_type == "meeting" or "meeting" in source.lower():
-                text = payload.get("text", "")
-                if not text and "_node_content" in payload:
-                    try:
-                        node = json.loads(payload["_node_content"])
-                        text = node.get("text", "")
-                    except Exception:
-                        text = ""
-                meetings.append(
-                    f"[{source}, score {p.score:.2f}]\n{text[:500]}"
-                )
+        if results and results["documents"]:
+            for doc, dist, meta in zip(
+                results["documents"][0],
+                results["distances"][0],
+                results["metadatas"][0],
+            ):
+                source = meta.get("source", "unknown")
+                score = 1 - dist
+                if "meeting" in source.lower() or meta.get("type") == "meeting":
+                    meetings.append(f"[{source}, score {score:.2f}]\n{doc[:500]}")
 
         if not meetings:
             return "No relevant meeting notes found."

@@ -12,20 +12,21 @@ import asyncio
 import sys
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 from code import invoke_code
 from comms import invoke_comms
 from handoff import invoke_handoff
-from meeting import invoke_meeting
+# from meeting import invoke_meeting  # disabled on janhet (no audio hardware)
 from notes import invoke_notes
 from researcher_v2 import invoke_researcher_v2
 
 
 # ===== LLM for routing and reformulations =====
-router_llm = ChatOllama(
-    base_url="http://localhost:11434",
-    model="ibm/granite4:tiny-h",
+router_llm = ChatOpenAI(
+    base_url="http://localhost:4000/v1",
+    api_key="sk-cos-local-dev",
+    model="granite-tiny",
     temperature=0,
 )
 
@@ -78,7 +79,7 @@ VALID_AGENTS = {"meta", "meta_recording", "researcher", "comms", "notes", "code"
 
 
 # ===== System facts (used by meta questions) =====
-SYSTEM_FACTS = """You are the user's personal Chief of Staff — a 100% local multi-agent orchestrator running on their Mac.
+SYSTEM_FACTS = """You are the user's personal Chief of Staff — a 100% local multi-agent orchestrator running on their local server (janhet).
 
 You have 6 specialists you delegate to:
 - Researcher: searches indexed documents (papers, meeting notes) and the web (Tavily)
@@ -98,7 +99,7 @@ Example requests:
 - "Start recording the meeting" → Meeting pilots the recorder
 
 Important characteristics:
-- Runs 100% locally (Granite models via Ollama), no paid API calls
+- Runs 100% locally (Granite models via llama-server + LiteLLM), no paid API calls
 - Data stays on your machine (except via Handoff, under explicit user control)
 - Multilingual (adapts to user's language: French, English, Spanish, Portuguese, etc.)
 - For volumic tasks or complex reasoning, naturally suggest Claude.ai or ChatGPT (existing subscriptions)"""
@@ -295,7 +296,8 @@ async def invoke_supervisor(user_message: str) -> str:
     elif agent_name == "handoff":
         return await invoke_handoff(user_message, user_lang)
     elif agent_name == "meeting":
-        return await invoke_meeting(user_message, user_lang)
+        # disabled on janhet — no audio hardware
+        return "⚠️ Meeting recording is not available on this server deployment."
     else:
         return await invoke_researcher_v2(user_message, user_lang)
 

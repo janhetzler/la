@@ -18,8 +18,8 @@ import sys
 
 import httpx
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_ollama import ChatOllama
-from qdrant_client import QdrantClient
+from langchain_openai import ChatOpenAI
+import chromadb
 
 import config
 from project_context import PROJECT_CONTEXT
@@ -27,9 +27,10 @@ from user_profile import USER_PROFILE
 
 
 # Granite for prompt structuring — no tool calling needed
-llm = ChatOllama(
-    base_url="http://localhost:11434",
-    model="ibm/granite4:tiny-h",
+llm = ChatOpenAI(
+    base_url="http://localhost:4000/v1",
+    api_key="sk-cos-local-dev",
+    model="granite-tiny",
     temperature=0.2,
 )
 
@@ -50,7 +51,7 @@ def _fetch_context(query: str, top_k: int = 3) -> str:
     """Retrieve relevant chunks to enrich the outgoing prompt."""
     try:
         query_vec = _embed_query(query)
-        client = QdrantClient(url=config.QDRANT_URL)
+        client = chromadb.PersistentClient(path=config.CHROMA_PATH)
         results = client.query_points(
             collection_name=config.QDRANT_COLLECTION,
             query=query_vec,

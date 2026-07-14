@@ -20,7 +20,7 @@ from pathlib import Path
 from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 
 from project_context import PROJECT_CONTEXT
 from user_profile import USER_PROFILE
@@ -36,9 +36,10 @@ RECORDINGS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ===== LLM =====
-llm = ChatOllama(
-    base_url="http://localhost:11434",
-    model="ibm/granite4:tiny-h",
+llm = ChatOpenAI(
+    base_url="http://localhost:4000/v1",
+    api_key="sk-cos-local-dev",
+    model="granite-tiny",
     temperature=0,
 )
 
