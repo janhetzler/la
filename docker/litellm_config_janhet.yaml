@@ -1,0 +1,104 @@
+# Chief of Staff — LiteLLM Config für janhet
+# llama-server direkt auf Host, kein Ollama, kein Docker
+# Master Key: sk-cos-local-dev (nur localhost, nie extern exponiert)
+
+model_list:
+
+  # ===== Reasoning Modelle (llama-server Port 8080) =====
+
+  - model_name: granite-tiny
+    litellm_params:
+      model: openai/granite-tiny
+      api_base: http://127.0.0.1:8080/v1
+      api_key: not-needed
+    model_info:
+      description: "Primary — Granite 4.0-H-Tiny IQ4_XS, alle Agenten"
+
+  - model_name: granite-micro
+    litellm_params:
+      model: openai/granite-micro
+      api_base: http://127.0.0.1:8080/v1
+      api_key: not-needed
+    model_info:
+      description: "Alias für granite-tiny auf janhet (kein separates micro)"
+
+  # ===== Embedding Modell (llama-server Port 8081) =====
+
+  - model_name: granite-embed
+    litellm_params:
+      model: openai/granite-embed
+      api_base: http://127.0.0.1:8081/v1
+      api_key: not-needed
+    model_info:
+      description: "granite-embedding-30m, 384-dim, für ChromaDB RAG"
+      mode: embedding
+
+  # ===== Cloud Fallback (optional, bei Bedarf aktivieren) =====
+  # - model_name: claude-fallback
+  #   litellm_params:
+  #     model: claude-sonnet-4-6
+  #     api_key: os.environ/ANTHROPIC_API_KEY
+  #   model_info:
+  #     description: "Cloud Fallback für komplexe Tasks"
+
+  # ===== Agent Endpunkte (FastAPI Port 8002) =====
+
+  - model_name: agent-chief-of-staff
+    litellm_params:
+      model: openai/agent-chief-of-staff
+      api_base: http://127.0.0.1:8002/v1
+      api_key: sk-cos-local-dev
+
+  - model_name: agent-researcher
+    litellm_params:
+      model: openai/agent-researcher
+      api_base: http://127.0.0.1:8002/v1
+      api_key: sk-cos-local-dev
+
+  - model_name: agent-comms
+    litellm_params:
+      model: openai/agent-comms
+      api_base: http://127.0.0.1:8002/v1
+      api_key: sk-cos-local-dev
+
+  - model_name: agent-notes
+    litellm_params:
+      model: openai/agent-notes
+      api_base: http://127.0.0.1:8002/v1
+      api_key: sk-cos-local-dev
+
+  - model_name: agent-code
+    litellm_params:
+      model: openai/agent-code
+      api_base: http://127.0.0.1:8002/v1
+      api_key: sk-cos-local-dev
+
+  - model_name: agent-handoff
+    litellm_params:
+      model: openai/agent-handoff
+      api_base: http://127.0.0.1:8002/v1
+      api_key: sk-cos-local-dev
+
+# ===== Router Aliase =====
+router_settings:
+  model_group_alias:
+    task-general: granite-tiny
+    task-fast:    granite-tiny
+    task-embed:   granite-embed
+
+# ===== Proxy Settings =====
+general_settings:
+  master_key: sk-cos-local-dev
+  # Kein PostgreSQL — SQLite für LiteLLM State
+  database_url: "sqlite:///tmp/litellm.db"
+
+litellm_settings:
+  drop_params: true
+  set_verbose: false
+  json_logs: true
+  # Observability → Arize Phoenix
+  success_callback: ["arize_phoenix"]
+  failure_callback: ["arize_phoenix"]
+
+environment_variables:
+  PHOENIX_HOST: "http://127.0.0.1:6006"
