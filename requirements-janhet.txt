@@ -34,3 +34,10 @@ openai==1.97.1
 # MCP Servers
 mcp-server-git==2026.7.10
 mcp-server-fetch==2026.7.10
+
+# llama-cpp-python Server (OpenAI-kompatibler lokaler Inferenz-Server)
+# WICHTIG: Braucht ~500 MB Disk für C++ Build
+# Alternative: Prebuilt Wheel nutzen (siehe HANDOFF.md)
+llama-cpp-python==0.3.23
+starlette-context==0.5.1
+langchain-mcp-adapters==0.2.2
