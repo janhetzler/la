@@ -68,23 +68,23 @@ test_agent("Supervisor Routing",
     "Schritt 1-4: Supervisor empfängt + routet + antwortet")
 
 test_agent("Comms Agent",
-    "Schreibe eine kurze professionelle E-Mail an das Team über den janhet Projektstatus.",
+    "Write a short professional email to the team about the janhet project status.",
     "Schritt 1-4: Supervisor→Comms→Generierung→Antwort")
 
 test_agent("Code Agent",
-    "Schreibe eine Python Funktion mit Type Hints und Docstring die eine Liste sortiert.",
+    "Write a Python function with type hints and docstring that sorts a list.",
     "Schritt 1-4: Supervisor→Code→Generierung→Antwort")
 
 test_agent("Researcher Agent",
-    "Was ist LangGraph und wie funktionieren Multi-Agent Systeme damit?",
+    "What is LangGraph and how do multi-agent systems work with it?",
     "Schritt 1-4: Supervisor→Researcher→ChromaDB→Antwort")
 
 test_agent("Notes Agent",
-    "Notiere: janhet läuft auf AMD EPYC 7443P, 4 vCores, 10GB RAM, Granite-4.0-H-Tiny.",
+    "Save this note: janhet runs on AMD EPYC 7443P, 4 vCores, 10GB RAM, Granite-4.0-H-Tiny.",
     "Schritt 1-4: Supervisor→Notes→ChromaDB Schreiben→Bestätigung")
 
 test_agent("Handoff Agent",
-    "Bereite einen Prompt für Claude.ai vor: Analyse lokale LLMs vs Cloud APIs.",
+    "Prepare a prompt for Claude.ai: analyse local LLMs vs Cloud APIs.",
     "Schritt 1-4: Supervisor→Handoff→Prompt→Antwort")
 
 # ── PHOENIX API ANALYSE ───────────────────────────────────────────
