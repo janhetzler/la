@@ -276,7 +276,7 @@ settings = Settings(model='...', host='127.0.0.1', port=8080, n_ctx=2048, ...)
 | Headroom | ✓ installiert, 24 Requests |
 | MCP git_log direkt | ✓ |
 | MCP durch Agent | ✓ Tools laden |
-| Tool-Calling 350m | ⚠️ args_schema Fix nötig, dann testen |
+| Tool-Calling 350m | ✓ Tool-Call generiert! args_schema via dict() Fix |
 | Tool-Calling 4B (janhet) | ✓ bereits bestätigt |
 | tool_formatter.py | ✓ 18/18 Tests |
 
@@ -297,7 +297,8 @@ settings = Settings(model='...', host='127.0.0.1', port=8080, n_ctx=2048, ...)
 
 ## 10. Nächste Schritte
 
-1. **Tool-Calling Test** mit args_schema Fix und nativem Granite Format
+1. ✓ ERLEDIGT: Tool-Calling 350m funktioniert mit nativem Granite Format
+2. **Pfad-Fix**: Modell nutzt "." statt absolutem Pfad — System-Prompt anpassen
 2. **Phoenix Spans** — richtigen API Endpoint finden für Trace-Inhalte
 3. **Auf janhet deployen** — `git pull` + `pip install -r requirements-janhet.txt`
 4. **Echte MCP Tests auf janhet** mit Granite-Tiny-4B
