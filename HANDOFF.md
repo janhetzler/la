@@ -39,18 +39,9 @@ cd /home/claude/la
 pip install --break-system-packages -r requirements-janhet.txt
 ```
 
-### 2b. Zusätzliche Pakete (nicht in requirements-janhet.txt):
-```bash
-pip install --break-system-packages \
-  mcp-server-git \
-  mcp-server-fetch \
-  starlette-context \
-  langchain-mcp-adapters \
-  "llama-cpp-python==0.3.23"
-```
-
 > **Hinweis `llama-cpp-python`:** Braucht ~500 MB Disk für den C++-Build.
 > Wenn Disk voll → erst aufräumen: `pip cache purge && apt clean`
+> Alles andere (mcp-server-git/fetch, headroom-ai, phoenix) ist in requirements-janhet.txt enthalten.
 
 ### 2c. Vollständige installierte Paket-Versionen (Stand dieser Session):
 

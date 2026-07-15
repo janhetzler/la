@@ -140,7 +140,7 @@ source /home/user/chief/venv/bin/activate
 # Dependencies installieren
 pip install --upgrade pip
 pip install -r requirements-janhet.txt
-pip install "headroom-ai[proxy]"
+# requirements-janhet.txt enthält bereits: headroom-ai, litellm, phoenix, mcp-server-git/fetch, llama-cpp-python
 
 # Testen
 python3 -c "import langchain, chromadb, litellm; print('OK')"
