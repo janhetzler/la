@@ -1,0 +1,10 @@
+.git
+.github
+*.md
+__pycache__
+*.pyc
+*.pyo
+.env
+data/
+logs/
+*.log
