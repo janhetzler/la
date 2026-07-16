@@ -1,34 +1,16 @@
 #!/bin/bash
-# Headroom Context Compression Proxy
-# Sitzt zwischen LiteLLM (Port 4000) und llama-server (Port 8080)
-# Komprimiert RAG-Outputs, Tool-Antworten und lange Kontexte
-
-LOG="/tmp/headroom.log"
-
-# Prüfen ob bereits läuft
-if pgrep -f "headroom proxy" > /dev/null 2>&1; then
-    echo "Headroom läuft bereits auf Port 8787"
-    exit 0
-fi
-
-echo "Starte Headroom Proxy auf Port 8787..."
-
-HEADROOM_TELEMETRY=off \
-OPENAI_TARGET_API_URL=http://127.0.0.1:8080/v1 \
-headroom proxy \
-  --host 127.0.0.1 \
-  --port 8787 \
-  --no-telemetry \
-  >> "$LOG" 2>&1 &
-
-echo "Headroom PID: $!"
-sleep 3
-
-# Health Check
-if curl -s http://127.0.0.1:8787/health > /dev/null 2>&1; then
-    echo "Headroom OK → http://127.0.0.1:8787"
-    echo "Stats: curl http://127.0.0.1:8787/stats"
-else
-    echo "Headroom noch nicht bereit — Log:"
-    tail -5 "$LOG"
-fi
+# DISABLED — Headroom Proxy
+# 
+# Headroom benötigt "headroom-ai[all]" (~500 MB + ONNX Runtime + HuggingFace Modell).
+# Zu groß für die Sandbox und janhet Erstinstallation.
+#
+# Reaktivierung:
+#   pip install "headroom-ai[all]==0.31.0"
+#   Dann in litellm_config_janhet.yaml:
+#     api_base: http://127.0.0.1:8787/v1  (statt 8080)
+#   Dann:
+#   HEADROOM_TELEMETRY=off \
+#   OPENAI_TARGET_API_URL=http://127.0.0.1:8080/v1 \
+#   headroom proxy --host 127.0.0.1 --port 8787 --no-telemetry
+#
+echo "Headroom ist disabled — siehe Kommentar in dieser Datei für Reaktivierung"
