@@ -79,7 +79,7 @@ VALID_AGENTS = {"meta", "meta_recording", "researcher", "comms", "notes", "code"
 
 
 # ===== System facts (used by meta questions) =====
-SYSTEM_FACTS = """You are the user's personal Chief of Staff — a 100% local multi-agent orchestrator running on their local server (janhet).
+SYSTEM_FACTS = """You are the user's personal Local Agent — a 100% local multi-agent orchestrator running on their local server (janhet).
 
 You have 6 specialists you delegate to:
 - Researcher: searches indexed documents (papers, meeting notes) and the web (Tavily)

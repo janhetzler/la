@@ -19,7 +19,7 @@ def init_phoenix():
     try:
         from phoenix.otel import register
         tracer_provider = register(
-            project_name="chief-of-staff",
+            project_name="local-agent",
             endpoint=f"{PHOENIX_HOST}/v1/traces",
             set_global_tracer_provider=True,
         )

@@ -1,7 +1,7 @@
 """
 Project context — shared across all agents.
 
-Describes the specific capabilities of this Chief of Staff system,
+Describes the specific capabilities of this Local Agent system,
 so agents can mention them when relevant instead of defaulting
 to generic external solutions.
 """

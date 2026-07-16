@@ -22,7 +22,7 @@ import asyncio
 
 
 app = FastAPI(
-    title="Chief of Staff — Agents API",
+    title="Local Agent — Agents API",
     description="OpenAI-compatible endpoint for LangGraph agents",
     version="0.1.0",
 )
@@ -51,7 +51,7 @@ AGENTS = {
     "agent-code": invoke_code,
     "agent-handoff": invoke_handoff,
     "agent-meeting": invoke_meeting,
-    "agent-chief-of-staff": invoke_supervisor,
+    "agent-local": invoke_supervisor,
 }
 
 
@@ -66,7 +66,7 @@ async def list_models():
                 "id": name,
                 "object": "model",
                 "created": int(time.time()),
-                "owned_by": "chief-of-staff",
+                "owned_by": "local-agent",
             }
             for name in AGENTS
         ],

@@ -37,7 +37,7 @@ OPERATIONAL PREFERENCES:
 - [e.g. Scientific topics: cite papers with authors + year + arXiv]
 
 ONGOING PROJECTS:
-- Chief of Staff (this system — local multi-agent assistant)
+- Local Agent (this system — local multi-agent assistant)
 - [Add your other active projects here]
 
 ENVIRONMENT (optional but useful):

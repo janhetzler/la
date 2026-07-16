@@ -58,7 +58,7 @@ def chat(frage, max_tokens=300):
     t0 = time.time()
     resp, status = api_call(
         AGENT_URL,
-        data={"model": "agent-chief-of-staff",
+        data={"model": "agent-local",
               "messages": [{"role": "user", "content": frage}],
               "max_tokens": max_tokens},
         method="POST")

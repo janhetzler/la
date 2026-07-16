@@ -2,7 +2,7 @@ import sys, time
 from openai import OpenAI
 
 client = OpenAI(
-    base_url="http://127.0.0.1:4000/v1",
+    base_url="http://127.0.0.1:8002/v1",
     api_key="sk-cos-local-dev"
 )
 
@@ -23,7 +23,7 @@ def run_chat():
             messages.append({"role": "user", "content": user_input})
             
             response = client.chat.completions.create(
-                model="agent-chief-of-staff",
+                model="agent-local",
                 messages=messages,
                 stream=False,
                 max_tokens=300
