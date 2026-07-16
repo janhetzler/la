@@ -35,3 +35,21 @@
   noch nicht getroffen — daher noch nicht behoben.
 - **Muss behoben sein, bevor**: die nächste neue Sandbox-Session den Code
   frisch klont.
+
+## Phoenix Log-Check False Positive (2026-07-16)
+
+- **Symptom**: `tests/test_stack.py` meldet Fehler in `phoenix.log` beim
+  Log-Check, obwohl Phoenix korrekt läuft.
+- **Cause**: Die Log-Check-Funktion sucht nach dem bloßen String `"ERROR"`.
+  Phoenix schreibt beim Start SQL-`CREATE TABLE`-Statements, deren
+  Constraint-Namen den String `"ERROR"` enthalten — z.B.
+  `CONSTRAINT "ck_spans_\`valid_status\`" CHECK (status_code IN ('OK', 'ERROR', ...))`.
+  Das ist kein Laufzeitfehler, sondern normales Datenbankschema-Logging.
+- **Workaround**: Log-Check-Ergebnis für Phoenix manuell ignorieren, wenn
+  der Kontext zeigt dass es sich um `CREATE TABLE` oder `CHECK` Statements handelt.
+- **Fix**: Log-Check-Funktion in `tests/test_stack.py` präzisieren — z.B.
+  auf Muster wie `"ERROR:"` oder `"Exception:"` (mit Doppelpunkt) prüfen
+  statt auf bloßes Vorkommen von `"ERROR"`. Alternativ: nur Zeilen ab einem
+  bestimmten Log-Level-Präfix (`[ERROR]`, `ERROR -`) scannen.
+- **Priorität**: Niedrig — kein Einfluss auf Stack-Funktion, nur auf
+  Testübersicht (False Alarm statt echtem Fehler).
