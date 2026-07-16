@@ -46,14 +46,8 @@ threading.Thread(target=uvicorn.Server(
 wait_for('http://127.0.0.1:8080/v1/models', 'llama-server')
 
 # ── 2. Headroom Proxy ────────────────────────────────────────────
-headroom_env = os.environ.copy()
-headroom_env.update({'HEADROOM_TELEMETRY':'off',
-                     'OPENAI_TARGET_API_URL':'http://127.0.0.1:8080/v1'})
-headroom_proc = subprocess.Popen(
-    ['headroom', 'proxy', '--host', '127.0.0.1', '--port', '8787', '--no-telemetry'],
-    env=headroom_env,
-    stdout=open('/tmp/headroom.log','w'), stderr=subprocess.STDOUT)
-wait_for('http://127.0.0.1:8787/health', 'Headroom')
+headroom_proc = None
+print('Headroom: übersprungen (Test-Modus, direkt auf llama-server)', flush=True)
 
 # ── 3. Phoenix ───────────────────────────────────────────────────
 os.environ['PHOENIX_COLLECTOR_ENDPOINT'] = 'http://127.0.0.1:6006/v1/traces'
@@ -70,7 +64,7 @@ model_list:
   - model_name: granite-tiny
     litellm_params:
       model: openai/granite
-      api_base: http://127.0.0.1:8787/v1
+      api_base: http://127.0.0.1:8080/v1
       api_key: not-needed
 general_settings:
   master_key: sk-cos-local-dev
@@ -89,6 +83,23 @@ litellm_proc = subprocess.Popen(
     stdout=open('/tmp/litellm.log','w'), stderr=subprocess.STDOUT)
 wait_for('http://127.0.0.1:4000/health', 'LiteLLM',
          headers={'Authorization': f'Bearer {LITELLM_KEY}'})
+
+# Echter Readiness-Check — warte bis LiteLLM einen echten Request durchleiten kann
+print('Warte auf LiteLLM → llama-server Verbindung...', flush=True)
+for i in range(30):
+    try:
+        req = urllib.request.Request(
+            'http://127.0.0.1:4000/v1/chat/completions',
+            data=json.dumps({'model':'granite-tiny',
+                'messages':[{'role':'user','content':'hi'}],
+                'max_tokens':5}).encode(),
+            headers={'Content-Type':'application/json',
+                     'Authorization':f'Bearer {LITELLM_KEY}'},
+            method='POST')
+        urllib.request.urlopen(req, timeout=30)
+        print('LiteLLM → llama-server ✓', flush=True)
+        break
+    except: time.sleep(2); print(f'{i+1}...', end=' ', flush=True)
 
 # ── 5. Agent Config + Phoenix Init ───────────────────────────────
 import config
@@ -119,6 +130,6 @@ test_path = os.path.join(os.path.dirname(__file__), 'test_stack.py')
 exec(open(test_path).read())
 
 # ── 8. Cleanup ───────────────────────────────────────────────────
-for proc in [litellm_proc, phoenix_proc, headroom_proc]:
+for proc in [litellm_proc, phoenix_proc]:
     proc.terminate()
 print('\nStack gestoppt.', flush=True)
