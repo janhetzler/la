@@ -1,24 +1,53 @@
 """
 Chief-of-Staff janhet — Vollständige Test-Suite
-Testet alle Agenten mit 4-Schritt Workflow, Phoenix Traces und Headroom Kompression.
+Testet alle Agenten mit 4-Schritt Workflow, Phoenix Traces und ChromaDB.
 """
-import json, time, urllib.request, sys
+import json, time, urllib.request, sys, os
 from datetime import datetime
 
-AGENT_URL   = "http://127.0.0.1:8002/v1/chat/completions"
-PHOENIX_URL = "http://127.0.0.1:6006"
-HEADROOM_URL= "http://127.0.0.1:8787"
-AUTH        = "Bearer sk-cos-local-dev"
-results     = []
+AGENT_URL    = "http://127.0.0.1:8002/v1/chat/completions"
+PHOENIX_URL  = "http://127.0.0.1:6006"
+AUTH         = "Bearer sk-cos-local-dev"
+LOG_DIR      = "/tmp/logs"
+CHROMA_PATH  = os.getenv("CHROMA_PATH", "/tmp/chroma_chief")
+results      = []
 
-def api_call(url, data=None, method="GET", headers=None):
+# ── Log-Check Funktion ───────────────────────────────────────────
+ERROR_PATTERNS = ["ERROR", "Exception", "Traceback", "CRITICAL"]
+
+def check_log(log_file: str, label: str) -> bool:
+    """Liest Log-Datei und sucht nach Fehler-Mustern. Gibt True zurück wenn sauber."""
+    if not os.path.exists(log_file):
+        print(f"  [{label}] Log-Datei nicht gefunden: {log_file}", flush=True)
+        return True  # Kein Log = kein Fehler (z.B. llama-server noch nichts geloggt)
+    with open(log_file) as f:
+        lines = f.readlines()
+    found = []
+    for i, line in enumerate(lines):
+        if any(p in line for p in ERROR_PATTERNS):
+            found.append(f"    Zeile {i+1}: {line.strip()[:120]}")
+    if found:
+        print(f"  [{label}] ⚠️  Fehler in {log_file}:", flush=True)
+        for f in found[:5]:
+            print(f, flush=True)
+        return False
+    print(f"  [{label}] Log sauber ✓ ({len(lines)} Zeilen)", flush=True)
+    return True
+
+# ── Log-Check nach Service-Start ─────────────────────────────────
+print("=== LOG-CHECK NACH SERVICE-START ===", flush=True)
+check_log(os.path.join(LOG_DIR, "llama-server.log"), "llama-server")
+check_log(os.path.join(LOG_DIR, "litellm.log"),      "LiteLLM")
+check_log(os.path.join(LOG_DIR, "phoenix.log"),      "Phoenix")
+check_log(os.path.join(LOG_DIR, "agent-server.log"), "Agent Server")
+
+# ── API-Helfer ───────────────────────────────────────────────────
+def api_call(url, data=None, method="GET"):
     req = urllib.request.Request(url, method=method)
     req.add_header("Authorization", AUTH)
     if data:
         req.data = json.dumps(data).encode()
         req.add_header("Content-Type", "application/json")
-    if headers:
-        for k,v in headers.items(): req.add_header(k,v)
     try:
         r = urllib.request.urlopen(req, timeout=120)
         return json.loads(r.read()), r.status
@@ -27,44 +56,94 @@ def api_call(url, data=None, method="GET", headers=None):
 
 def chat(frage, max_tokens=300):
     t0 = time.time()
-    resp, status = api_call(AGENT_URL,
-        data={"model":"agent-chief-of-staff",
-              "messages":[{"role":"user","content":frage}],
-              "max_tokens":max_tokens},
+    resp, status = api_call(
+        AGENT_URL,
+        data={"model": "agent-chief-of-staff",
+              "messages": [{"role": "user", "content": frage}],
+              "max_tokens": max_tokens},
         method="POST")
-    elapsed = time.time()-t0
+    elapsed = time.time() - t0
     if "choices" in resp:
-        return resp["choices"][0]["message"]["content"], resp.get("usage",{}).get("completion_tokens",0), elapsed, status
-    return str(resp), 0, elapsed, 0
+        text = resp["choices"][0]["message"]["content"]
+        tokens = resp.get("usage", {}).get("completion_tokens", 0)
+        return text, tokens, elapsed, status
+    return str(resp), 0, elapsed, status
 
-def test_agent(name, frage, beschreibung):
+# ── Antwort-Validierung ──────────────────────────────────────────
+def validate_response(text: str, min_length: int = 10) -> tuple[bool, str]:
+    """Validiert Antwort inhaltlich. Gibt (ok, grund) zurück."""
+    if not text or text.strip() == "":
+        return False, "Antwort leer"
+    if len(text.strip()) < min_length:
+        return False, f"Antwort zu kurz ({len(text.strip())} < {min_length} Zeichen)"
+    if text.strip().startswith("{") and "error" in text.lower():
+        return False, f"Antwort ist Fehler-JSON"
+    return True, f"OK ({len(text.strip())} Zeichen)"
+
+def test_agent(name, frage, beschreibung, notes_check=False):
     print(f"\n{'='*55}", flush=True)
     print(f"TEST: {name}", flush=True)
     print(f"Info: {beschreibung}", flush=True)
-    print(f"Frage: {frage[:80]}", flush=True)
-    # Schritt 1+2: Call + Antwort
+    print(f"Frage: {frage[:70]}", flush=True)
+
     text, tokens, elapsed, status = chat(frage)
     print(f"Antwort: {text[:200]}", flush=True)
-    print(f"Tokens:{tokens} | Zeit:{elapsed:.1f}s", flush=True)
-    # Schritt 3: Headroom Stats nach Call
-    hs, _ = api_call(f"{HEADROOM_URL}/stats")
-    hr = hs.get("requests",{}).get("total",0) if isinstance(hs,dict) else "?"
-    print(f"Headroom Requests gesamt: {hr}", flush=True)
-    # Schritt 4: Phoenix
-    time.sleep(1)
-    r = {"agent":name,"frage":frage[:60],"tokens":tokens,
-         "zeit":round(elapsed,1),"status":"OK" if status==200 else "FAIL",
-         "headroom_total":hr}
+    print(f"Tokens: {tokens} | Zeit: {elapsed:.1f}s | HTTP: {status}", flush=True)
+
+    # Inhaltliche Validierung
+    content_ok, content_reason = validate_response(text)
+
+    # Notes Agent: ChromaDB nachprüfen
+    notes_ok = True
+    notes_reason = "nicht geprüft"
+    if notes_check and content_ok:
+        try:
+            sys.path.insert(0, '/home/claude/la/agents/server')
+            sys.path.insert(0, '/home/claude/la/agents/ingestion')
+            import chromadb
+            client = chromadb.PersistentClient(path=CHROMA_PATH)
+            col = client.get_or_create_collection('notes')
+            count = col.count()
+            notes_ok = count > 0
+            notes_reason = f"ChromaDB 'notes' collection: {count} Dokumente"
+        except Exception as e:
+            notes_ok = False
+            notes_reason = f"ChromaDB Fehler: {e}"
+        print(f"ChromaDB: {notes_reason}", flush=True)
+
+    # Gesamtergebnis
+    overall_ok = (status == 200) and content_ok and (notes_ok if notes_check else True)
+    status_str = "OK" if overall_ok else "FAIL"
+
+    reasons = []
+    if status != 200: reasons.append(f"HTTP {status}")
+    reasons.append(content_reason)
+    if notes_check: reasons.append(notes_reason)
+
+    print(f"Ergebnis: {status_str} — {' | '.join(reasons)}", flush=True)
+
+    # Log nach jedem Agent-Call prüfen
+    check_log(os.path.join(LOG_DIR, "agent-server.log"), f"Agent Server nach {name}")
+
+    r = {
+        "agent": name,
+        "frage": frage[:60],
+        "tokens": tokens,
+        "zeit": round(elapsed, 1),
+        "status": status_str,
+        "http": status,
+        "content_ok": content_ok,
+        "reason": ' | '.join(reasons),
+    }
     results.append(r)
     return r
 
-# ── STACK MUSS LAUFEN ────────────────────────────────────────────
+# ── AGENT TESTS ──────────────────────────────────────────────────
 print(f"\n=== CHIEF-OF-STAFF TEST SUITE ===", flush=True)
 print(f"Start: {datetime.now().isoformat()}", flush=True)
 
-# Agent Tests
 test_agent("Supervisor Routing",
-    "Kannst du mir kurz helfen?",
+    "Can you help me?",
     "Schritt 1-4: Supervisor empfängt + routet + antwortet")
 
 test_agent("Comms Agent",
@@ -80,72 +159,52 @@ test_agent("Researcher Agent",
     "Schritt 1-4: Supervisor→Researcher→ChromaDB→Antwort")
 
 test_agent("Notes Agent",
-    "Save this note: janhet runs on AMD EPYC 7443P, 4 vCores, 10GB RAM, Granite-4.0-H-Tiny.",
-    "Schritt 1-4: Supervisor→Notes→ChromaDB Schreiben→Bestätigung")
+    "Save this note: janhet runs on AMD EPYC 7443P, 4 vCores, 10GB RAM.",
+    "Schritt 1-4: Supervisor→Notes→ChromaDB Schreiben→Bestätigung",
+    notes_check=True)
 
 test_agent("Handoff Agent",
     "Prepare a prompt for Claude.ai: analyse local LLMs vs Cloud APIs.",
     "Schritt 1-4: Supervisor→Handoff→Prompt→Antwort")
 
-# ── PHOENIX API ANALYSE ───────────────────────────────────────────
-print(f"\n{'='*55}", flush=True)
-print("PHOENIX TRACES ANALYSE", flush=True)
-time.sleep(3)
-
-for ep in ["/v1/projects", "/v1/spans?limit=20", "/v1/traces"]:
-    data, st = api_call(f"{PHOENIX_URL}{ep}")
-    if st == 200:
-        print(f"\nEndpoint {ep}:", flush=True)
-        if isinstance(data, dict):
-            keys = list(data.keys())
-            print(f"  Keys: {keys}", flush=True)
-            if "data" in data:
-                items = data["data"]
-                print(f"  Einträge: {len(items)}", flush=True)
-                for item in items[:3]:
-                    name = item.get("name") or item.get("project_name") or str(item)[:80]
-                    print(f"    - {name}", flush=True)
-        else:
-            print(f"  {str(data)[:200]}", flush=True)
-
-# ── HEADROOM KOMPRESSION DETAIL ───────────────────────────────────
-print(f"\n{'='*55}", flush=True)
-print("HEADROOM KOMPRESSION DETAIL", flush=True)
-
-for ep in ["/stats", "/stats-history", "/health", "/metrics"]:
-    data, st = api_call(f"{HEADROOM_URL}{ep}")
-    if st == 200 and isinstance(data, dict):
-        print(f"\n{ep}:", flush=True)
-        # Tokens gespart
-        for key in ["tokens_saved","compression_ratio","requests","total_tokens_in","total_tokens_out"]:
-            if key in data:
-                print(f"  {key}: {data[key]}", flush=True)
-        # Alles ausgeben wenn klein
-        if len(str(data)) < 500:
-            print(f"  Vollständig: {json.dumps(data, indent=2)}", flush=True)
-
-# ── CHROMADB ──────────────────────────────────────────────────────
+# ── CHROMADB STATUS ───────────────────────────────────────────────
 print(f"\n{'='*55}", flush=True)
 print("CHROMADB STATUS", flush=True)
-sys.path.insert(0,'/home/claude/la/agents/server')
-sys.path.insert(0,'/home/claude/la/agents/ingestion')
-import chromadb as cdb
-client = cdb.PersistentClient(path='/tmp/chroma_chief')
-for col in client.list_collections():
-    c = client.get_collection(col.name)
-    print(f"  Collection '{col.name}': {c.count()} Dokumente", flush=True)
+try:
+    import chromadb
+    client = chromadb.PersistentClient(path=CHROMA_PATH)
+    for col in client.list_collections():
+        c = client.get_collection(col.name)
+        print(f"  Collection '{col.name}': {c.count()} Dokumente", flush=True)
+except Exception as e:
+    print(f"  ChromaDB Fehler: {e}", flush=True)
+
+# ── FINALER LOG-CHECK ─────────────────────────────────────────────
+print(f"\n{'='*55}", flush=True)
+print("FINALER LOG-CHECK", flush=True)
+for label, fname in [
+    ("llama-server", "llama-server.log"),
+    ("LiteLLM",      "litellm.log"),
+    ("Phoenix",      "phoenix.log"),
+    ("Agent Server", "agent-server.log"),
+]:
+    check_log(os.path.join(LOG_DIR, fname), label)
 
 # ── ZUSAMMENFASSUNG ───────────────────────────────────────────────
 print(f"\n{'='*55}", flush=True)
 print("ZUSAMMENFASSUNG", flush=True)
-ok = sum(1 for r in results if r["status"]=="OK")
+print(f"Ende: {datetime.now().isoformat()}", flush=True)
+ok = sum(1 for r in results if r["status"] == "OK")
 print(f"Tests: {ok}/{len(results)} OK", flush=True)
 for r in results:
-    icon = "✓" if r["status"]=="OK" else "✗"
-    print(f"  {icon} {r['agent']}: {r['tokens']} tokens, {r['zeit']}s", flush=True)
+    icon = "✓" if r["status"] == "OK" else "✗"
+    print(f"  {icon} {r['agent']}: {r['reason']}", flush=True)
 
-report = {"timestamp":datetime.now().isoformat(),"results":results,"summary":{"total":len(results),"ok":ok}}
-with open('/tmp/test_results.json','w') as f:
+report = {
+    "timestamp": datetime.now().isoformat(),
+    "results": results,
+    "summary": {"total": len(results), "ok": ok}
+}
+with open('/tmp/test_results.json', 'w') as f:
     json.dump(report, f, indent=2, ensure_ascii=False)
-print(f"\nReport gespeichert: /tmp/test_results.json", flush=True)
-print(f"Ende: {datetime.now().isoformat()}", flush=True)
+print(f"\nReport: /tmp/test_results.json", flush=True)
