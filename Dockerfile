@@ -1,4 +1,4 @@
-# Chief-of-Staff — janhet Edition
+# Local Agent — portable Docker Edition
 # Selbstständiges Image mit beiden Granite Modellen
 # Basis: python:3.12-slim-bookworm (kein nvidia, kein torch)
 
@@ -43,7 +43,7 @@ RUN pip install --no-cache-dir "litellm[proxy]==1.92.0"
 RUN pip install --no-cache-dir arize-phoenix==18.0.0 openinference-instrumentation-langchain==0.1.67 opentelemetry-sdk==1.43.0 opentelemetry-exporter-otlp==1.43.0
 
 # 8. MCP + Rest
-RUN pip install --no-cache-dir mcp-server-git==2026.7.10 mcp-server-fetch==2026.7.10 openai==1.97.1 pydantic==2.12.5 numpy==2.4.4 tqdm==4.67.3
+RUN pip install --no-cache-dir mcp-server-git==2026.7.10 mcp-server-fetch==2026.7.10 "openai>=2.26.0" pydantic==2.12.5 numpy==2.4.4 tqdm==4.67.3 starlette-context==0.5.1
 
 # Code kopieren
 COPY agents/ ./agents/
@@ -51,6 +51,12 @@ COPY mcp/ ./mcp/
 COPY scripts/ ./scripts/
 COPY tests/ ./tests/
 COPY docker/ ./docker/
+
+# Bekannter Fix: mcp.json liegt nach Ordner-Umstrukturierung unter mcp/docker/
+# statt mcp/mcp.json (siehe BUGS.md). Fest im Image korrigiert, kein Laufzeit-Workaround.
+RUN mkdir -p mcp/docker && cp mcp/sandbox/mcp.json mcp/docker/mcp.json && \
+    sed -i 's|PROJECT_ROOT / "mcp" / "mcp.json"|PROJECT_ROOT / "mcp" / "docker" / "mcp.json"|' \
+      agents/server/tools.py
 
 # Modelle herunterladen (direkt im Image)
 # GitHub Token wird als Build-Arg übergeben
