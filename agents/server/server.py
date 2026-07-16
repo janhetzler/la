@@ -17,7 +17,6 @@ from supervisor import invoke_supervisor
 from notes import invoke_notes
 from code import invoke_code
 from handoff import invoke_handoff
-from meeting import invoke_meeting
 import asyncio
 
 
@@ -50,7 +49,6 @@ AGENTS = {
     "agent-notes": invoke_notes,
     "agent-code": invoke_code,
     "agent-handoff": invoke_handoff,
-    "agent-meeting": invoke_meeting,
     "agent-local": invoke_supervisor,
 }
 
