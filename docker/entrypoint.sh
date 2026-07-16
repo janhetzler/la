@@ -40,7 +40,7 @@ sleep 5
 
 # 5. LiteLLM (Port 4000)
 echo "Starting LiteLLM :4000..."
-litellm --config /app/docker/litellm_config_janhet.yaml \
+litellm --config /app/docker/litellm_config.yaml \
     --host 127.0.0.1 --port 4000 \
     > /var/log/litellm.log 2>&1 &
 
