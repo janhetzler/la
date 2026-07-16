@@ -150,19 +150,31 @@ python3 tests/run_tests.py
 ## 7. Terminal-Chat (Ersatz für VS Code Language Model API)
 
 Die Sandbox hat keinen Web-Zugang für eine VS Code Verbindung. `scripts/chat.py`
-ist der direkte Ersatz — ein Terminal-Client der gegen LiteLLM (Port 4000) spricht:
+ist der direkte Ersatz — ein Terminal-Client der gegen LiteLLM (Port 4000) spricht,
+LiteLLM leitet zum Agent Server (Port 8002) weiter, der Supervisor routet zum
+richtigen Spezialisten. Das entspricht dem Original-Konzept aus
+`docker/litellm_config.yaml` (dort: `agent-chief-of-staff` → Port 8002).
 
 ```bash
 python3 scripts/chat.py
 ```
 
-⚠️ **Bekannter Bug:** `chat.py` nutzt aktuell `model="agent-chief-of-staff"` —
-dieser Name ist in der LiteLLM-Config nicht registriert (dort heißt es
-`granite-tiny`). Der Aufruf über LiteLLM schlägt deshalb fehl. Fix steht aus.
+`model="agent-local"` — funktioniert, seit `litellm_config_janhet.yaml` um den
+`agent-local` Endpoint ergänzt wurde (Port 8002). Bestätigt getestet 2026-07-16:
+Supervisor antwortet korrekt über diesen Pfad.
+
+⚠️ **Bekannte Kleinigkeit:** `chat.py` Z.10 zeigt noch den alten Begrüßungstext
+`"=== Chief-of-Staff Terminal Chat ==="` — kosmetisch, keine Funktionsauswirkung,
+noch nicht nachgezogen bei der Umbenennung.
+
+⚠️ **Timing beim Start:** `litellm.log` zeigt beim Hochfahren kurzzeitig
+`ConnectionRefusedError` auf Port 8002, weil LiteLLM einen Readiness-Check
+ausführt bevor der Agent Server bereit ist. Der eigentliche Request danach
+funktioniert. Kein funktionaler Fehler, aber beim Log-Lesen nicht verwirren lassen.
 
 ---
 
-## Installierte Pakete (Stand 2026-07-16)
+## A. Installierte Pakete (Stand 2026-07-16)
 
 ### Aktiv
 
@@ -204,7 +216,7 @@ dieser Name ist in der LiteLLM-Config nicht registriert (dort heißt es
 
 ---
 
-## Modelle
+## B. Modelle
 
 | Modell | Größe | Port | Zweck |
 |--------|-------|------|-------|
@@ -215,7 +227,7 @@ Beide als GitHub Release Assets unter dem Tag `granite-models`.
 
 ---
 
-## Ports
+## C. Ports
 
 | Port | Dienst |
 |------|--------|
@@ -228,7 +240,7 @@ Beide als GitHub Release Assets unter dem Tag `granite-models`.
 
 ---
 
-## Bekannte Fixes
+## D. Bekannte Fixes
 
 **Fix 1 — Phoenix skip_dep_check**
 ```python
@@ -267,7 +279,7 @@ Aktuell nicht relevant — Headroom ist deaktiviert, siehe ROADMAP.md.
 
 ---
 
-## Testergebnisse (Stand 2026-07-16)
+## E. Testergebnisse (Stand 2026-07-16)
 
 | Test | Ergebnis |
 |------|----------|
@@ -287,7 +299,41 @@ Prompts in Tests verwenden. Das ist eine Modellgrößen-Limitation, kein Bug.
 
 ---
 
-## Referenzen
+## F. Logging (Stand 2026-07-16, nachgerüstet)
+
+Alle Logs liegen einheitlich unter `/tmp/logs/`:
+
+| Datei | Komponente | Status |
+|---|---|---|
+| `/tmp/logs/litellm.log` | LiteLLM | ✓ funktioniert |
+| `/tmp/logs/phoenix.log` | Phoenix | ✓ funktioniert |
+| `/tmp/logs/llama-server.log` | Reasoning Server | ⚠️ bleibt leer — uvicorn-Thread-Logging greift nicht |
+| `/tmp/logs/agent-server.log` | Agent Server | ⚠️ bleibt leer — gleicher Grund |
+
+`tests/test_stack.py` prüft nach jedem Service-Start die jeweilige Log-Datei
+auf `ERROR`, `Exception`, `Traceback`, `CRITICAL` — nicht erst am Ende des
+gesamten Testlaufs.
+
+**Antwort-Validierung:** Tests bewerten nicht mehr nur `status==200`, sondern
+prüfen zusätzlich Mindestlänge der Antwort. Beim Notes-Agent wird gezielt in
+ChromaDB nachgeschaut ob die neue Notiz tatsächlich gespeichert wurde.
+
+---
+
+## G. Bekannte offene Punkte (Stand 2026-07-16)
+
+- **Headroom-Guardrails-Block** in `docker/litellm_config_janhet.yaml` ist
+  noch vorhanden, obwohl Headroom deinstalliert ist (siehe ROADMAP.md —
+  Headroom wurde zugunsten von llmtrim verworfen). Erzeugt vermutlich
+  Warnungen beim LiteLLM-Start. Noch nicht bereinigt.
+- **Embedding-Server (Port 8081)** wird in `run_tests.py` nicht gestartet —
+  nur der Reasoning-Server läuft. Ob ChromaDB mit echten Embeddings über
+  diesen Pfad aktuell funktioniert, ist ungeklärt.
+- **Notes/Handoff-Agent Routing** bleibt unzuverlässig — bekanntes
+  Kapazitätslimit des 350m-Modells beim Supervisor-Routing (nicht beim
+  MCP-Tool-Calling, das funktioniert). Auf einem größeren Modell (Host)
+  sollte dies nicht auftreten.
+- **`chat.py` Begrüßungstext** noch nicht auf "Local Agent" umbenannt (kosmetisch).
 
 - Repository: https://github.com/janhetzler/la
 - Original-Projekt: https://github.com/xaviervasques/chief-of-staff
