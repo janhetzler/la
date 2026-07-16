@@ -14,6 +14,14 @@ model_list:
       api_base: http://127.0.0.1:8081/v1
       api_key: not-needed
 
+  - model_name: agent-local
+    litellm_params:
+      model: openai/agent-local
+      api_base: http://127.0.0.1:8002/v1
+      api_key: not-needed
+    model_info:
+      description: "Local Agent — orchestrator, routes to the right specialist"
+
 # Headroom als LiteLLM Guardrail
 guardrails:
   - guardrail_name: headroom-compression

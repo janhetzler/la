@@ -87,6 +87,11 @@ model_list:
       model: openai/granite
       api_base: http://127.0.0.1:8080/v1
       api_key: not-needed
+  - model_name: agent-local
+    litellm_params:
+      model: openai/agent-local
+      api_base: http://127.0.0.1:8002/v1
+      api_key: not-needed
 general_settings:
   master_key: sk-cos-local-dev
 litellm_settings:
