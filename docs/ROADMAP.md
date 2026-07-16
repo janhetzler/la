@@ -161,6 +161,57 @@ Arize Phoenix :6006 (Observability)
 
 ---
 
+## Bekannte Lösung, noch nicht implementiert: MCP Tool-Calling für kleine Modelle
+
+**Stand:** 2026-07-16. Betrifft: `agents/server/researcher_v2.py`
+
+Das kleine Granite-350m-Modell (Sandbox) kann MCP-Tools (git_log, fetch etc.)
+zuverlässig aufrufen — das wurde bereits erfolgreich isoliert getestet
+(Commit `ae471a6`). Der Ansatz ist im Code vorhanden, aber **nicht in den
+Produktivpfad des Researcher-Agenten eingebaut.** Deshalb schlägt MCP im
+regulären Agenten-Betrieb mit dem 350m-Modell fehl, obwohl die Lösung
+bereits existiert.
+
+**Das Problem:** `researcher_v2.py` nutzt `create_agent()` aus LangGraph,
+das intern `bind_tools()` verwendet — also das Standard-OpenAI-
+Function-Calling-Format. Das 350m-Modell kann dieses Format nicht
+zuverlässig bedienen.
+
+**Die bereits erprobte Lösung:** Tools nicht über `bind_tools()` einbinden,
+sondern über das **native Granite XML-Tool-Format**, erzeugt mit der bereits
+vorhandenen Funktion `format_tools_for_model()` aus `tool_formatter.py`:
+
+```python
+system_prompt = format_tools_for_model([tool_def], model_name="granite-tiny")
+llm.invoke([SystemMessage(content=system_prompt), HumanMessage(...)])
+```
+
+Der Prompt enthält dann `<tools>...</tools>`, und das Modell antwortet mit
+`<tool_call>{"name": ..., "arguments": ...}</tool_call>` — zuverlässig
+erkennbar per `parse_tool_call_from_response()`.
+
+**Zusätzlich nötiger Fix:** Wenn Tools über `get_tools_by_names()` aus MCP
+geladen werden, liefert `tool.args_schema` ein Dict statt eines Pydantic-
+Objekts. Der Aufruf `.schema()` schlägt dann fehl — stattdessen
+`dict(tool.args_schema)` verwenden.
+
+**Was konkret zu tun ist, um das nachzuziehen:**
+1. In `researcher_v2.py`: `create_agent()`/`bind_tools()` durch einen
+   manuellen LangGraph-Agenten ersetzen, der `format_tools_for_model()`
+   für den System-Prompt nutzt.
+2. `args_schema`-Fix (`dict(...)` statt `.schema()`) beim MCP-Tool-Loading
+   übernehmen.
+3. Erneut mit `scripts/sandbox/start_full.py` oder gezielt gegen den
+   Researcher-Agenten testen (git_log, fetch).
+
+**Warum das wichtig ist:** Ohne diesen Umbau funktioniert MCP-Tool-Calling
+nur in isolierten Tests, nicht im echten Agenten-Betrieb — auf dem Host mit
+einem größeren Modell (Granite-4.0-H-Tiny) mag `bind_tools()` funktionieren,
+aber für die Sandbox und kleinere Modelle ist dieser Umbau die Voraussetzung
+für funktionierendes MCP.
+
+---
+
 ## Referenzen
 
 - Fork: https://github.com/janhetzler/la
