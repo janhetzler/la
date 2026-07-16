@@ -55,8 +55,8 @@ opentelemetry-exporter-otlp==1.43.0
 #
 # Prebuilt Wheel (kein C++ Build nötig, empfohlen):
 # pip install https://github.com/abetlen/llama-cpp-python/releases/download/v0.3.23/llama_cpp_python-0.3.23-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-llama-cpp-python==0.3.23
-starlette-context==0.5.1
+# llama-cpp-python==0.3.23  # Im Dockerfile via Prebuilt Wheel installiert
+# starlette-context==0.5.1  # Abhängigkeit von llama-cpp-python
 
 # ── MCP Servers ───────────────────────────────────────────────────
 mcp-server-git==2026.7.10
