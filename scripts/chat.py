@@ -23,7 +23,7 @@ def run_chat():
             messages.append({"role": "user", "content": user_input})
             
             response = client.chat.completions.create(
-                model="granite-tiny",
+                model="agent-chief-of-staff",
                 messages=messages,
                 stream=False,
                 max_tokens=300
