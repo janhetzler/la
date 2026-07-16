@@ -284,9 +284,10 @@ funktioniert. Kein funktionaler Fehler, aber beim Log-Lesen nicht verwirren lass
 | opentelemetry-sdk | 1.43.0 | Tracing |
 | opentelemetry-exporter-otlp | 1.43.0 | Tracing Export |
 | llama-cpp-python | 0.3.23 | Inferenz Server |
+| starlette-context | 0.5.1 | Abhängigkeit von llama-cpp-python (fehlte — Absturz beim Start) |
 | mcp-server-git | 2026.7.10 | Git MCP Tools |
 | mcp-server-fetch | 2026.7.10 | Web Fetch MCP Tool |
-| openai | 1.97.1 | API Client |
+| openai | >=2.26.0 (2.45.0 getestet) | API Client |
 | fastapi | 0.139.0 | Agent Server |
 | uvicorn | 0.51.0 | ASGI Server |
 | httpx | 0.28.1 | HTTP Client |
@@ -501,6 +502,13 @@ Prompts in Tests verwenden. Das ist eine Modellgrößen-Limitation, kein Bug.
 - **llama-server / Agent Server Logs** bleiben leer — uvicorn-Thread-Logging
   funktioniert in der aktuellen Konfiguration nicht (kein echtes Problem,
   aber keine Logs für Debugging).
+
+- **Phoenix Log-Check False Positive** — `test_stack.py` sucht nach dem
+  String `"ERROR"` in Logs. Phoenix schreibt beim Start SQL-`CREATE TABLE`-
+  Statements mit Constraint-Namen wie `"ck_spans_\`valid_status\`"` die den
+  String `"ERROR"` enthalten — kein echter Fehler. Details: `BUGS.md`.
+  Fix: Log-Check auf Zeilenmuster `"ERROR:"` oder `"Exception:"` (mit Doppelpunkt)
+  statt bloßem Vorkommen von `"ERROR"` einschränken.
 
 ---
 
