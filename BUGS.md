@@ -14,3 +14,24 @@
 - **Cause**: Open WebUI auto-generates follow-up suggestions
 - **Workaround**: Filter in `supervisor.invoke_supervisor` (already in place)
 - **Better fix**: Disable Follow Up Generation in Open WebUI Settings → Interface
+
+## mcp.json Pfad nach Ordner-Umstrukturierung (2026-07-16)
+
+- **Symptom**: Agent Server kann `mcp/mcp.json` nicht laden, `FileNotFoundError`
+  beim Start — betrifft jede **neue** Sandbox/Docker/Host-Session, die den Code
+  frisch von GitHub klont. Die aktuell laufende Sandbox-Session ist nicht
+  betroffen, da sie den alten Pfad noch im eigenen Dateisystem hat.
+- **Cause**: `agents/server/tools.py` Z.39 hat den Pfad hart codiert:
+  `config_path = PROJECT_ROOT / "mcp" / "mcp.json"`. Im Rahmen der
+  Aufräumarbeiten wurde die Config-Struktur auf Umgebungs-Ordner umgestellt
+  (`mcp/sandbox/mcp.json`, später `mcp/docker/mcp.json`, `mcp/host/mcp.json`),
+  `tools.py` wurde dabei noch nicht angepasst.
+- **Grundsatz**: Pfade sollen grundsätzlich nicht hart codiert werden, außer
+  wenn zwingend nötig.
+- **Offene Frage vor dem Fix**: Wie soll der Code erkennen, in welcher der
+  drei Umgebungen (Sandbox/Docker/Host) er läuft, um automatisch den
+  richtigen Unterordner zu wählen? Z.B. über eine Umgebungsvariable wie
+  `LOCAL_AGENT_ENV=sandbox`. Das ist eine bewusste Architektur-Entscheidung,
+  noch nicht getroffen — daher noch nicht behoben.
+- **Muss behoben sein, bevor**: die nächste neue Sandbox-Session den Code
+  frisch klont.
