@@ -21,6 +21,17 @@ Dokumentation, eigenen Requirements und eigenen Start-Skripten:
 | 🖥️ **Host** | Produktivbetrieb auf eigenem Server (systemd) | [docs/HOST.md](docs/HOST.md) |
 | 🐳 **Docker** | Portable Version der Sandbox, für jeden x86_64 Server | [docs/DOCKER.md](docs/DOCKER.md) |
 
+### Hardware im Vergleich
+
+| | Sandbox | Host (Empfehlung) | Docker |
+|---|---|---|---|
+| CPU | Intel Xeon, 1 Core | x86_64, 4 Cores (AMD EPYC) | x86_64, 1 Core (wie Sandbox) |
+| RAM | 4 GB | 10 GB | 4 GB (wie Sandbox) |
+| Inferenz | llama-cpp-python (Python) | llama-server (Binary) | llama-cpp-python (Python) |
+| Reasoning-Modell | Granite-4.0-H-350m (213 MB) | Granite-4.0-H-Tiny (4.2 GB) | Granite-4.0-H-350m (213 MB) |
+| Embedding-Modell | Granite-Embedding-30m (28 MB) | Granite-Embedding-30m (28 MB) | Granite-Embedding-30m (28 MB) |
+| Persistenz | Keine — stirbt nach Session | Dauerhaft (systemd) | Dauerhaft (Container) |
+
 ---
 
 ## Was es tut
