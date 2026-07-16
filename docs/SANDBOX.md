@@ -159,7 +159,7 @@ richtigen Spezialisten. Das entspricht dem Original-Konzept aus
 python3 scripts/chat.py
 ```
 
-`model="agent-local"` — funktioniert, seit `litellm_config_janhet.yaml` um den
+`model="agent-local"` — funktioniert, seit `litellm_config.yaml` um den
 `agent-local` Endpoint ergänzt wurde (Port 8002). Bestätigt getestet 2026-07-16:
 Supervisor antwortet korrekt über diesen Pfad.
 
@@ -322,10 +322,11 @@ ChromaDB nachgeschaut ob die neue Notiz tatsächlich gespeichert wurde.
 
 ## G. Bekannte offene Punkte (Stand 2026-07-16)
 
-- **Headroom-Guardrails-Block** in `docker/litellm_config_janhet.yaml` ist
-  noch vorhanden, obwohl Headroom deinstalliert ist (siehe ROADMAP.md —
-  Headroom wurde zugunsten von llmtrim verworfen). Erzeugt vermutlich
-  Warnungen beim LiteLLM-Start. Noch nicht bereinigt.
+- ~~Headroom-Guardrails-Block in `docker/litellm_config.yaml`~~ — **behoben
+  2026-07-16**: `docker/litellm_config.yaml` und `docker/litellm_config_janhet.yaml`
+  waren zwei parallele, verwirrende Dateien (plus das veraltete Original mit
+  Ollama-Config). Zusammengeführt zu einer einzigen `docker/litellm_config.yaml`,
+  Headroom-Block entfernt.
 - **Embedding-Server (Port 8081)** wird in `run_tests.py` nicht gestartet —
   nur der Reasoning-Server läuft. Ob ChromaDB mit echten Embeddings über
   diesen Pfad aktuell funktioniert, ist ungeklärt.
