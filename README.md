@@ -1,167 +1,118 @@
-# Chief of Staff — janhet Edition
+# Local Agent (la)
 
-> A 100% local, open-source, multi-agent personal AI assistant — powered by Granite open-weight models, orchestrated with LangGraph, running on a Hetzner KVM vServer (AMD EPYC 7443P, 4 vCores, 10 GB RAM). No paid APIs, no data leaving your machine.
+> Ein vollständig lokaler, quelloffener Multi-Agenten-Assistent —
+> läuft auf eigener Infrastruktur mit IBM Granite Modellen,
+> orchestriert mit LangGraph. Keine bezahlten APIs, keine Daten
+> verlassen die eigene Maschine.
 
----
-
-## What it does
-
-A single chat interface — the **Chief of Staff** — that understands what you ask and delegates to the right specialist. Six agents work behind the scenes:
-
-| Agent | Role |
-|---|---|
-| 🎯 **Chief of Staff** | Orchestrator, routes to specialists |
-| 📚 **Researcher** | Searches your indexed library (ChromaDB RAG) + web |
-| 📝 **Comms** | Drafts emails, messages, short reports |
-| 🗒️ **Notes** | Explores your knowledge base |
-| 💻 **Code** | Programming Q&A + GitHub issues |
-| 🔀 **Handoff** | Prepares prompts for Claude.ai / ChatGPT |
+Fork von [xaviervasques/chief-of-staff](https://github.com/xaviervasques/chief-of-staff),
+MIT-lizenziert, seitdem grundlegend umgebaut.
 
 ---
 
-## Architecture (janhet)
+## Drei Umgebungen
 
-```
-┌─────────────────────────────────────────────────────────┐
-│ Interface — Terminal chat.py or VS Code 1.127 LM API    │
-├─────────────────────────────────────────────────────────┤
-│ LiteLLM proxy (OpenAI-compatible, port 4000)            │
-│ + Arize Phoenix Observability (port 6006)               │
-├─────────────────────────────────────────────────────────┤
-│ FastAPI + LangGraph (agents, port 8002)                 │
-│ 1 supervisor + 5 active specialists                     │
-├─────────────────────────────────────────────────────────┤
-│ llama-server (port 8080) — Granite 4.0-H-Tiny IQ4_XS   │
-│ llama-server (port 8081) — granite-embedding-30m        │
-├─────────────────────────────────────────────────────────┤
-│ ChromaDB (embedded) — vector store for RAG              │
-└─────────────────────────────────────────────────────────┘
-```
+Dieses Projekt existiert in drei parallelen Umgebungen — jede mit eigener
+Dokumentation, eigenen Requirements und eigenen Start-Skripten:
 
-**Key differences from the original Mac/Docker version:**
-- No Docker, no Ollama, no Open WebUI
-- No torch/transformers — embeddings via LiteLLM → llama-server
-- Qdrant → ChromaDB (embedded, no separate service)
-- Audio/Meeting pipeline disabled (headless server)
-- Arize Phoenix for observability/tracing
-
----
-
-## Models
-
-| Model | Size | Role |
+| Umgebung | Zweck | Dokumentation |
 |---|---|---|
-| `granite-4.0-h-tiny.i1-IQ4_XS.gguf` | 4.2 GB | All agents — reasoning, tool-calling |
-| `granite-embedding-30m` | 62 MB | RAG embeddings (384-dim) |
+| 🧪 **Sandbox** | Claude.ai Entwicklungsumgebung, kurzlebig | [docs/SANDBOX.md](docs/SANDBOX.md) |
+| 🖥️ **Host** | Produktivbetrieb auf eigenem Server (systemd) | [docs/HOST.md](docs/HOST.md) |
+| 🐳 **Docker** | Portable Version der Sandbox, für jeden x86_64 Server | [docs/DOCKER.md](docs/DOCKER.md) |
 
 ---
 
-## Quick start (janhet)
+## Was es tut
 
-```bash
-# 1. Clone
-git clone https://github.com/janhetzler/la /home/user/chief/la
-cd /home/user/chief/la
+Sechs Agenten hinter einer einzigen Chat-Oberfläche:
 
-# 2. Python venv ohne torch
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements-janhet.txt
+| Agent | Rolle |
+|---|---|
+| 🎯 Supervisor | Orchestriert, routet zu Spezialisten |
+| 📚 Researcher | Durchsucht ChromaDB RAG + Web |
+| 📝 Comms | E-Mails, Nachrichten, Kurzberichte |
+| 🗒️ Notes | Wissensdatenbank |
+| 💻 Code | Programmier-Fragen + GitHub Issues |
+| 🔀 Handoff | Bereitet Prompts für Claude.ai/ChatGPT vor |
 
-# 3. LiteLLM starten
-bash scripts/start_litellm.sh
+---
 
-# 4. Phoenix starten (optional)
-bash scripts/start_phoenix.sh
+## Architektur
 
-# 5. Agent Server starten
-cd agents/server
-uvicorn server:app --host 127.0.0.1 --port 8002
-
-# 6. Terminal Chat
-python3 scripts/chat.py
+```
+Interface — Terminal chat.py oder VS Code Language Model API
+    │
+LiteLLM Proxy (Port 4000) + Arize Phoenix Observability (Port 6006)
+    │
+FastAPI + LangGraph Agent-Server (Port 8002)
+    │
+llama-server Reasoning (Port 8080) + llama-server Embedding (Port 8081)
+    │
+ChromaDB (embedded) — Vektorspeicher für RAG
 ```
 
 ---
 
-## Test results (Claude container — Granite 4.0-H 350m)
+## Kernstück
 
-Validated end-to-end on a 1-core Intel Xeon @ 2.1 GHz, 4 GB RAM  
-Full test suite:  — detailed results: 
+`agents/` — der ursprüngliche Agent-Code aus dem Original-Projekt,
+angepasst für lokalen Betrieb. Alles andere im Repo (Docker, Deploy-Skripte,
+Dokumentation) ist im Rahmen dieses Forks entstanden.
 
-| Component | Status | Detail |
-|-----------|--------|--------|
-| llama-server :8080 | ✓ | Granite 350m, ~25 t/s |
-| Headroom Proxy :8787 | ✓ | 24 Requests verarbeitet |
-| LiteLLM :4000 | ✓ | Phoenix Callbacks aktiv |
-| Phoenix :6006 | ✓ | Traces empfangen (POST 200 OK) |
-| Agent Server :8002 | ✓ | 6/6 Tests OK |
-| Supervisor Routing | ✓ | Korrekt per Sprache/Intent |
-| Comms Agent | ✓ | E-Mail generiert, 21.5s |
-| Code Agent | ✓ | Python Funktion korrekt, 24.1s |
-| Researcher Agent | ✓ | LangGraph erklärt, 33.4s |
-| Notes Agent | ✓ | Notiz gespeichert, 22.9s |
-| Handoff Agent | ✓ | Prompt aufbereitet, 32.5s |
-| ChromaDB | ✓ | 3 Dokumente, write/read OK |
-
-Response time: 21–33s per call on 1-core Xeon. Expected 5–10s on janhet EPYC with 4 cores.
+**Wichtigste Änderungen gegenüber dem Original:**
+- Ollama → llama-server (native Binary / llama-cpp-python)
+- Qdrant → ChromaDB (embedded)
+- torch/transformers entfernt — Embeddings via LiteLLM
+- Open WebUI entfernt — VS Code Language Model API
+- Audio/Meeting-Pipeline deaktiviert (Headless-Server)
+- Arize Phoenix für Observability hinzugefügt
+- MCP-Integration: mcp-server-git + mcp-server-fetch
 
 ---
 
-## Project structure
+## MCP Server
 
-```
-chief-of-staff/
-├── requirements-janhet.txt          # Dependencies ohne torch/qdrant/ollama
-├── deploy-janhet.sh                 # Deployment script für janhet
-│
-├── scripts/
-│   ├── chat.py                      # Terminal Chat Client
-│   ├── start_litellm.sh             # LiteLLM Proxy starten
-│   └── start_phoenix.sh             # Arize Phoenix starten
-│
-├── docker/
-│   ├── litellm_config_janhet.yaml   # LiteLLM Config für janhet
-│   └── litellm_config.yaml          # Original Mac/Docker Config
-│
-├── agents/
-│   ├── server/                      # 6 LangGraph agents + supervisor
-│   │   ├── telemetry.py             # NEU: Phoenix + LiteLLM Client
-│   │   └── config.py                # ChromaDB statt Qdrant
-│   ├── notes/                       # recorder.py disabled auf Server
-│   └── ingestion/                   # ChromaDB statt Qdrant
-│
-├── mcp/mcp.json                     # MCP Server Config (leer = kein MCP)
-└── JANHET_SETUP.md                  # Detaillierte Setup-Dokumentation
-```
+Zwei MCP-Server sind konfiguriert und getestet:
+
+| Server | Tools | Zweck |
+|---|---|---|
+| mcp-server-git | 12 Tools | Repository durchsuchen |
+| mcp-server-fetch | 1 Tool | Web-Inhalte abrufen |
+
+Details: [docs/MCP_SERVERS.md](docs/MCP_SERVERS.md)
 
 ---
 
-## Disabled on janhet
+## Modelle
 
-- `agents/notes/recorder.py` — Audio capture (no hardware)
-- `agents/server/meeting.py` — Meeting pipeline
-- Docker/Ollama/Open WebUI — replaced by native llama-server
-
----
-
-## Credits
-
-Built on: [Granite](https://www.ibm.com/granite) · [LangGraph](https://github.com/langchain-ai/langgraph) · [LiteLLM](https://github.com/BerriAI/litellm) · [ChromaDB](https://www.trychroma.com) · [Arize Phoenix](https://phoenix.arize.com) · [llama.cpp](https://github.com/ggml-org/llama.cpp) · [Docling](https://github.com/DS4SD/docling)
-
-Original project: [xaviervasques/chief-of-staff](https://github.com/xaviervasques/chief-of-staff)
-
-## License
-
-MIT
+| Modell | Größe | Rolle |
+|---|---|---|
+| Granite-4.0-H-Tiny (IQ4_XS) | 4.2 GB | Reasoning, alle Agenten (Host) |
+| Granite-4.0-H-350m (Q4_K_M) | 213 MB | Reasoning (Sandbox/Docker) |
+| Granite-Embedding-30m | 28-62 MB | RAG-Embeddings |
 
 ---
 
 ## Dokumentation
 
 | Datei | Inhalt |
-|-------|--------|
-| [docs/INSTALL_JANHET.md](docs/INSTALL_JANHET.md) | Schritt-für-Schritt Installation (11 Schritte) |
-| [JANHET_SETUP.md](JANHET_SETUP.md) | Technische Setup-Dokumentation + Testergebnisse |
-| [tests/TEST_RESULTS.md](tests/TEST_RESULTS.md) | Aktuelle Testergebnisse |
-| [BUGS.md](BUGS.md) | Bekannte Probleme |
+|---|---|
+| [docs/SANDBOX.md](docs/SANDBOX.md) | Claude Sandbox aufbauen |
+| [docs/HOST.md](docs/HOST.md) | Produktiv-Deployment |
+| [docs/DOCKER.md](docs/DOCKER.md) | Docker Image bauen + nutzen |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Architektur-Entscheidungen, Phasen |
+| [docs/MCP_SERVERS.md](docs/MCP_SERVERS.md) | MCP-Konfiguration |
+| [docs/BUGS.md](docs/BUGS.md) | Bekannte Probleme |
+
+---
+
+## Credits
+
+Aufgebaut mit: [Granite](https://www.ibm.com/granite) · [LangGraph](https://github.com/langchain-ai/langgraph) · [LiteLLM](https://github.com/BerriAI/litellm) · [ChromaDB](https://www.trychroma.com) · [Arize Phoenix](https://phoenix.arize.com) · [llama.cpp](https://github.com/ggml-org/llama.cpp)
+
+Original-Projekt: [xaviervasques/chief-of-staff](https://github.com/xaviervasques/chief-of-staff) (MIT License)
+
+## Lizenz
+
+MIT
