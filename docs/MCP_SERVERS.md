@@ -1,6 +1,6 @@
 # MCP Server — Installation und Konfiguration
 
-Chief-of-Staff nutzt MCP (Model Context Protocol) Server um den Agenten
+Local Agent nutzt MCP (Model Context Protocol) Server um den Agenten
 Zugriff auf externe Tools zu geben: Git Repository, Web-Fetch, und mehr.
 
 ---
@@ -8,7 +8,7 @@ Zugriff auf externe Tools zu geben: Git Repository, Web-Fetch, und mehr.
 ## Installation
 
 ```bash
-source /home/user/chief/venv/bin/activate
+source venv/bin/activate  # aktives Python-Environment
 pip install mcp-server-git mcp-server-fetch
 ```
 
@@ -23,7 +23,7 @@ git_commit, git_add, git_reset, git_create_branch, git_checkout, git_show, git_b
 
 ```bash
 # Testen
-python3 -m mcp_server_git --repository /home/user/chief/la
+python3 -m mcp_server_git --repository .
 ```
 
 **Konfiguration in mcp/mcp.json:**
@@ -57,9 +57,9 @@ Der Pfad zum Repository wird aus dem Arbeitsverzeichnis (`"."`) abgeleitet.
 
 **Wichtig:** Die MCP Server müssen im selben Python-Environment sein wie der Agent Server:
 ```bash
-source /home/user/chief/venv/bin/activate
+source venv/bin/activate  # aktives Python-Environment
 pip install mcp-server-git mcp-server-fetch
-cd /home/user/chief/la/agents/server
+cd agents/server  # relativ zum Repository-Root
 uvicorn server:app --host 127.0.0.1 --port 8002
 ```
 
@@ -74,7 +74,7 @@ uvicorn server:app --host 127.0.0.1 --port 8002
 | git_diff | ✓ | Änderungen anzeigbar |
 | git_branch | ✓ | Branch-Liste korrekt |
 | git_show | ✓ | Commit-Inhalte lesbar |
-| fetch | ✓* | *Benötigt Netzwerkzugang auf janhet |
+| fetch | ✓* | *Benötigt Netzwerkzugang — auf Host verifiziert werden, sobald real getestet |
 
 **MCP durch Agent System:** Supervisor routet Git-Anfragen zum Researcher-Agent,
 der MCP Tools lädt und aufruft. Verifiziert am 2026-07-14.
@@ -93,7 +93,7 @@ pip install mcp-server-sequential-thinking
 npx -y @modelcontextprotocol/server-memory
 
 # Filesystem (Node.js)
-npx -y @modelcontextprotocol/server-filesystem /home/user/chief
+npx -y @modelcontextprotocol/server-filesystem .
 ```
 
 In mcp/mcp.json eintragen und Agent Server neu starten.
