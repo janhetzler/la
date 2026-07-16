@@ -4,12 +4,17 @@
 
 FROM python:3.12-slim-bookworm
 
-# System Dependencies (minimal)
+# System Dependencies (chromadb benötigt Rust + build-essential)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
     ca-certificates \
+    build-essential \
+    pkg-config \
+    && curl --proto =https --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
     && rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Arbeitsverzeichnis
 WORKDIR /app
