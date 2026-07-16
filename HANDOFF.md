@@ -10,7 +10,7 @@
 |--|---------------|---------------------|
 | **Zweck** | Entwicklung + Tests | Echter Betrieb |
 | **Hardware** | Intel Xeon 1-Core, 4 GB RAM | AMD EPYC 7443P, 4 vCores, 10 GB RAM |
-| **IP** | Claude.ai intern | 185.129.86.169 / janhet.de |
+| **IP** | Claude.ai intern | [SERVER-IP] / [HOSTNAME] |
 | **Inferenz** | llama-cpp-python (Python) | llama.cpp Binary |
 | **Reasoning** | Granite-4.0-H-350m Q4_K_M (213 MB) | Granite-4.0-H-Tiny IQ4_XS (4.2 GB) |
 | **Embedding** | Granite-Embedding-30m Q4_0 (28 MB) | Granite-Embedding-30m Q4_0 (28 MB) |
@@ -150,7 +150,7 @@ python3 tests/run_tests.py
 Vollständige Anleitung: `docs/INSTALL_JANHET.md`
 
 ```bash
-ssh user@janhet.de
+ssh user@[HOSTNAME]
 cd /home/user/chief/la && git pull
 source /home/user/chief/venv/bin/activate
 pip install -r requirements-janhet.txt
