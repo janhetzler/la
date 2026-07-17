@@ -78,7 +78,8 @@ if only_reg:
     print(f"  ⚠️  In server.py aber nicht in VALID_AGENTS: {only_reg}", flush=True)
 
 # ── 1. llama-server ───────────────────────────────────────────────
-print("\n=== SCHRITT 1: llama-server ===", flush=True)
+print("
+=== SCHRITT 1: llama-server ===", flush=True)
 from llama_cpp.server.app import create_app
 from llama_cpp.server.settings import Settings
 import uvicorn
@@ -92,7 +93,8 @@ if not wait_for("http://127.0.0.1:8080/v1/models", "llama-server"):
     sys.exit(1)
 
 # ── 2. LiteLLM (kein Phoenix) ─────────────────────────────────────
-print("\n=== SCHRITT 2: LiteLLM ===", flush=True)
+print("
+=== SCHRITT 2: LiteLLM ===", flush=True)
 open("/tmp/litellm_quick.yaml", "w").write(f"""
 model_list:
   - model_name: granite-tiny
@@ -107,6 +109,7 @@ model_list:
       api_key: not-needed
 general_settings:
   master_key: {LITELLM_KEY}
+  database_url: "sqlite:////tmp/litellm.db"
 litellm_settings:
   drop_params: true
   set_verbose: false
@@ -130,7 +133,8 @@ for i in range(20):
     except: time.sleep(2); print(f"{i+1}...", end=" ", flush=True)
 
 # ── 3. Agent Server ───────────────────────────────────────────────
-print("\n=== SCHRITT 3: Agent Server ===", flush=True)
+print("
+=== SCHRITT 3: Agent Server ===", flush=True)
 import config
 config.LITELLM_URL = "http://127.0.0.1:4000"
 config.LITELLM_KEY = LITELLM_KEY
@@ -146,7 +150,8 @@ if not wait_for("http://127.0.0.1:8002/health", "Agent Server"):
     lp.terminate(); sys.exit(1)
 
 # ── 4. Gezielter Test ─────────────────────────────────────────────
-print("\n=== SCHRITT 4: Test ===", flush=True)
+print("
+=== SCHRITT 4: Test ===", flush=True)
 t0 = time.time()
 req = urllib.request.Request("http://127.0.0.1:4000/v1/chat/completions",
     data=json.dumps({"model":"agent-local",
@@ -165,8 +170,10 @@ except Exception as e:
     print(f"Test FEHLER: {e}", flush=True)
 
 # ── 5. Log-Check ──────────────────────────────────────────────────
-print("\n=== SCHRITT 5: Log-Check ===", flush=True)
+print("
+=== SCHRITT 5: Log-Check ===", flush=True)
 check_log(os.path.join(LOG_DIR, "litellm.log"), "LiteLLM")
 
 lp.terminate()
-print("\nStack gestoppt.", flush=True)
+print("
+Stack gestoppt.", flush=True)
