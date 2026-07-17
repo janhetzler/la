@@ -291,3 +291,19 @@ print('\nReport: /tmp/test_results.json', flush=True)
 for proc in [litellm_proc, phoenix_proc]:
     if proc: proc.terminate()
 print('\nStack gestoppt.', flush=True)
+
+# ------------------------------------------------------------
+# NACH DEM TESTLAUF — Aufgabe fuer den Agenten:
+#
+# Testergebnisse aus /tmp/test_results.json als Markdown
+# dokumentieren und ins Repo pushen:
+#
+#   docs/SANDBOX_X_TESTRESULTS.md
+#
+# X = aktuelle Session-Nummer (z.B. SANDBOX_2, SANDBOX_3).
+# Namenskonvention und Format: siehe CONTRIBUTING.md und
+# vorhandene docs/SANDBOX_1_TESTRESULTS.md als Vorlage.
+#
+# Push via Python urllib + base64 (keine Shell-Pipes).
+# Erst nach expliziter Anweisung des Nutzers committen.
+# ------------------------------------------------------------
