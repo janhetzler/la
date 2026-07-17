@@ -1,0 +1,20 @@
+[Unit]
+Description=Local Agent — Agent Server
+After=litellm.service
+
+[Service]
+User={{USER}}
+WorkingDirectory={{PROJECT_PATH}}/agents/server
+Environment=LITELLM_URL=http://127.0.0.1:4000
+Environment=LITELLM_KEY={{LITELLM_KEY}}
+Environment=OPENAI_API_KEY={{LITELLM_KEY}}
+Environment=CHROMA_PATH={{CHROMA_PATH}}
+Environment=PHOENIX_HOST=http://127.0.0.1:6006
+ExecStart={{VENV_PATH}}/bin/uvicorn server:app \
+  --host 127.0.0.1 \
+  --port 8002
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
