@@ -44,6 +44,7 @@ litellm[proxy]==1.92.0
 
 # ── Observability ─────────────────────────────────────────────────
 arize-phoenix==18.0.0
+arize-phoenix-client          # Phoenix REST API + Span-Query
 openinference-instrumentation-langchain==0.1.67
 # WICHTIG: skip_dep_check=True in telemetry.py (pydantic Metadaten-Konflikt)
 opentelemetry-sdk==1.43.0
