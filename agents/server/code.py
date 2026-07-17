@@ -22,8 +22,8 @@ from user_profile import USER_PROFILE
 
 # Granite tiny-h, deterministic
 llm = ChatOpenAI(
-    base_url="http://localhost:4000/v1",
-    api_key="sk-cos-local-dev",
+    base_url=f"{config.LITELLM_URL}/v1",
+    api_key=config.LITELLM_KEY,
     model="granite-tiny",
     temperature=0,
 )
