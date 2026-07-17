@@ -14,7 +14,7 @@ Verwendung:
 Umgebungsvariablen:
   MODEL_PATH  (default: /tmp/granite-350m-Q4_K_M.gguf)
   CHROMA_PATH (default: /tmp/chroma_la)
-  LITELLM_KEY (default: sk-local-dev)
+  LITELLM_KEY (default: sk-cos-local-dev)
 
 Logs: /tmp/logs/
 """
@@ -24,7 +24,7 @@ from datetime import datetime
 # Konfiguration
 MODEL_PATH  = os.getenv("MODEL_PATH",  "/tmp/granite-350m-Q4_K_M.gguf")
 CHROMA_PATH = os.getenv("CHROMA_PATH", "/tmp/chroma_la")
-LITELLM_KEY = os.getenv("LITELLM_KEY", "sk-local-dev")
+LITELLM_KEY = os.getenv("LITELLM_KEY", "sk-cos-local-dev")
 AGENT_URL   = "http://127.0.0.1:8002/v1/chat/completions"
 LOG_DIR     = "/tmp/logs"
 AUTH        = f"Bearer {LITELLM_KEY}"
