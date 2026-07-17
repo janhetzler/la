@@ -53,3 +53,41 @@
   bestimmten Log-Level-Präfix (`[ERROR]`, `ERROR -`) scannen.
 - **Priorität**: Niedrig — kein Einfluss auf Stack-Funktion, nur auf
   Testübersicht (False Alarm statt echtem Fehler).
+
+---
+
+## Tool-Calling nicht testbar in der Sandbox (llama-cpp-python Limitation)
+
+**Stand:** 2026-07-17
+**Schwere:** Bekannte Limitation — kein Fix noetig, nur Dokumentation
+
+### Problem
+
+In der Sandbox wird llama-server ueber den Python-Wrapper `llama-cpp-python` gestartet.
+Dieser Wrapper unterstuetzt den `--jinja` Flag nicht — der fuer natives OpenAI-kompatibles
+Tool-Calling zwingend erforderlich ist.
+
+Die vollstaendige Tool-Calling-Kette besteht aus drei Teilen die zwingend zusammengehoeren:
+1. `supports_tools: true` in `litellm_config.yaml` — damit LiteLLM das tools-Array durchreicht
+2. `bind_tools()` in LangChain — strukturierte API statt manueller XML-Tags
+3. `--jinja` in llama-server — aktiviert natives Chat-Template fuer Tool-Calling
+
+Punkt 3 ist in der Sandbox nicht verfuegbar.
+
+### Auswirkung
+
+- Tool-Calling mit dem 350m Modell ist in der Sandbox nicht testbar
+- Das Modell ignoriert Tool-Prompts und antwortet direkt (bewiesen via Phoenix Trace)
+- `tool_formatter.py` (manuelles XML) ist ein Workaround der nicht zuverlaessig funktioniert
+
+### Loesung
+
+Tool-Calling ist ausschliesslich auf dem Host testbar:
+- Host nutzt Binary `llama-server` mit `--jinja` Flag
+- Granite ist nativ in der llama.cpp Jinja-Template-Liste enthalten
+- Dort mit `bind_tools()` + `supports_tools: true` + `--jinja` testen
+
+### Referenz
+
+- llama.cpp Function Calling Docs: https://github.com/ggml-org/llama.cpp/blob/master/docs/function-calling.md
+- Granite native support bestaetigt in llama.cpp Server README
