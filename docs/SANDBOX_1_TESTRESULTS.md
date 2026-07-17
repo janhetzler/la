@@ -14,7 +14,7 @@ LiteLLM :4000       (Gateway + Phoenix Callbacks)
     ↑
 Agent Server :8002  (Supervisor + 5 Agenten)
     ↓
-ChromaDB (embedded, /tmp/chroma_chief)
+ChromaDB (embedded, /tmp/chroma_la)
     ↓
 Phoenix :6006       (Observability)
 ```
@@ -99,7 +99,11 @@ Dieser Testlauf ist der erste nach dem `config/*.env` Refactor:
 
 | Testlauf | Datum | OK/Gesamt | Headroom |
 |---------|-------|-----------|---------|
-| Sandbox 1 (historisch) | 2026-07-14 | 6/6 | aktiv |
+| Sandbox 1 (historisch) | 2026-07-14 | 6/6 ¹ | aktiv |
+
+¹ Hinweis: 6/6 historisch weil Tests weniger streng waren —
+kein ChromaDB-Check, keine Mindestlängen-Validierung.
+Nicht vergleichbar mit aktuellem Testlauf.
 | Sandbox 1 (aktuell) | 2026-07-17 | 4/6 | disabled |
 
 Unterschied 6→4: Notes und Handoff scheitern jetzt an inhaltlicher
