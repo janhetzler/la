@@ -14,6 +14,8 @@ import sys
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
+import config
+
 from code import invoke_code
 from comms import invoke_comms
 from handoff import invoke_handoff
