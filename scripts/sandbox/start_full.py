@@ -107,6 +107,7 @@ model_list:
       api_key: not-needed
 general_settings:
   master_key: {LITELLM_KEY}
+  database_url: "sqlite:////tmp/litellm.db"
 litellm_settings:
   drop_params: true
   set_verbose: false
@@ -167,7 +168,9 @@ threading.Thread(target=run_agent_server, daemon=True).start()
 wait_for('http://127.0.0.1:8002/health', 'Agent Server')
 
 # ── 6. Test Suite ────────────────────────────────────────────────
-print(f'\n=== STACK BEREIT — STARTE TEST SUITE ===\n', flush=True)
+print(f'
+=== STACK BEREIT — STARTE TEST SUITE ===
+', flush=True)
 print(f'Start: {datetime.now().isoformat()}', flush=True)
 
 results = []
@@ -203,7 +206,8 @@ def validate_response(text, min_length=10):
     return True, f"OK ({len(text.strip())} Zeichen)"
 
 def test_agent(name, frage, beschreibung, notes_check=False):
-    print(f'\n{"="*55}', flush=True)
+    print(f'
+{"="*55}', flush=True)
     print(f'TEST: {name}', flush=True)
     print(f'Frage: {frage[:70]}', flush=True)
     text, elapsed, status = chat(frage)
@@ -266,7 +270,8 @@ test_agent("Handoff Agent",
     "Supervisor → Handoff → Prompt → Antwort")
 
 # ChromaDB Status
-print(f'\n{"="*55}', flush=True)
+print(f'
+{"="*55}', flush=True)
 print("CHROMADB STATUS", flush=True)
 try:
     import chromadb
@@ -278,14 +283,16 @@ except Exception as e:
     print(f"  ChromaDB Fehler: {e}", flush=True)
 
 # Finaler Log-Check
-print(f'\n{"="*55}', flush=True)
+print(f'
+{"="*55}', flush=True)
 print("FINALER LOG-CHECK", flush=True)
 for label, fname in [("llama-server","llama-server.log"),("LiteLLM","litellm.log"),
                      ("Phoenix","phoenix.log"),("Agent Server","agent-server.log")]:
     check_log(os.path.join(LOG_DIR, fname), label)
 
 # Zusammenfassung
-print(f'\n{"="*55}', flush=True)
+print(f'
+{"="*55}', flush=True)
 print("ZUSAMMENFASSUNG", flush=True)
 print(f'Ende: {datetime.now().isoformat()}', flush=True)
 ok = sum(1 for r in results if r["status"] == "OK")
@@ -298,9 +305,11 @@ report = {"timestamp": datetime.now().isoformat(), "results": results,
           "summary": {"total": len(results), "ok": ok}}
 with open('/tmp/test_results.json', 'w') as f:
     json.dump(report, f, indent=2, ensure_ascii=False)
-print(f'\nReport: /tmp/test_results.json', flush=True)
+print(f'
+Report: /tmp/test_results.json', flush=True)
 
 # Cleanup
 for proc in [litellm_proc, phoenix_proc]:
     if proc: proc.terminate()
-print('\nStack gestoppt.', flush=True)
+print('
+Stack gestoppt.', flush=True)
