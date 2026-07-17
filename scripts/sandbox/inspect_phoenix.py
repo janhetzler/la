@@ -180,7 +180,8 @@ try:
     spans_df = client.spans.get_spans_dataframe(
         project_identifier="local-agent",
         limit=50,
-        start_time=datetime.now() - timedelta(minutes=30)
+        root_spans_only=True,
+        start_time=datetime.now() - timedelta(minutes=5)
     )
 
     if spans_df is not None and not spans_df.empty:
