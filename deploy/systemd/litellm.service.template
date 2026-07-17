@@ -1,0 +1,16 @@
+[Unit]
+Description=Local Agent — LiteLLM Proxy Gateway
+After=network.target
+
+[Service]
+User={{USER}}
+WorkingDirectory={{PROJECT_PATH}}
+ExecStart={{VENV_PATH}}/bin/litellm \
+  --config {{PROJECT_PATH}}/docker/litellm_config.yaml \
+  --host 127.0.0.1 \
+  --port 4000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
