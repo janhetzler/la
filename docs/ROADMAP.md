@@ -315,6 +315,64 @@ Separate Unterordner wenn Modell-Varianten benoetigt werden.
 4.  bauen
 5.  laedt Agenten dynamisch
 
+---
+
+## Geplant: Prompt-Management und generischer Agent-Loader
+
+**Stand:** 2026-07-17
+**Voraussetzung:** Stack laeuft stabil, Baseline-Tests abgeschlossen
+
+### Ziel
+
+Agenten werden nicht mehr in Python hartkodiert sondern aus Konfiguration
+zusammengebaut. Ein neuer Agent = eine neue Konfigurationsdatei,
+kein Python anfassen.
+
+### Neue Struktur
+
+    prompts/
+    - shared/
+      - user_profile.md        (aus user_profile.py)
+      - project_context.md     (aus project_context.py)
+    - agents/
+      - router.md
+      - comms.md
+      - code.md
+      - notes.md
+      - researcher.md
+      - handoff.md
+
+### Was sich aendert
+
+**Raus aus dem Code:**
+- user_profile.py und project_context.py werden zu .md Dateien
+- System-Prompts als hardkodierte Strings — raus in prompts/agents/
+- AGENTS Dictionary in server.py — wird dynamisch aus Verzeichnis geladen
+
+**Bleibt in Python (wegen echter Logik):**
+- notes.py — custom Tool-Decorator + ChromaDB Embedding
+- researcher_v2.py — custom Tool-Decorator + RAG-Suche
+- handoff.py — RAG-Logik + mehrsprachige Templates
+- tool_formatter.py, tools.py, telemetry.py, config.py — Infrastruktur
+
+**Neu:**
+- agent_loader.py — liest Prompt aus .md Datei, baut Agent zusammen
+- supervisor.py liest router.md statt hardkodierten String
+
+### Modell-spezifische Prompts
+
+Prompts sind umgebungsunabhaengig aber modellspezifisch.
+Steuerung ueber Umgebungsvariable PROMPT_MODEL.
+Separate Unterordner wenn Modell-Varianten benoetigt werden.
+
+### Reihenfolge
+
+1. Router-Prompt verbessern + mit Phoenix verifizieren (Baseline zuerst)
+2. prompts/ Struktur anlegen, Prompts extrahieren
+3. Code liest Prompts aus Dateien statt hardkodierten Strings
+4. agent_loader.py bauen
+5. server.py laedt Agenten dynamisch
+
 ## Referenzen
 
 - Fork: https://github.com/janhetzler/la
