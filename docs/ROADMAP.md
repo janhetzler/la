@@ -264,6 +264,57 @@ Das ist fuer die Sandbox akzeptabel (nur localhost), aber nicht fuer den Host.
 
 **Voraussetzung:** Erst angehen wenn Stack stabil auf Host laeuft.
 
+---
+
+## Geplant: Prompt-Management und generischer Agent-Loader
+
+**Stand:** 2026-07-17
+**Voraussetzung:** Stack laeuft stabil, Baseline-Tests abgeschlossen
+
+### Ziel
+
+Agenten werden nicht mehr in Python hartkodiert sondern aus Konfiguration
+zusammengebaut. Ein neuer Agent = eine neue Konfigurationsdatei, kein
+Python anfassen.
+
+### Neue Struktur
+
+
+
+### Was sich aendert
+
+**Raus aus dem Code:**
+-  und  werden zu  Dateien
+- System-Prompts als hardkodierte Strings — alle raus in 
+-  Dictionary in  — wird dynamisch aus Verzeichnis geladen
+
+**Bleibt in Python (wegen echter Logik):**
+-  — custom  + ChromaDB Embedding
+-  — custom  + RAG-Suche
+-  — RAG-Logik + mehrsprachige Templates
+- , , ,  — Infrastruktur
+
+**Neu:**
+-  — liest Prompt aus  Datei, baut Agent zusammen
+-  liest  statt hardkodierten String
+
+### Modell-spezifische Prompts
+
+Prompts sind umgebungsunabhaengig aber modellspezifisch.
+Steuerung ueber Umgebungsvariable :
+
+
+
+Separate Unterordner wenn Modell-Varianten benoetigt werden.
+
+### Reihenfolge
+
+1. Router-Prompt verbessern + mit Phoenix verifizieren (Baseline zuerst)
+2.  Struktur anlegen, Prompts extrahieren
+3. Code liest Prompts aus Dateien
+4.  bauen
+5.  laedt Agenten dynamisch
+
 ## Referenzen
 
 - Fork: https://github.com/janhetzler/la
