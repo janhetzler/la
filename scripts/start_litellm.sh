@@ -1,37 +1,32 @@
 #!/bin/bash
-# LiteLLM API-Gateway
-# Routet auf Headroom :8787 → llama-server :8080
-# Phoenix Callbacks für Observability aktiv
+# start_litellm.sh — LiteLLM Proxy starten (Host)
+# Konfiguration via config/host/litellm.env
 
-CONFIG="/home/user/chief/la/docker/litellm_config_janhet.yaml"
-LOG="/tmp/litellm.log"
+set -e
 
-if pgrep -f "litellm" > /dev/null 2>&1; then
-    echo "LiteLLM läuft bereits auf Port 4000"
-    exit 0
-fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# Config-Pfad anpassen falls abweichend
-if [ ! -f "$CONFIG" ]; then
-    CONFIG="$(dirname "$0")/../docker/litellm_config_janhet.yaml"
-fi
+# Umgebungsvariablen laden
+set -a
+source "$PROJECT_ROOT/config/host/common.env"
+source "$PROJECT_ROOT/config/host/litellm.env"
+set +a
 
-echo "Starte LiteLLM auf Port 4000..."
+LOG="${LITELLM_LOG:-/tmp/logs/litellm.log}"
+mkdir -p "$(dirname "$LOG")"
 
+echo "Starte LiteLLM auf Port ${LITELLM_PORT:-4000}..."
 litellm \
-  --config "$CONFIG" \
+  --config "$PROJECT_ROOT/$LITELLM_CONFIG_PATH" \
   --host 127.0.0.1 \
-  --port 4000 \
-  >> "$LOG" 2>&1 &
+  --port "${LITELLM_PORT:-4000}" \
+  > "$LOG" 2>&1 &
 
-echo "LiteLLM PID: $!"
-sleep 8
-
-if curl -s http://127.0.0.1:4000/health \
-    -H "Authorization: Bearer sk-cos-local-dev" > /dev/null 2>&1; then
-    echo "LiteLLM OK → http://127.0.0.1:4000"
-    echo "Modelle: curl http://127.0.0.1:4000/v1/models -H 'Authorization: Bearer sk-cos-local-dev'"
+sleep 3
+if curl -s "http://127.0.0.1:${LITELLM_PORT:-4000}/health" \
+  -H "Authorization: Bearer $LITELLM_KEY" > /dev/null 2>&1; then
+  echo "LiteLLM OK"
 else
-    echo "LiteLLM noch nicht bereit — Log:"
-    tail -10 "$LOG"
+  echo "LiteLLM Fehler — Log: $LOG"
 fi
