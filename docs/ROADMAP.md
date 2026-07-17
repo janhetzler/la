@@ -274,66 +274,37 @@ Das ist fuer die Sandbox akzeptabel (nur localhost), aber nicht fuer den Host.
 ### Ziel
 
 Agenten werden nicht mehr in Python hartkodiert sondern aus Konfiguration
-zusammengebaut. Ein neuer Agent = eine neue Konfigurationsdatei, kein
-Python anfassen.
-
-### Neue Struktur
-
-
-
-### Was sich aendert
-
-**Raus aus dem Code:**
--  und  werden zu  Dateien
-- System-Prompts als hardkodierte Strings — alle raus in 
--  Dictionary in  — wird dynamisch aus Verzeichnis geladen
-
-**Bleibt in Python (wegen echter Logik):**
--  — custom  + ChromaDB Embedding
--  — custom  + RAG-Suche
--  — RAG-Logik + mehrsprachige Templates
-- , , ,  — Infrastruktur
-
-**Neu:**
--  — liest Prompt aus  Datei, baut Agent zusammen
--  liest  statt hardkodierten String
-
-### Modell-spezifische Prompts
-
-Prompts sind umgebungsunabhaengig aber modellspezifisch.
-Steuerung ueber Umgebungsvariable :
-
-
-
-Separate Unterordner wenn Modell-Varianten benoetigt werden.
-
-### Reihenfolge
-
-1. Router-Prompt verbessern + mit Phoenix verifizieren (Baseline zuerst)
-2.  Struktur anlegen, Prompts extrahieren
-3. Code liest Prompts aus Dateien
-4.  bauen
-5.  laedt Agenten dynamisch
-
----
-
-## Geplant: Prompt-Management und generischer Agent-Loader
-
-**Stand:** 2026-07-17
-**Voraussetzung:** Stack laeuft stabil, Baseline-Tests abgeschlossen
-
-### Ziel
-
-Agenten werden nicht mehr in Python hartkodiert sondern aus Konfiguration
-zusammengebaut. Ein neuer Agent = eine neue Konfigurationsdatei,
+zusammengebaut. Ein neuer Agent = eine neue .md Datei mit YAML-Frontmatter,
 kein Python anfassen.
+
+### Kernkonzept: YAML-Frontmatter in .md Dateien
+
+Jede Agent-Datei kombiniert Metadaten (YAML) und System-Prompt (Markdown)
+in einer einzigen Datei. Beispiel prompts/agents/comms.md:
+
+    ---
+    name: comms
+    description: E-Mails, Nachrichten, Kurzberichte. Kein RAG, keine Suche.
+    tools: []
+    temperature: 0.3
+    ---
+    Du bist der Kommunikations-Spezialist.
+    {{ project_context }}
+    {{ user_profile }}
+
+Vorteile:
+- Konfiguration und Prompt in einer Datei
+- supervisor.py liest description aus Frontmatter und baut Router-Prompt dynamisch
+- agent_loader.py liest tools und bindet sie via bind_tools()
+- Template-Injection: {{ project_context }} wird via String-Replace befuellt
+- Neuer Agent: einfach neue .md Datei anlegen, Router weiss sofort davon
 
 ### Neue Struktur
 
     prompts/
     - shared/
-      - user_profile.md        (aus user_profile.py)
-      - project_context.md     (aus project_context.py)
+      - user_profile.md
+      - project_context.md
     - agents/
       - router.md
       - comms.md
@@ -342,59 +313,32 @@ kein Python anfassen.
       - researcher.md
       - handoff.md
 
-### Was sich aendert
+### Hybrides Design
 
-**Raus aus dem Code:**
-- user_profile.py und project_context.py werden zu .md Dateien
-- System-Prompts als hardkodierte Strings — raus in prompts/agents/
-- AGENTS Dictionary in server.py — wird dynamisch aus Verzeichnis geladen
+Reine Text-Agenten (comms, code) werden zu reiner Konfiguration:
+Python-Datei entfaellt, agent_loader.py baut Agent aus .md.
 
-**Bleibt in Python (wegen echter Logik):**
-- notes.py — custom Tool-Decorator + ChromaDB Embedding
-- researcher_v2.py — custom Tool-Decorator + RAG-Suche
-- handoff.py — RAG-Logik + mehrsprachige Templates
-- tool_formatter.py, tools.py, telemetry.py, config.py — Infrastruktur
+Logik-Agenten (notes, researcher, handoff) behalten Python:
+Wegen custom Tools und RAG-Logik — lesen aber Prompt aus .md.
 
-**Neu:**
-- agent_loader.py — liest Prompt aus .md Datei, baut Agent zusammen
-- supervisor.py liest router.md statt hardkodierten String
+Infrastruktur bleibt unveraendert:
+tool_formatter.py, tools.py, telemetry.py, config.py.
+
+Neu: agent_loader.py (parst Frontmatter, baut Agent) und
+supervisor.py liest alle agents/*.md dynamisch.
 
 ### Modell-spezifische Prompts
 
-Prompts sind umgebungsunabhaengig aber modellspezifisch.
 Steuerung ueber Umgebungsvariable PROMPT_MODEL.
-Separate Unterordner wenn Modell-Varianten benoetigt werden.
+Separate Unterordner fuer Modell-Varianten (z.B. granite-350m/).
 
-### Reihenfolge
+### Reihenfolge (Strangler-Fig-Pattern)
 
-1. Router-Prompt verbessern + mit Phoenix verifizieren (Baseline zuerst)
-2. prompts/ Struktur anlegen, Prompts extrahieren
-3. Code liest Prompts aus Dateien statt hardkodierten Strings
-4. agent_loader.py bauen
+1. prompts/ Struktur anlegen, Prompts aus Code extrahieren
+2. Code liest Prompts aus .md Dateien (keine Funktionsaenderung)
+3. agent_loader.py bauen
+4. supervisor.py dynamisieren
 5. server.py laedt Agenten dynamisch
-
-
----
-
-## Offene Aufgabe: Tool-Calling auf dem Host aktivieren
-
-**Stand:** 2026-07-17
-**Voraussetzung:** Host-Deployment abgeschlossen
-
-Die vollstaendige Tool-Calling-Kette muss auf dem Host implementiert werden:
-
-1. `supports_tools: true` in `docker/litellm_config.yaml` ergaenzen:
-   Damit LiteLLM eingehende tools-Arrays nicht verwirft sondern durchreicht.
-
-2. `bind_tools()` in LangChain nutzen (researcher_v2.py, code.py):
-   Ersetzt manuelles XML-Prompt-Engineering durch strukturierte API-Aufrufe.
-
-3. llama-server mit `--jinja` starten (bereits in restart_llama.sh vorgesehen):
-   Aktiviert natives Granite Chat-Template fuer Tool-Calling.
-   Granite ist nativ in der llama.cpp Jinja-Template-Liste enthalten.
-
-Hinweis: `tool_formatter.py` kann nach erfolgreichem Test entfernt werden.
-In der Sandbox nicht testbar — llama-cpp-python Python-Wrapper unterstuetzt --jinja nicht.
 
 ## Referenzen
 
