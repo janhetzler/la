@@ -1,31 +1,31 @@
 #!/bin/bash
-# Arize Phoenix Observability
-# Empfängt LangChain Traces von allen Agent-Calls
-# UI: http://127.0.0.1:6006 (nur via SSH-Tunnel erreichbar)
+# start_phoenix.sh — Arize Phoenix starten (Host)
+# Konfiguration via config/host/phoenix.env
 
-PHOENIX_DIR="/home/user/chief/phoenix_data"
-LOG="/tmp/phoenix.log"
+set -e
 
-if pgrep -f "phoenix.server.main" > /dev/null 2>&1; then
-    echo "Phoenix läuft bereits auf Port 6006"
-    exit 0
-fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-mkdir -p "$PHOENIX_DIR"
-echo "Starte Arize Phoenix auf Port 6006..."
+# Umgebungsvariablen laden
+set -a
+source "$PROJECT_ROOT/config/host/common.env"
+source "$PROJECT_ROOT/config/host/phoenix.env"
+set +a
 
+LOG="${PHOENIX_LOG:-/tmp/logs/phoenix.log}"
+mkdir -p "$(dirname "$LOG")"
+mkdir -p "${PHOENIX_DATA_PATH:-/tmp/phoenix}"
+
+echo "Starte Phoenix auf Port ${PHOENIX_PORT:-6006}..."
 python3 -m phoenix.server.main serve \
   --host 127.0.0.1 \
-  --port 6006 \
-  >> "$LOG" 2>&1 &
+  --port "${PHOENIX_PORT:-6006}" \
+  > "$LOG" 2>&1 &
 
-echo "Phoenix PID: $!"
-sleep 5
-
-if curl -s http://127.0.0.1:6006/healthz > /dev/null 2>&1; then
-    echo "Phoenix OK → http://127.0.0.1:6006"
-    echo "Traces API: curl http://127.0.0.1:6006/v1/projects"
+sleep 3
+if curl -s "http://127.0.0.1:${PHOENIX_PORT:-6006}/healthz" > /dev/null 2>&1; then
+  echo "Phoenix OK"
 else
-    echo "Phoenix noch nicht bereit — Log:"
-    tail -5 "$LOG"
+  echo "Phoenix Fehler — Log: $LOG"
 fi
