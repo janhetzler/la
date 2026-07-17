@@ -373,6 +373,29 @@ Separate Unterordner wenn Modell-Varianten benoetigt werden.
 4. agent_loader.py bauen
 5. server.py laedt Agenten dynamisch
 
+
+---
+
+## Offene Aufgabe: Tool-Calling auf dem Host aktivieren
+
+**Stand:** 2026-07-17
+**Voraussetzung:** Host-Deployment abgeschlossen
+
+Die vollstaendige Tool-Calling-Kette muss auf dem Host implementiert werden:
+
+1. `supports_tools: true` in `docker/litellm_config.yaml` ergaenzen:
+   Damit LiteLLM eingehende tools-Arrays nicht verwirft sondern durchreicht.
+
+2. `bind_tools()` in LangChain nutzen (researcher_v2.py, code.py):
+   Ersetzt manuelles XML-Prompt-Engineering durch strukturierte API-Aufrufe.
+
+3. llama-server mit `--jinja` starten (bereits in restart_llama.sh vorgesehen):
+   Aktiviert natives Granite Chat-Template fuer Tool-Calling.
+   Granite ist nativ in der llama.cpp Jinja-Template-Liste enthalten.
+
+Hinweis: `tool_formatter.py` kann nach erfolgreichem Test entfernt werden.
+In der Sandbox nicht testbar — llama-cpp-python Python-Wrapper unterstuetzt --jinja nicht.
+
 ## Referenzen
 
 - Fork: https://github.com/janhetzler/la
