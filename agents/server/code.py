@@ -15,6 +15,8 @@ from langchain.agents import create_agent
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 
+import config
+
 from project_context import PROJECT_CONTEXT
 from tools import get_tools_by_names
 from user_profile import USER_PROFILE
