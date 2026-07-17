@@ -212,6 +212,39 @@ für funktionierendes MCP.
 
 ---
 
+---
+
+## Offene Architektur-Aufgabe: Keine hardcodierten Pfade
+
+**Stand:** 2026-07-17
+
+Aktuell sind in mehreren Dateien Pfade hardcodiert — z.B. `/tmp/chroma_la`,
+`mcp/sandbox/mcp.json`, `/tmp/litellm.db`. Das funktioniert solange wir nur
+eine Umgebung haben, bricht aber sobald Dienste auf unterschiedlichen Hosts
+oder in unterschiedlichen Containern laufen.
+
+**Ziel:** Alle Pfade und umgebungsspezifische Werte werden ausschließlich
+über Umgebungsvariablen gesetzt. Der Code selbst weiß nicht wo er läuft.
+
+**Betrifft:**
+- `agents/server/config.py` — zentrale Stelle, dort alle Pfade als `os.getenv()`
+- `agents/server/tools.py` — `MCP_CONFIG_PATH` statt hardcodiertem Pfad
+- `scripts/sandbox/start_full.py` — Env-Variablen explizit setzen
+- `scripts/sandbox/start_quick.py` — Env-Variablen explizit setzen
+- `deploy/systemd/litellm.service.template` — `DATABASE_URL` als Env-Variable
+- `docker/entrypoint.sh` — Env-Variablen für Docker-Pfade
+
+**Umgebungsvariablen (geplant):**
+
+| Variable | Sandbox | Host | Docker |
+|----------|---------|------|--------|
+| `CHROMA_PATH` | `/tmp/chroma_la` | `/home/user/chroma` | `/app/data/chroma` |
+| `LITELLM_DB_PATH` | `/tmp/litellm.db` | `/home/user/litellm.db` | `/app/data/litellm.db` |
+| `MCP_CONFIG_PATH` | `mcp/sandbox/mcp.json` | `mcp/host/mcp.json` | `mcp/docker/mcp.json` |
+| `LITELLM_KEY` | `sk-local-dev` | via Secret | via Secret |
+
+**Voraussetzung:** Phase 1 (Stack läuft stabil auf Host) abgeschlossen.
+
 ## Referenzen
 
 - Fork: https://github.com/janhetzler/la
