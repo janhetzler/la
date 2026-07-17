@@ -23,8 +23,8 @@ from researcher_v2 import invoke_researcher_v2
 
 # ===== LLM for routing and reformulations =====
 router_llm = ChatOpenAI(
-    base_url="http://localhost:4000/v1",
-    api_key="sk-cos-local-dev",
+    base_url=f"{config.LITELLM_URL}/v1",
+    api_key=config.LITELLM_KEY,
     model="granite-tiny",
     temperature=0,
 )
