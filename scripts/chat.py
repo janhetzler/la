@@ -1,14 +1,27 @@
-import sys, time
+import sys, time, os
 from openai import OpenAI
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Konfiguration aus Umgebungsvariablen
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+LA_ENV = os.getenv("LA_ENV", "sandbox")
+for env_file in ["common.env"]:
+    p = PROJECT_ROOT / "config" / LA_ENV / env_file
+    if p.exists():
+        load_dotenv(p, override=False)
+
+LITELLM_URL = os.getenv("LITELLM_URL", "http://127.0.0.1:4000")
+LITELLM_KEY = os.getenv("LITELLM_KEY", "sk-cos-local-dev")
 
 client = OpenAI(
-    base_url="http://127.0.0.1:4000/v1",
-    api_key="sk-cos-local-dev"
+    base_url=f"{LITELLM_URL}/v1",
+    api_key=LITELLM_KEY
 )
 
 def run_chat():
-    print("=== Chief-of-Staff Terminal Chat ===")
-    print("Tippe 'exit' zum Beenden, 'log' für Phoenix Traces.\n")
+    print("=== Local Agent Terminal Chat ===")
+    print("Tippe 'exit' zum Beenden.\n")
     messages = []
 
     while True:
@@ -21,14 +34,14 @@ def run_chat():
                 continue
 
             messages.append({"role": "user", "content": user_input})
-            
+
             response = client.chat.completions.create(
                 model="agent-local",
                 messages=messages,
                 stream=False,
                 max_tokens=300
             )
-            
+
             text = response.choices[0].message.content
             print(f"\033[1;32mAgent:\033[0m {text}\n")
             messages.append({"role": "assistant", "content": text})
