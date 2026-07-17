@@ -36,7 +36,7 @@ def _substitute_env_vars(value: str) -> str:
 
 def load_mcp_config() -> dict:
     """Charge mcp.json brut (sans substitution texte)."""
-    config_path = PROJECT_ROOT / "mcp" / "mcp.json"
+    config_path = Path(config.MCP_CONFIG_PATH) if Path(config.MCP_CONFIG_PATH).is_absolute() else PROJECT_ROOT / config.MCP_CONFIG_PATH
     return json.loads(config_path.read_text())
 
 
