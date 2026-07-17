@@ -1,0 +1,14 @@
+[Unit]
+Description=Local Agent — Arize Phoenix Observability
+After=network.target
+
+[Service]
+User={{USER}}
+ExecStart={{VENV_PATH}}/bin/python3 -m phoenix.server.main serve \
+  --host 127.0.0.1 \
+  --port 6006
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
