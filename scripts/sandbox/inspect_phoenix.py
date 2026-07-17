@@ -165,16 +165,22 @@ print('\nWarte 5s auf Trace-Delivery...', flush=True)
 time.sleep(5)
 
 # 7. Phoenix Traces via arize-phoenix-client
+# Verifizierte API: https://arize.com/docs/phoenix/sdk-api-reference/python/arize-phoenix-client
+# from phoenix.client import Client
+# client = Client(base_url=PHOENIX_URL)
+# spans_df = client.spans.get_spans_dataframe(project_identifier="local-agent", limit=100)
 print('\n=== PHOENIX TRACES ===', flush=True)
 try:
-    import phoenix as px
-    from phoenix.trace import SpanQuery
+    from phoenix.client import Client
+    from datetime import datetime, timedelta
 
-    client = px.Client(endpoint=PHOENIX_URL)
+    client = Client(base_url=PHOENIX_URL)
 
-    # Alle Spans der letzten 10 Minuten
-    spans_df = client.get_spans_dataframe(
-        project_name="local-agent",
+    # Spans der letzten 30 Minuten
+    spans_df = client.spans.get_spans_dataframe(
+        project_identifier="local-agent",
+        limit=50,
+        start_time=datetime.now() - timedelta(minutes=30)
     )
 
     if spans_df is not None and not spans_df.empty:
@@ -201,15 +207,11 @@ try:
                     label = col.replace('attributes.', '').replace('llm.', '')
                     print(f'  {label}: {str(val)[:300]}', flush=True)
     else:
-        print('Keine Spans gefunden — Fallback auf REST API', flush=True)
-        req = urllib.request.Request(f'{PHOENIX_URL}/v1/projects')
-        r = urllib.request.urlopen(req, timeout=10)
-        projects = json.loads(r.read())
-        print(f'Projekte: {json.dumps(projects, indent=2)[:500]}', flush=True)
+        print('Keine Spans gefunden.', flush=True)
 
-except ImportError:
-    print('arize-phoenix-client nicht installiert', flush=True)
-    print('pip install arize-phoenix-client', flush=True)
+except ImportError as e:
+    print(f'arize-phoenix-client Import Fehler: {e}', flush=True)
+    print('pip install --break-system-packages arize-phoenix-client', flush=True)
 except Exception as e:
     print(f'Phoenix Client Fehler: {e}', flush=True)
     import traceback
