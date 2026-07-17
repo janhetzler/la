@@ -91,3 +91,39 @@ Tool-Calling ist ausschliesslich auf dem Host testbar:
 
 - llama.cpp Function Calling Docs: https://github.com/ggml-org/llama.cpp/blob/master/docs/function-calling.md
 - Granite native support bestaetigt in llama.cpp Server README
+
+---
+
+## Grammar Constraint via LiteLLM nicht nutzbar (extra_body Konflikt)
+
+**Stand:** 2026-07-17
+**Getestet in:** Sandbox 2
+**Reverted:** Ja — supervisor.py zurueck auf alten Stand
+
+### Was versucht wurde
+
+Router-Prompt in supervisor.py auf Few-Shot + Wenn-Dann-Heuristik umgestellt
+und Grammar Constraint ergaenzt um das 350m Modell auf exakt einen gueltigen
+Token zu zwingen:
+
+    grammar = 'root ::= "comms" | "researcher" | "notes" | "code" | "meta" | "handoff"'
+    response = await router_llm.ainvoke(messages, extra_body={"grammar": grammar})
+
+### Was passiert ist
+
+LiteLLM 1.92.0 behandelt Requests mit  anders als normale Requests.
+Der  Parameter triggert eine erneute Key-Validierung gegen die DB.
+Da keine DB verbunden ist, kommt 'No connected db.' zurueck — Stack bricht zusammen.
+Ergebnis: 3/6 Tests statt vorher 4/6.
+
+### Erkenntnis
+
+-  ist ein llama.cpp-nativer Parameter — nicht LiteLLM-kompatibel via extra_body
+- Grammar Constraint muss direkt an llama-server Port 8080 gesendet werden
+- Oder: Router-LLM in supervisor.py direkt auf llama-server zeigen lassen (ohne LiteLLM)
+- Oder: Grammar-Thema erst auf dem Host angehen wo Granite-Tiny kein Routing-Problem hat
+
+### Status
+
+Reverted. supervisor.py zurueck auf Zero-Shot Prompt ohne grammar Constraint.
+Routing bleibt ein bekanntes 350m-Limit — wird auf dem Host behoben.
