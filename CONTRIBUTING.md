@@ -11,7 +11,7 @@ Das Projekt läuft in drei Umgebungen:
 | Umgebung | Beschreibung |
 |----------|-------------|
 | **Sandbox** | Claude.ai Sandbox — Entwicklung und Testing |
-| **Host** | janhet (Hetzner KVM, AMD EPYC, 10 GB RAM) — Produktion |
+| **Host** | Host-Server (AMD EPYC, 10 GB RAM, Debian 12) — Produktion |
 | **Docker** | Containerisierte Version — portabler Betrieb |
 
 ---
@@ -24,7 +24,7 @@ Das Projekt läuft in drei Umgebungen:
 bereich/
 ├── sandbox/        ← Dateien für die Claude.ai Sandbox
 │   └── README.md   ← Erklärt Inhalt, Verwendung, Konventionen
-├── host/           ← Dateien für janhet (Produktion)
+├── host/           ← Dateien für den Host (Produktion)
 │   └── README.md
 └── docker/         ← Dateien für den Docker-Container
     └── README.md
@@ -58,21 +58,19 @@ mcp/
 
 ### `scripts/`
 
-Start- und Hilfsskripte pro Umgebung.
+Start- und Hilfsskripte pro Umgebung. Allgemeine Skripte liegen direkt in `scripts/`.
 
 ```
 scripts/
-├── sandbox/
-│   ├── README.md
-│   ├── import_check.py
-│   ├── start_quick.py
-│   └── start_full.py
-├── host/
-│   ├── README.md
-│   └── ...
-└── docker/
+├── chat.py                    ← allgemein — Terminal Chat Client
+├── test_tool_formatter.py     ← allgemein — Unit-Test, kein Stack nötig
+├── start_litellm.sh           ← allgemein
+├── start_phoenix.sh           ← allgemein
+└── sandbox/
     ├── README.md
-    └── ...
+    ├── import_check.py        ← ~2s, nur Modul-Import-Check
+    ├── start_quick.py         ← ~90s, schlanker Stack-Start
+    └── start_full.py          ← ~3 Min, vollständiger Stack + Testlauf
 ```
 
 ### `docs/`
@@ -81,10 +79,29 @@ Dokumentation pro Umgebung sowie übergreifende Dokumente.
 
 ```
 docs/
-├── SANDBOX.md      ← Aufbauanleitung Sandbox
-├── HOST.md         ← Aufbauanleitung Host (janhet)
-└── DOCKER.md       ← Aufbauanleitung Docker
+├── SANDBOX.md                 ← Aufbauanleitung Sandbox
+├── DOCKER.md                  ← Aufbauanleitung Docker
+├── INSTALL_HOST.md            ← Installationsanleitung Host
+├── ROADMAP.md                 ← Architekturentscheidungen und Phasenplan
+└── MCP_SERVERS.md             ← MCP Server Dokumentation
 ```
+
+---
+
+## Testergebnisse
+
+Nach jedem vollständigen Testlauf (`scripts/sandbox/start_full.py`) werden
+die Ergebnisse als Markdown-Datei in `docs/` abgelegt.
+
+**Namenskonvention:** `<UMGEBUNG>_<SESSION>_TESTRESULTS.md`
+
+Beispiele:
+- `docs/SANDBOX_1_TESTRESULTS.md` — Ergebnisse aus Sandbox Session 1
+- `docs/SANDBOX_2_TESTRESULTS.md` — Ergebnisse aus Sandbox Session 2
+- `docs/HOST_TESTRESULTS.md` — Ergebnisse vom Host (sobald deployed)
+
+Die Datei enthält: Datum, Umgebung, Modell, Testergebnisse pro Agent,
+ChromaDB-Status, Log-Check-Ergebnisse.
 
 ---
 
