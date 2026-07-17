@@ -106,7 +106,6 @@ model_list:
       api_key: not-needed
 general_settings:
   master_key: {LITELLM_KEY}
-  database_url: "sqlite:////tmp/litellm.db"
 litellm_settings:
   drop_params: true
   set_verbose: false
