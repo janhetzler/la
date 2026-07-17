@@ -1,7 +1,7 @@
-# Installation Guide — janhet Edition
+# Installation Guide — Host
 
-Schritt-für-Schritt Anleitung für die Installation des Chief-of-Staff
-auf einem Hetzner KVM Server (AMD EPYC, 4 vCores, 10 GB RAM, Debian 12).
+Schritt-für-Schritt Anleitung für die Installation von Local Agent (LA)
+auf dem Host (AMD EPYC, 4 vCores, 10 GB RAM, Debian 12).
 Funktioniert auf jedem ähnlichen Linux-Server ohne GPU.
 
 ---
@@ -9,7 +9,7 @@ Funktioniert auf jedem ähnlichen Linux-Server ohne GPU.
 ## Voraussetzungen
 
 | Komponente | Minimum | Empfohlen |
-|-----------|---------|-----------|
+|-----------|---------|-----------| 
 | RAM | 8 GB | 10 GB |
 | CPU | 2 Kerne | 4 Kerne (AVX2) |
 | Disk | 10 GB frei | 20 GB frei |
@@ -25,10 +25,10 @@ vorgebaute Binary für Ubuntu/Debian x64.
 
 ```bash
 # Verzeichnis anlegen
-mkdir -p /home/user/llamaorgakt
+mkdir -p /home/user/llamaserver
 
 # Aktuelles Release herunterladen (b9977 oder neuer)
-cd /home/user/llamaorgakt
+cd /home/user/llamaserver
 wget https://github.com/ggml-org/llama.cpp/releases/download/b9977/llama-b9977-bin-ubuntu-x64.zip
 unzip llama-b9977-bin-ubuntu-x64.zip -d llama-b9977
 chmod +x llama-b9977/llama-server
@@ -71,7 +71,6 @@ cat << 'CFGEOF' > /home/user/models/config/granite-server-params.txt
 -ctv q4_0
 --no-mmap
 --jinja
---tools read_file,grep_search,file_glob_search,get_datetime
 --repeat-penalty 1.15
 --temp 0.1
 --top-p 0.95
@@ -81,25 +80,25 @@ cat << 'CFGEOF' > /home/user/models/config/granite-server-params.txt
 CFGEOF
 
 # Start-Script für Reasoning (Port 8080)
-cat << 'SEOF' > /home/user/restart_llamaorgakt.sh
+cat << 'SEOF' > /home/user/restart_llama.sh
 #!/bin/bash
 pkill -f "llama-server.*8080" || true
 sleep 2
 xargs -a /home/user/models/config/granite-server-params.txt \
-  /home/user/llamaorgakt/llama-b9977/llama-server \
+  /home/user/llamaserver/llama-b9977/llama-server \
   -m /home/user/models/granite-4.0-h-tiny.i1-IQ4_XS.gguf \
   > /home/user/llama-granite.log 2>&1 &
 sleep 5
 tail -5 /home/user/llama-granite.log
 SEOF
-chmod +x /home/user/restart_llamaorgakt.sh
+chmod +x /home/user/restart_llama.sh
 
 # Start-Script für Embedding (Port 8081)
 cat << 'EEOF' > /home/user/restart_embedding.sh
 #!/bin/bash
 pkill -f "llama-server.*8081" || true
 sleep 2
-/home/user/llamaorgakt/llama-b9977/llama-server \
+/home/user/llamaserver/llama-b9977/llama-server \
   -m /home/user/models/granite-embedding-30m-Q8_0.gguf \
   --host 127.0.0.1 \
   --port 8081 \
@@ -112,7 +111,7 @@ EEOF
 chmod +x /home/user/restart_embedding.sh
 
 # Beide starten
-bash /home/user/restart_llamaorgakt.sh
+bash /home/user/restart_llama.sh
 bash /home/user/restart_embedding.sh
 
 # Testen
@@ -126,21 +125,19 @@ curl -s http://127.0.0.1:8081/health && echo "Embedding OK"
 
 ```bash
 # Arbeitsverzeichnis
-mkdir -p /home/user/chief
-cd /home/user/chief
+mkdir -p /home/user/la
+cd /home/user/la
 
 # Repository klonen
-git clone https://github.com/janhetzler/la la
-cd la
+git clone https://github.com/janhetzler/la .
 
 # Virtuelle Umgebung (ohne torch!)
-python3 -m venv /home/user/chief/venv
-source /home/user/chief/venv/bin/activate
+python3 -m venv /home/user/venv
+source /home/user/venv/bin/activate
 
 # Dependencies installieren
 pip install --upgrade pip
-pip install -r requirements-janhet.txt
-# requirements-janhet.txt enthält bereits: headroom-ai, litellm, phoenix, mcp-server-git/fetch, llama-cpp-python
+pip install -r requirements.txt
 
 # Testen
 python3 -c "import langchain, chromadb, litellm; print('OK')"
@@ -148,29 +145,13 @@ python3 -c "import langchain, chromadb, litellm; print('OK')"
 
 ---
 
-## Schritt 5 — Headroom Proxy
-
-Headroom komprimiert Kontexte bevor sie den llama-server erreichen.
-Sitzt zwischen LiteLLM (Port 4000) und llama-server (Port 8080).
-
-```bash
-# Starten
-source /home/user/chief/venv/bin/activate
-bash /home/user/chief/la/scripts/start_headroom.sh
-
-# Testen
-curl -s http://127.0.0.1:8787/health | python3 -m json.tool
-```
-
----
-
-## Schritt 6 — Arize Phoenix
+## Schritt 5 — Arize Phoenix
 
 Phoenix sammelt Traces von allen Agent-Calls für Observability.
 
 ```bash
-source /home/user/chief/venv/bin/activate
-bash /home/user/chief/la/scripts/start_phoenix.sh
+source /home/user/venv/bin/activate
+bash /home/user/la/scripts/start_phoenix.sh
 
 # Testen
 curl -s http://127.0.0.1:6006/healthz
@@ -178,13 +159,13 @@ curl -s http://127.0.0.1:6006/healthz
 
 ---
 
-## Schritt 7 — LiteLLM Proxy
+## Schritt 6 — LiteLLM Proxy
 
-LiteLLM ist das zentrale API-Gateway. Routet auf Headroom → llama-server.
+LiteLLM ist das zentrale API-Gateway. Routet direkt auf llama-server.
 
 ```bash
-source /home/user/chief/venv/bin/activate
-bash /home/user/chief/la/scripts/start_litellm.sh
+source /home/user/venv/bin/activate
+bash /home/user/la/scripts/start_litellm.sh
 
 # Testen
 curl -s http://127.0.0.1:4000/health \
@@ -197,16 +178,16 @@ curl -s http://127.0.0.1:4000/v1/models \
 
 ---
 
-## Schritt 8 — Agent Server
+## Schritt 7 — Agent Server
 
 ```bash
-source /home/user/chief/venv/bin/activate
-cd /home/user/chief/la/agents/server
+source /home/user/venv/bin/activate
+cd /home/user/la/agents/server
 
 export LITELLM_URL=http://127.0.0.1:4000
 export LITELLM_KEY=sk-cos-local-dev
 export OPENAI_API_KEY=sk-cos-local-dev
-export CHROMA_PATH=/home/user/chief/chroma_db
+export CHROMA_PATH=/home/user/chroma
 export PHOENIX_HOST=http://127.0.0.1:6006
 
 uvicorn server:app --host 127.0.0.1 --port 8002 &
@@ -218,38 +199,39 @@ curl -s http://127.0.0.1:8002/v1/models | python3 -m json.tool
 
 ---
 
-## Schritt 9 — Terminal Chat testen
+## Schritt 8 — Terminal Chat testen
 
 ```bash
-source /home/user/chief/venv/bin/activate
-python3 /home/user/chief/la/scripts/chat.py
+source /home/user/venv/bin/activate
+python3 /home/user/la/scripts/chat.py
 ```
 
 ---
 
-## Schritt 10 — Test Suite ausführen
+## Schritt 9 — Test Suite ausführen
 
 ```bash
-source /home/user/chief/venv/bin/activate
+source /home/user/venv/bin/activate
 MODEL_PATH=/home/user/models/granite-4.0-h-tiny.i1-IQ4_XS.gguf \
-CHROMA_PATH=/home/user/chief/chroma_db \
-python3 /home/user/chief/la/tests/run_tests.py
+CHROMA_PATH=/home/user/chroma \
+python3 /home/user/la/tests/run_tests.py
 ```
 
 ---
 
-## Schritt 11 — systemd Services (Dauerbetrieb)
+## Schritt 10 — systemd Services (Dauerbetrieb)
 
 ```bash
-# Alle 4 Services installieren
-sudo cp /home/user/chief/la/deploy/systemd/*.service /etc/systemd/system/
+# Templates aus deploy/systemd/ befüllen und installieren
+# Siehe deploy/systemd/README.md für Platzhalter-Übersicht
+sudo cp /home/user/la/deploy/systemd/*.service /etc/systemd/system/
 sudo systemctl daemon-reload
 
 # Aktivieren und starten
-sudo systemctl enable --now headroom phoenix litellm chief-agent
+sudo systemctl enable --now phoenix litellm agent
 
 # Status prüfen
-sudo systemctl status headroom phoenix litellm chief-agent
+sudo systemctl status phoenix litellm agent
 ```
 
 ---
@@ -260,10 +242,9 @@ sudo systemctl status headroom phoenix litellm chief-agent
 |------|--------|-------|
 | 8080 | llama-server | Granite Reasoning |
 | 8081 | llama-server | Granite Embedding |
-| 8787 | Headroom | Kontext-Kompression |
 | 6006 | Phoenix | Observability |
 | 4000 | LiteLLM | API-Gateway |
-| 8002 | Agent Server | Chief-of-Staff |
+| 8002 | Agent Server | Local Agent |
 
 Alle Ports sind nur auf `127.0.0.1` gebunden — kein externer Zugang.
 Zugriff über Cloudflare Tunnel oder SSH-Tunnel.
@@ -276,14 +257,12 @@ Zugriff über Cloudflare Tunnel oder SSH-Tunnel.
 Du (Terminal/VS Code)
     ↓ Port 4000
 LiteLLM (API-Gateway)
-    ↓ Port 8787
-Headroom (Kompression)
     ↓ Port 8080
 llama-server (Granite Reasoning)
 
 Agent Server (Port 8002)
     ↓
-ChromaDB (embedded, /home/user/chief/chroma_db)
+ChromaDB (embedded, /home/user/chroma)
     ↓
 llama-server (Port 8081, Embeddings)
 
@@ -309,7 +288,7 @@ tail -20 /tmp/litellm.log
 
 **Agent Server Fehler:**
 ```bash
-journalctl -u chief-agent -f
+journalctl -u agent -f
 # Häufig: OPENAI_API_KEY nicht gesetzt
 ```
 
@@ -330,48 +309,30 @@ export PHOENIX_COLLECTOR_ENDPOINT=http://127.0.0.1:6006/v1/traces
 TypeError: 'NoneType' object is not iterable
 ```
 
-**Ursache:** Pakete mit ungültigen Metadaten (z.B. pydantic) verursachen einen Fehler
-in `get_dependency_conflicts()` von opentelemetry-instrumentation.
-
 **Fix:** Bereits in `telemetry.py` eingebaut:
 ```python
 LangChainInstrumentor().instrument(
     tracer_provider=tracer_provider,
-    skip_dep_check=True  # ← dieser Parameter löst das Problem
+    skip_dep_check=True
 )
 ```
 
 Kein manueller Eingriff nötig — `git pull` und neu starten reicht.
 
-### Headroom: Falsches Paket
-
-`pip install headroom` installiert ein falsches Terminal-Tool.
-Das richtige Paket heißt:
-```bash
-pip install "headroom-ai[proxy]"
-```
-
 ---
 
 ## Tool-Calling: Modell-natives Format
 
-LangChain `bind_tools()` sendet Tools im OpenAI-Format. Granite, Qwen
-und andere Modelle erwarten ihr eigenes Format. Der `tool_formatter.py`
-löst das generisch.
-
-**Wie es funktioniert:**
+LangChain `bind_tools()` sendet Tools im OpenAI-Format. Granite und andere
+Modelle erwarten ihr eigenes Format. `tool_formatter.py` löst das generisch.
 
 ```python
 from tool_formatter import format_tools_for_model
 
-# Gibt nativen System-Prompt zurück statt bind_tools()
 system = format_tools_for_model(tools, model_name="granite-tiny")
 # → <tools>...</tools> XML für Granite
-# → <tools>...</tools> ChatML für Qwen  
 # → None für OpenAI-kompatible Modelle (pass-through)
 ```
-
-**Unterstützte Modell-Familien:**
 
 | Familie | Erkennung | Format |
 |---------|-----------|--------|
@@ -379,6 +340,3 @@ system = format_tools_for_model(tools, model_name="granite-tiny")
 | qwen    | qwen | ChatML `<tools>` |
 | llama   | llama, meta | JSON function |
 | default | alles andere | OpenAI pass-through |
-
-**Neues Modell hinzufügen:** `MODEL_FAMILIES` und `FORMATTERS`
-in `tool_formatter.py` erweitern — kein anderer Code ändern nötig.
