@@ -9,15 +9,14 @@ Ablauf:
   3. LiteLLM starten
   4. Agent Server starten
   5. Einen einzelnen Request an Comms Agent
-  6. Phoenix CLI (px) aufrufen und Trace ausgeben
-  7. Fallback: Phoenix REST API wenn px nicht verfuegbar
+  6. Phoenix Traces via arize-phoenix-client auslesen
 
 Verwendung:
   cd /home/claude/la && python3 scripts/sandbox/inspect_phoenix.py
 
 Voraussetzung:
-  - Node.js verfuegbar fuer Phoenix CLI (optional)
-  - Stack-Modelle unter /tmp/granite-350m-Q4_K_M.gguf
+  - pip install arize-phoenix-client
+  - Modelle unter /tmp/granite-350m-Q4_K_M.gguf
 """
 import threading, time, urllib.request, json, subprocess, sys, os
 from datetime import datetime
@@ -34,7 +33,7 @@ os.makedirs(LOG_DIR, exist_ok=True)
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../agents/server'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../agents/ingestion'))
 
-def wait_for(url, label, retries=25, headers=None):
+def wait_for(url, label, retries=40, headers=None):
     for i in range(retries):
         try:
             req = urllib.request.Request(url)
@@ -69,7 +68,8 @@ phoenix_proc = subprocess.Popen(
      '--host', '127.0.0.1', '--port', '6006'],
     stdout=open(os.path.join(LOG_DIR, 'phoenix.log'), 'w'),
     stderr=subprocess.STDOUT)
-wait_for(f'{PHOENIX_URL}/healthz', 'Phoenix')
+# /v1/projects statt /healthz — zuverlaessigerer Readiness-Endpoint
+wait_for(f'{PHOENIX_URL}/v1/projects', 'Phoenix')
 
 # 3. LiteLLM
 litellm_cfg = f"""
@@ -140,7 +140,7 @@ def run_agent():
 threading.Thread(target=run_agent, daemon=True).start()
 wait_for('http://127.0.0.1:8002/health', 'Agent Server')
 
-# 6. Einzelner Request — Comms Agent
+# 6. Einzelner Request
 print('\n=== REQUEST ===', flush=True)
 PROMPT = "Write a short professional email to the team about the project status."
 print(f'Prompt: {PROMPT}', flush=True)
@@ -156,67 +156,64 @@ try:
     r = urllib.request.urlopen(req, timeout=120)
     resp = json.loads(r.read())
     text = resp['choices'][0]['message']['content']
-    print(f'Antwort ({time.time()-t0:.1f}s): {text[:300]}', flush=True)
+    print(f'Antwort ({time.time()-t0:.1f}s):\n{text}', flush=True)
 except Exception as e:
     print(f'Fehler: {e}', flush=True)
 
-# Kurz warten damit Traces bei Phoenix ankommen
-print('\nWarte 3s auf Trace-Delivery...', flush=True)
-time.sleep(3)
+# Warten auf Trace-Delivery
+print('\nWarte 5s auf Trace-Delivery...', flush=True)
+time.sleep(5)
 
-# 7. Phoenix Traces auslesen
+# 7. Phoenix Traces via arize-phoenix-client
 print('\n=== PHOENIX TRACES ===', flush=True)
-
-# Versuch 1: Phoenix CLI (px)
-px_available = False
 try:
-    result = subprocess.run(['which', 'px'], capture_output=True, text=True)
-    px_available = result.returncode == 0
-except: pass
+    import phoenix as px
+    from phoenix.trace import SpanQuery
 
-if px_available:
-    print('Phoenix CLI verfuegbar — px trace list:', flush=True)
-    os.environ['PHOENIX_HOST'] = PHOENIX_URL
-    os.environ['PHOENIX_PROJECT'] = 'local-agent'
-    result = subprocess.run(
-        ['px', 'trace', 'list', '--limit', '5', '--format', 'raw'],
-        capture_output=True, text=True, env=os.environ.copy()
+    client = px.Client(endpoint=PHOENIX_URL)
+
+    # Alle Spans der letzten 10 Minuten
+    spans_df = client.get_spans_dataframe(
+        project_name="local-agent",
     )
-    print(result.stdout[:3000], flush=True)
-    if result.stderr:
-        print('STDERR:', result.stderr[:500], flush=True)
-else:
-    print('Phoenix CLI nicht verfuegbar — nutze REST API', flush=True)
 
-    # Versuch 2: REST API
-    try:
-        # Projekte auflisten
+    if spans_df is not None and not spans_df.empty:
+        print(f'\n{len(spans_df)} Spans gefunden:\n', flush=True)
+
+        # Relevante Spalten anzeigen
+        cols = [c for c in [
+            'name', 'span_kind',
+            'attributes.input.value',
+            'attributes.output.value',
+            'attributes.llm.model_name',
+            'attributes.llm.token_count.prompt',
+            'attributes.llm.token_count.completion',
+            'attributes.llm.prompts',
+            'status_code', 'latency_ms'
+        ] if c in spans_df.columns]
+
+        for _, row in spans_df[cols].iterrows():
+            print(f'\n--- {row.get("name", "?")} [{row.get("span_kind", "?")}] ---', flush=True)
+            for col in cols:
+                if col in ['name', 'span_kind']: continue
+                val = row.get(col)
+                if val and str(val) != 'nan':
+                    label = col.replace('attributes.', '').replace('llm.', '')
+                    print(f'  {label}: {str(val)[:300]}', flush=True)
+    else:
+        print('Keine Spans gefunden — Fallback auf REST API', flush=True)
         req = urllib.request.Request(f'{PHOENIX_URL}/v1/projects')
         r = urllib.request.urlopen(req, timeout=10)
         projects = json.loads(r.read())
         print(f'Projekte: {json.dumps(projects, indent=2)[:500]}', flush=True)
 
-        # Spans des ersten Projekts
-        if projects.get('data'):
-            project_id = projects['data'][0]['id']
-            req = urllib.request.Request(
-                f'{PHOENIX_URL}/v1/projects/{project_id}/spans?limit=10'
-            )
-            r = urllib.request.urlopen(req, timeout=10)
-            spans = json.loads(r.read())
-            print(f'\nSpans ({len(spans.get("data",[]))} gefunden):', flush=True)
-            for span in spans.get('data', [])[:5]:
-                print(f'\n--- Span: {span.get("name")} ---', flush=True)
-                attrs = span.get('attributes', {})
-                # Die wichtigen Felder
-                for key in ['input.value', 'output.value', 'llm.model_name',
-                            'llm.token_count.prompt', 'llm.token_count.completion',
-                            'tool.name', 'llm.prompts']:
-                    if key in attrs:
-                        val = str(attrs[key])[:200]
-                        print(f'  {key}: {val}', flush=True)
-    except Exception as e:
-        print(f'REST API Fehler: {e}', flush=True)
+except ImportError:
+    print('arize-phoenix-client nicht installiert', flush=True)
+    print('pip install arize-phoenix-client', flush=True)
+except Exception as e:
+    print(f'Phoenix Client Fehler: {e}', flush=True)
+    import traceback
+    traceback.print_exc()
 
 # Cleanup
 for proc in [litellm_proc, phoenix_proc]:
