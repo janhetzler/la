@@ -11,6 +11,8 @@ import sys
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
+import config
+
 from project_context import PROJECT_CONTEXT
 from user_profile import USER_PROFILE
 
