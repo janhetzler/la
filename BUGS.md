@@ -127,3 +127,69 @@ Ergebnis: 3/6 Tests statt vorher 4/6.
 
 Reverted. supervisor.py zurueck auf Zero-Shot Prompt ohne grammar Constraint.
 Routing bleibt ein bekanntes 350m-Limit — wird auf dem Host behoben.
+
+## HTML-Kommentare in .md Prompts verwirren 350m Modell (2026-07-18)
+
+### Symptom
+
+`router.md` hatte einen HTML-Kommentar-Block (`<!-- ... -->`). Das 350m-Modell
+generierte danach Garbage-Tokens statt einem gueltigen Agent-Namen:
+- `<|` — Chat-Template-Start-Token
+- `<code>` — HTML-Tag
+- `<` — unvollstaendiges Token
+
+### Ursache
+
+Das 350m-Modell interpretiert `<!--` als Beginn eines Chat-Templates und
+wechselt in den Modus "generiere Assistant-Tokens", statt den Router-Prompt
+zu befolgen. Der Kommentar-Block erschien am Ende von `router.md` nach dem
+eigentlichen Prompt-Inhalt.
+
+### Fix
+
+HTML-Kommentar-Block aus `router.md` entfernt. Zero-Shot Prompt wieder sauber.
+Commit: `9cf389b`
+
+### Regel
+
+Keine HTML-Kommentare (`<!-- -->`) in `.md`-Prompt-Dateien die ans Modell gehen.
+Fuer Entwickler-Notizen: separate Datei oder YAML-Frontmatter-Felder verwenden.
+
+---
+
+## Few-Shot + Heuristik funktioniert nicht mit 350m Modell (2026-07-18)
+
+### Symptom
+
+Versuch: `router.md` mit Few-Shot-Beispielen und Wenn-Dann-Heuristik
+("Wenn die Frage mit 'Write' beginnt -> comms").
+Ergebnis: Modell gibt erstes Token der User-Message zurueck statt Agent-Namen:
+- `"Can you help me?"` -> `"Help"`
+- `"Write a short..."` -> `"<|exactly one word>"`
+- `"Prepare a prompt..."` -> die gesamte User-Message
+
+### Ursache
+
+Das 350m-Modell ist zu klein um Few-Shot-Beispiele korrekt zu interpretieren
+und daraus ein Output-Format abzuleiten. Es "sieht" die Beispiele als Teil der
+Konversation und setzt die Mustervervollstaendigung fort — statt den
+Instruktionen zu folgen.
+
+Ausserdem: der `<|exactly one word>` Instruction-Marker aus dem Prompt wird
+literal wiedergegeben — das Modell "zitiert" Prompt-Fragmente statt zu generieren.
+
+### Fix
+
+Reverted auf Zero-Shot Prompt. Commit: `02012de`
+
+### Erkenntnis
+
+- Zero-Shot ist zuverlaessiger als Few-Shot fuer 350m Modelle
+- Instruction-Marker wie `<|exactly one word>` nicht im Prompt verwenden —
+  werden von kleinen Modellen literal kopiert
+- Few-Shot Router-Prompt auf dem Host mit Granite-4.0-H-Tiny (4B) testen
+  wo das Routing nachweislich korrekt funktioniert
+
+### Status
+
+Offen fuer Host-Test. Auf 350m: Zero-Shot bleibt die stabile Loesung.
