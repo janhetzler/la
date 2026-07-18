@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Erstellt angereicherte Prompts fuer Claude.ai oder ChatGPT. Fuer schwere Aufgaben: lange Texte, tiefe Analysen, komplexes Reasoning.
+description: "Erstellt angereicherte Prompts fuer Claude.ai oder ChatGPT. Fuer schwere Aufgaben: lange Texte, tiefe Analysen, komplexes Reasoning."
 tools: []
 temperature: 0.4
 model: null
