@@ -25,7 +25,7 @@ import config
 from agent_loader import load_agent
 
 
-# Granite for prompt structuring — no tool calling needed
+# Granite fuer Prompt-Strukturierung -- kein Tool-Calling noetig
 llm = ChatOpenAI(
     base_url=f"{config.LITELLM_URL}/v1",
     api_key=config.LITELLM_KEY,
@@ -47,7 +47,7 @@ def _embed_query(text: str) -> list[float]:
 
 
 def _fetch_context(query: str, top_k: int = 3) -> str:
-    """Retrieve relevant chunks to enrich the outgoing prompt."""
+    """Ruft relevante Chunks ab um den ausgehenden Prompt anzureichern."""
     try:
         query_vec = _embed_query(query)
         client = chromadb.PersistentClient(path=config.CHROMA_PATH)
@@ -92,7 +92,7 @@ def _get_system_prompt(user_language: str = "en") -> str:
 
 
 
-# Wrapper text translations (kept short — added around the structured prompt)
+# Wrapper-Text-Uebersetzungen (kurz gehalten -- um den strukturierten Prompt herum)
 WRAPPER_TEMPLATES = {
     "French": {
         "title": "## 📋 Prompt préparé pour Claude.ai / ChatGPT",
@@ -122,12 +122,12 @@ WRAPPER_TEMPLATES = {
 
 
 def _wrapper(user_language: str) -> dict:
-    """Return wrapper labels for a given language, falling back to English."""
+    """Gibt Wrapper-Labels fuer eine Sprache zurueck, Fallback auf Englisch."""
     return WRAPPER_TEMPLATES.get(user_language, WRAPPER_TEMPLATES["English"])
 
 
 async def invoke_handoff(user_message: str, user_language: str = "French") -> str:
-    """Build an enriched prompt for Claude.ai/ChatGPT in the user's language."""
+    """Erstellt einen angereicherten Prompt fuer Claude.ai/ChatGPT in der Sprache des Benutzers."""
     # 1. Pull relevant local context
     context = _fetch_context(user_message, top_k=3)
 
