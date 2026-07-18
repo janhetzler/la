@@ -91,19 +91,12 @@ Use emojis on agent names: Researcher, Comms, Notes, Code, Handoff."""
 
 # ===== Spracherkennung =====
 async def detect_user_language(user_message: str) -> str:
-    """Erkennt die Sprache der User-Nachricht in einem Wort."""
-    detection_prompt = """Detect the language of the user's message.
-Respond with ONLY the language name in English, in one word.
-Examples: English, French, Spanish, Portuguese, German, Italian.
-No other text, just the language name."""
-
-    messages = [
-        SystemMessage(content=detection_prompt),
-        HumanMessage(content=user_message),
-    ]
-    response = await router_llm.ainvoke(messages)
-    lang = response.content.strip().split()[0].rstrip(".,!?;:")
-    return lang
+    """
+    Spracherkennung — vereinfacht fuer kleine Modelle.
+    Gibt immer English zurueck bis Granite-Tiny auf dem Host verfuegbar.
+    TODO: LLM-basierte Erkennung auf dem Host reaktivieren.
+    """
+    return "English"
 
 
 # ===== Routing =====
