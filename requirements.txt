@@ -68,3 +68,5 @@ openai>=2.26.0                # Pin 1.97.1 war inkompatibel mit langchain-openai
 pydantic==2.12.5
 numpy==2.4.4
 tqdm==4.67.3
+
+pyyaml                          # YAML-Parsing fuer agent_loader.py
