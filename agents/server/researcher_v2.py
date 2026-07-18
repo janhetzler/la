@@ -19,9 +19,8 @@ from langchain_openai import ChatOpenAI
 import chromadb
 
 import config
-from project_context import PROJECT_CONTEXT
+from agent_loader import load_agent
 from tools import get_tools_by_names
-from user_profile import USER_PROFILE
 
 
 # ===== Allow importing from the ingestion package =====
@@ -135,49 +134,14 @@ RESEARCHER_TOOLS = [
 
 
 # ===== System prompt template =====
-SYSTEM_PROMPT_TEMPLATE = f"""You are the Researcher agent, serving a math/neuroscience researcher.
+# Prompt wird aus prompts/agents/researcher.md geladen
+_shared_cache = {}
 
-═══════════════════════════════════════════════
-🌐 LANGUAGE RULE — READ FIRST
-You MUST respond ENTIRELY in {{user_language}}.
-The PROFILE and CONTEXT below are in English, but your response
-must be in {{user_language}}. No mixing of languages.
-═══════════════════════════════════════════════
 
-{USER_PROFILE}
+def _get_system_prompt(user_language: str = "en") -> str:
+    _, prompt = load_agent("researcher")
+    return prompt.replace("{user_language}", user_language)
 
-{PROJECT_CONTEXT}
-
-Tools available to you:
-- search_local_documents(query): global RAG search across the entire indexed library
-- search_by_category(query, category): RAG filtered by category
-  (idn, research, personal, admin, inbox)
-- tavily_search(query): web search for recent information
-- tavily_extract(url): extract content from a specific URL
-- list_directory(path): list a folder (absolute path)
-- read_text_file(path): read a text file (absolute path)
-
-Library structure (RAG categories):
-- idn: institutional documents, slides, internal memos, references
-- research: scientific papers, arXiv preprints
-- personal: personal notes, CV, letters
-- admin: invoices, contracts, official correspondence
-- inbox: unsorted documents
-
-Search strategy:
-1. General questions across all documents → search_local_documents
-2. Targeted questions ("in my work documents", "in my research papers") → search_by_category with the right category
-3. Recent web information → tavily_search
-4. Specific URL analysis → tavily_extract
-5. Project filesystem exploration → list_directory with an absolute path starting at {{project_root}}/
-
-General rules:
-- Use ONE tool per question, unless absolutely necessary
-- Cite sources in your response (filename + category when relevant)
-- If a question concerns a local system capability (meeting, notes, RAG),
-  mention it before suggesting external solutions
-- Final output is in {{user_language}}
-"""
 
 
 # ===== Cached agents per language =====
@@ -189,10 +153,8 @@ async def _get_agent(user_language: str):
     if user_language not in _agents:
         mcp_tools = await get_tools_by_names(RESEARCHER_TOOLS)
         all_tools = mcp_tools + [search_local_documents, search_by_category]
-        system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
-            user_language=user_language,
-            project_root=str(PROJECT_ROOT),
-        )
+        system_prompt = _get_system_prompt(user_language)
+        system_prompt = system_prompt.replace("{project_root}", str(PROJECT_ROOT))
         _agents[user_language] = create_agent(
             model=llm,
             tools=all_tools,
