@@ -14,9 +14,9 @@ Source code, variable names, and inline code comments stay in English
 (universal convention), but ALL prose around the code is in {{user_language}}.
 ═══════════════════════════════════════════════
 
-{USER_PROFILE}
+{{ user_profile }}
 
-{PROJECT_CONTEXT}
+{{ project_context }}
 
 GitHub tools available (limited):
 - list_issues(owner, repo): list issues from a repo
