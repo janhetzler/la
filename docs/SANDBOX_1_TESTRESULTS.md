@@ -1,5 +1,5 @@
 # Local Agent Test Suite — Ergebnisse (Sandbox 1)
-**Datum:** 2026-07-17 (zweiter Lauf)
+**Datum:** 2026-07-18 (dritter Lauf)
 **Umgebung:** Claude.ai Sandbox (Intel Xeon, 1 Core, 4 GB RAM)
 **Modell:** Granite 4.0-H 350m Q4_K_M
 
@@ -44,60 +44,53 @@ Headroom: DISABLED (headroom-ai[all] zu groß für Sandbox)
 
 ---
 
-## Agent Test Ergebnisse (4/6 OK)
+## Agent Test Ergebnisse (5/6 OK)
 
 Testlauf: `python3 scripts/sandbox/start_full.py`
-Start: 2026-07-17T17:52:57 — Ende: 2026-07-17T17:55:23 (~2:26 min)
+Start: 2026-07-18T15:08:12 — Ende: 2026-07-18T15:09:59 (~1:47 min)
 
 | Agent | Status | Zeit | Routing | Antwort |
 |-------|--------|------|---------|---------|
-| Supervisor Routing | ✓ | 21.2s | meta | OK (75 Zeichen) |
-| Comms Agent | ✓ | 20.6s | meta | OK (606 Zeichen) |
-| Code Agent | ✓ | 28.4s | comms | OK (312 Zeichen) |
-| Researcher Agent | ✓ | 24.9s | handoff | OK (620 Zeichen) |
-| Notes Agent | ✗ | 18.5s | meta | ChromaDB notes: 0 Dokumente |
-| Handoff Agent | ✗ | 30.3s | researcher | Zu kurz (7 Zeichen: "Prepare") |
+| Supervisor Routing | ✓ | 15.0s | meta | OK (34 Zeichen) |
+| Comms Agent | ✓ | 18.8s | meta | OK (692 Zeichen) |
+| Code Agent | ✓ | 13.2s | meta | OK (28 Zeichen) |
+| Researcher Agent | ✓ | 29.2s | researcher | OK (619 Zeichen) |
+| Notes Agent | ✗ | 14.0s | meta | ChromaDB notes: 0 Dokumente |
+| Handoff Agent | ✓ | 14.0s | meta | OK (157 Zeichen) |
 
 ---
 
 ## Bekannte Punkte
 
 ### 1. Routing-Limit 350m
-Das 350m Modell routet nicht zuverlässig:
-- `Save → meta` statt `notes`
-- `Prepare → researcher` statt `handoff`
-- `Python → comms` statt `code`
-- `LangGraph → handoff` statt `researcher`
-
-Ursache: 350m zu klein für zuverlässige Intent-Klassifikation.
+Das 350m Modell routet fast alles zu `meta` — nur `researcher` wird
+korrekt erkannt. Ursache: 350m zu klein für Intent-Klassifikation.
 Auf janhet mit Granite-Tiny-4B wird Routing korrekt funktionieren.
 
-### 2. Phoenix Log-Check False Positive
-`test_stack.py` meldet `⚠️ Fehler gefunden` für `phoenix.log`.
-Ursache: Log-Check sucht nach bloßem String `"ERROR"` — Phoenix schreibt
-beim Start SQL `CREATE TABLE ... CHECK ... IN ('OK', 'ERROR', ...)`.
-Kein echter Fehler. Dokumentiert in `BUGS.md`.
+### 2. Notes Agent FAIL
+Notes Agent routet zu `meta` statt `notes` — ChromaDB collection bleibt
+leer. Bekanntes Routing-Limit, kein Code-Fehler.
 
-### 3. LiteLLM Traceback beim Cleanup
-Finaler Log-Check zeigt Traceback in `litellm.log`.
-Tritt auf wenn LiteLLM-Prozess per `lp.terminate()` beendet wird.
-Kein Einfluss auf Testergebnisse — nur beim Cleanup.
+### 3. Phoenix Log-Check False Positive
+`test_stack.py` meldet Fehler für `phoenix.log` wegen SQL
+`CHECK ... IN ('OK', 'ERROR', ...)`. Kein echter Fehler.
+Dokumentiert in `BUGS.md`.
 
-### 4. supervisor.py Grammar-Experiment (revertiert)
-Commits `265ec86` (Few-Shot + grammar constraint) und `d9ee9ef` (revert).
-Grammar-Constraint via `extra_body` inkompatibel mit LiteLLM — führte zu
-`No connected db.` Fehler. Dokumentiert in `BUGS.md`.
+### 4. Code Agent Antwort-Qualität
+Code Agent routet zu `meta` und antwortet mit `<|ex|>What can I do for you?`
+— 28 Zeichen, knapp über Mindestlänge. Inhaltlich nicht korrekt.
+Validierung prüft nur Mindestlänge, nicht Codequalität.
 
 ---
 
-## Neu seit letztem Lauf (Commit 0a21a7f)
+## Neu seit letztem Lauf (Commit a235959)
 
-- `config/` Struktur mit `.env` Dateien für alle Umgebungen
-- `arize-phoenix-client` in `requirements.txt`
-- `scripts/sandbox/inspect_phoenix.py` — Phoenix Traces auslesen
-- `scripts/sandbox/test_mcp_toolcall.py` — MCP Tool-Calling testen
-- `BUGS.md` und `docs/ROADMAP.md` aktualisiert
-- `supervisor.py` — unverändert (Grammar-Experiment revertiert)
+- `agent_loader.py` — neuer zentraler Agent-Loader aus `prompts/` Dateien
+- `prompts/` Verzeichnis — Prompt-Dateien für alle Agenten als Markdown
+- `TEMPLATE.py` / `TEMPLATE.md` — Agent-Templates
+- `project_context.py` und `user_profile.py` gelöscht → `prompts/shared/`
+- `scripts/sandbox/start_claude.py` — neues Sandbox-Skript
+- Fix: `TEMPLATE.md` aus `list_agents()` ausgeschlossen (Commit a235959)
 
 ---
 
@@ -108,6 +101,7 @@ Grammar-Constraint via `extra_body` inkompatibel mit LiteLLM — führte zu
 | Sandbox 1 (historisch) | 2026-07-14 | 6/6 ¹ | aktiv |
 | Sandbox 1 (erster Lauf) | 2026-07-17 | 4/6 | disabled |
 | Sandbox 1 (zweiter Lauf) | 2026-07-17 | 4/6 | disabled |
+| Sandbox 1 (dritter Lauf) | 2026-07-18 | 5/6 | disabled |
 
 ¹ Hinweis: 6/6 historisch weil Tests weniger streng waren —
 kein ChromaDB-Check, keine Mindestlängen-Validierung.
