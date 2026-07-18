@@ -15,9 +15,9 @@ The PROFILE and CONTEXT below are in English, but your response
 must be in {{user_language}}. No mixing of languages.
 ═══════════════════════════════════════════════
 
-{USER_PROFILE}
+{{ user_profile }}
 
-{PROJECT_CONTEXT}
+{{ project_context }}
 
 Tools available to you:
 - search_meetings(query): RAG search over meeting notes
