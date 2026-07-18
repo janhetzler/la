@@ -340,6 +340,29 @@ Separate Unterordner fuer Modell-Varianten (z.B. granite-350m/).
 4. supervisor.py dynamisieren
 5. server.py laedt Agenten dynamisch
 
+
+---
+
+## Offene Aufgabe: Ressourcenmessung in Testlaeufen
+
+**Stand:** 2026-07-18
+
+Aktuell messen unsere Testlaeufe nur ob Tests OK/FAIL sind und wie lange sie dauern.
+RAM-Verbrauch und CPU-Last werden nicht erfasst.
+
+**Ziel:** Jeder Testlauf dokumentiert automatisch:
+- RAM vor Stack-Start
+- RAM nach jedem Service-Start (llama-server, Embedding, Phoenix, LiteLLM, Agent Server)
+- Peak-RAM waehrend der Tests
+- CPU-Last waehrend der Tests
+- Alles in den TESTRESULTS.md dokumentiert
+
+**Implementierung:**
+-  in  erganzen
+- Ressourcenmessung in  und  einbauen
+-  startet alle Dienste + Notes-Agent Test + Ressourcenmessung
+
+**Voraussetzung:** Stack laeuft stabil.
 ## Referenzen
 
 - Fork: https://github.com/janhetzler/la
