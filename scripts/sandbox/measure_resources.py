@@ -288,6 +288,51 @@ with open("/tmp/resource_report.json", "w") as f:
     json.dump(report, f, indent=2)
 print("\nReport: /tmp/resource_report.json", flush=True)
 
+
+# ── Phoenix Traces auswerten ─────────────────────────────────────────────────
+print("\n" + "=" * 60, flush=True)
+print("PHOENIX TRACES -- Notes Agent Requests", flush=True)
+print("=" * 60, flush=True)
+
+time.sleep(3)  # Trace-Delivery abwarten
+
+try:
+    from phoenix.client import Client
+    from datetime import timedelta
+
+    px_client = Client(base_url=PHOENIX_URL)
+    df = px_client.spans.get_spans_dataframe(
+        project_identifier="local-agent",
+        limit=20,
+        root_spans_only=False,
+        start_time=datetime.now() - timedelta(minutes=10)
+    )
+
+    if df is not None and not df.empty:
+        print(f"\n{len(df)} Spans erfasst:\n", flush=True)
+        cols = [c for c in [
+            "name", "span_kind",
+            "attributes.input.value",
+            "attributes.output.value",
+            "attributes.llm.token_count.prompt",
+            "attributes.llm.token_count.completion",
+            "attributes.tool.name",
+        ] if c in df.columns]
+
+        for _, row in df[cols].iterrows():
+            print(f"\n--- {row.get('name','?')} [{row.get('span_kind','?')}] ---", flush=True)
+            for col in cols:
+                if col in ["name", "span_kind"]: continue
+                val = row.get(col)
+                if val and str(val) != "nan":
+                    label = col.replace("attributes.", "")
+                    print(f"  {label}: {str(val)[:400]}", flush=True)
+    else:
+        print("Keine Spans gefunden.", flush=True)
+
+except Exception as e:
+    print(f"Phoenix Client Fehler: {e}", flush=True)
+
 # Cleanup
 for proc in [litellm_proc, phoenix_proc]:
     if proc: proc.terminate()
