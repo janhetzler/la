@@ -22,8 +22,7 @@ from langchain_openai import ChatOpenAI
 import chromadb
 
 import config
-from project_context import PROJECT_CONTEXT
-from user_profile import USER_PROFILE
+from agent_loader import load_agent
 
 
 # Granite for prompt structuring — no tool calling needed
@@ -83,30 +82,14 @@ def _fetch_context(query: str, top_k: int = 3) -> str:
 
 
 # ===== Prompt builder =====
-PROMPT_BUILDER_SYSTEM_TEMPLATE = f"""You build a rich prompt for Claude.ai or ChatGPT, based on the user's request.
+# Prompt wird aus prompts/agents/handoff.md geladen
+_shared_cache = {}
 
-═══════════════════════════════════════════════
-🌐 LANGUAGE RULE — READ FIRST
-The PROMPT you generate must be in {{user_language}}, the user's language.
-The wrapper text in your response (intro, instructions) must also be in {{user_language}}.
-═══════════════════════════════════════════════
 
-{USER_PROFILE}
+def _get_system_prompt(user_language: str = "en") -> str:
+    _, prompt = load_agent("handoff")
+    return prompt.replace("{user_language}", user_language)
 
-{PROJECT_CONTEXT}
-
-Your job:
-1. Analyze the user's request
-2. Reformulate it as a clear, precise, professional prompt
-3. Preserve the spirit of the request, but enrich the context
-
-Rules:
-- Use clean markdown formatting
-- Preserve every constraint specified by the user
-- If local context is provided, integrate it explicitly with source citations
-- The OUTPUT PROMPT must be in {{user_language}}
-- Reply with ONLY the prompt ready to copy — no introduction or commentary from you
-"""
 
 
 # Wrapper text translations (kept short — added around the structured prompt)
@@ -149,7 +132,7 @@ async def invoke_handoff(user_message: str, user_language: str = "French") -> st
     context = _fetch_context(user_message, top_k=3)
 
     # 2. Ask the LLM to reformulate the request
-    builder_system = PROMPT_BUILDER_SYSTEM_TEMPLATE.format(user_language=user_language)
+    builder_system = _get_system_prompt(user_language)
     builder_input = f"""User request:
 {user_message}
 
