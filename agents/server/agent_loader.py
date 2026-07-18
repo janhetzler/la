@@ -105,7 +105,7 @@ def list_agents() -> list[dict]:
     if not agents_dir.exists():
         return agents
     for md_file in sorted(agents_dir.glob("*.md")):
-        if md_file.stem == "router":
+        if md_file.stem in ("router", "TEMPLATE", "TEMPLATE_LOGIC"):
             continue
         try:
             meta, _ = parse_frontmatter(md_file.read_text(encoding="utf-8"))
