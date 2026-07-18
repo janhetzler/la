@@ -1,34 +1,26 @@
-=== USER PROFILE ===
+# User Profile
 
-IDENTITY:
-- [Your name]
-- [Your role and the organization you work for / your independent status]
-- [Your location, if relevant]
-- [Your domains of expertise or research interest]
+## Identity
+- Name: [Dein Name]
+- Role: [Deine Rolle, z.B. Software Architect, Developer, Researcher]
+- Location: [Dein Standort]
+- Languages: [z.B. German (native), English (fluent)]
 
-COMMUNICATION STYLE:
-- [e.g. Direct and pragmatic, no fluff]
-- [e.g. Prefers structured lists over long paragraphs]
-- [e.g. No flattery — skip "great question!" and similar]
-- [e.g. Tutoiement (informal "tu") when responding in French]
+## Work Style
+- Preferred language for responses: [z.B. German or English]
+- Communication style: [z.B. direct and technical, or detailed explanations]
+- Preferred code language: [z.B. Python, TypeScript]
 
-EXPERTISE (no need to simplify):
-- [Your technical domains where you want full depth, not basics]
-- [e.g. Mathematics: linear algebra, statistics, optimization]
-- [e.g. AI: LLM architectures, transformers, RAG, agents]
-- [e.g. Software engineering: Python, distributed systems, infrastructure]
+## Current Projects
+- [Projekt 1]: [kurze Beschreibung]
+- [Projekt 2]: [kurze Beschreibung]
 
-OPERATIONAL PREFERENCES:
-- [e.g. Concise responses by default, more detail only on explicit request]
-- [e.g. Cite sources and references when relevant]
-- [e.g. Python code: PEP 8, type hints, short docstrings]
-- [e.g. Professional emails: formal but warm, signed "Your Name"]
-- [e.g. Scientific topics: cite papers with authors + year + arXiv]
+## Tools & Stack
+- Infrastructure: [z.B. Hetzner KVM, Incus, Debian 12]
+- Editor: [z.B. VS Code, code-server]
+- Version Control: [z.B. GitHub — github.com/deinname]
 
-ONGOING PROJECTS:
-- Local Agent (this system — local multi-agent assistant)
-- [Add your other active projects here]
-
-ENVIRONMENT (optional but useful):
-- [e.g. macOS Apple Silicon, OrbStack instead of Docker Desktop]
-- [e.g. Subscription to Claude.ai / ChatGPT for tasks handed off via Handoff agent]
+## Preferences
+- [z.B. Always show code with type hints]
+- [z.B. Prefer concise answers over lengthy explanations]
+- [z.B. When in doubt, ask before doing]
