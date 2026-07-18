@@ -27,7 +27,7 @@ from researcher_v2 import invoke_researcher_v2
 router_llm = ChatOpenAI(
     base_url=f"{config.LITELLM_URL}/v1",
     api_key=config.LITELLM_KEY,
-    model="granite-tiny",
+    model=config.DEFAULT_LLM,
     temperature=0,
 )
 
