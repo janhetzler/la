@@ -19,9 +19,8 @@ from langchain_openai import ChatOpenAI
 import chromadb
 
 import config
-from project_context import PROJECT_CONTEXT
+from agent_loader import load_agent
 from tools import get_tools_by_names
-from user_profile import USER_PROFILE
 
 
 # Project paths (used to inject absolute paths into the system prompt)
@@ -106,39 +105,14 @@ NOTES_TOOLS = [
 
 
 # ===== System prompt template =====
-SYSTEM_PROMPT_TEMPLATE = f"""You are the Notes agent.
+# Prompt wird aus prompts/agents/notes.md geladen
+_shared_cache = {}
 
-═══════════════════════════════════════════════
-🌐 LANGUAGE RULE — READ FIRST
-You MUST respond ENTIRELY in {{user_language}}.
-The PROFILE and CONTEXT below are in English, but your response
-must be in {{user_language}}. No mixing of languages.
-═══════════════════════════════════════════════
 
-{USER_PROFILE}
+def _get_system_prompt(user_language: str = "en") -> str:
+    _, prompt = load_agent("notes")
+    return prompt.replace("{user_language}", user_language)
 
-{PROJECT_CONTEXT}
-
-Tools available to you:
-- search_meetings(query): RAG search over meeting notes
-- list_directory(path): list a folder (absolute path)
-- read_text_file(path): read a specific note
-- search_files(path, pattern): find files by pattern (e.g., "*.md")
-- directory_tree(path): tree view of a folder
-
-IMPORTANT — paths:
-- Always use ABSOLUTE paths starting with {{vault_path}}
-- The vault is at: {{vault_path}}
-- Subfolders: meetings/, projects/, people/, daily/, inbox/
-
-Rules:
-1. To find a meeting by content/topic → search_meetings
-2. To explore the vault structure → list_directory or directory_tree
-3. To read a specific note → read_text_file
-4. To search by filename → search_files
-5. Cite paths or filenames in your response
-6. Final output is in {{user_language}}
-"""
 
 
 # Cached agents per language (avoid rebuilding on every call)
@@ -150,10 +124,8 @@ async def _get_agent(user_language: str):
     if user_language not in _agents:
         mcp_tools = await get_tools_by_names(NOTES_TOOLS)
         all_tools = [search_meetings] + mcp_tools
-        system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
-            user_language=user_language,
-            vault_path=str(VAULT_PATH),
-        )
+        system_prompt = _get_system_prompt(user_language)
+        system_prompt = system_prompt.replace("{vault_path}", str(VAULT_PATH))
         _agents[user_language] = create_agent(
             model=llm,
             tools=all_tools,
