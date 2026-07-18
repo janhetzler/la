@@ -14,9 +14,9 @@ The PROMPT you generate must be in {{user_language}}, the user's language.
 The wrapper text in your response (intro, instructions) must also be in {{user_language}}.
 ═══════════════════════════════════════════════
 
-{USER_PROFILE}
+{{ user_profile }}
 
-{PROJECT_CONTEXT}
+{{ project_context }}
 
 Your job:
 1. Analyze the user's request
