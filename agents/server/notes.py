@@ -134,7 +134,7 @@ async def _get_agent(user_language: str):
     return _agents[user_language]
 
 
-async def invoke_notes(user_message: str, user_language: str = "French") -> str:
+async def invoke_notes(user_message: str, user_language: str = "English") -> str:
     """Asynchroner Einstiegspunkt fuer den Notes-Agenten."""
     agent = await _get_agent(user_language)
     result = await agent.ainvoke({
@@ -143,7 +143,7 @@ async def invoke_notes(user_message: str, user_language: str = "French") -> str:
     return result["messages"][-1].content
 
 
-def invoke_notes_sync(user_message: str, user_language: str = "French") -> str:
+def invoke_notes_sync(user_message: str, user_language: str = "English") -> str:
     """Synchroner Wrapper fuer die Kommandozeile."""
     return asyncio.run(invoke_notes(user_message, user_language))
 
