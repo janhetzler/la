@@ -23,7 +23,7 @@ from agent_loader import load_agent
 from tools import get_tools_by_names
 
 
-# ===== Allow importing from the ingestion package =====
+# ===== Import aus dem Ingestion-Paket ermoeglichen =====
 INGESTION_PATH = Path(__file__).resolve().parent.parent / "ingestion"
 sys.path.insert(0, str(INGESTION_PATH))
 from search import search as rag_search, VALID_CATEGORIES  # noqa: E402
@@ -45,7 +45,7 @@ llm = ChatOpenAI(
 )
 
 
-# ===== Custom tools: RAG search over the local library =====
+# ===== Eigene Tools: RAG-Suche ueber die lokale Bibliothek =====
 @tool
 def search_local_documents(query: str, top_k: int = 5) -> str:
     """
@@ -124,7 +124,7 @@ def search_by_category(query: str, category: str, top_k: int = 5) -> str:
     return "\n\n---\n\n".join(output)
 
 
-# ===== Curated subset of MCP tools for the Researcher =====
+# ===== Ausgewaehlte MCP-Tools fuer den Researcher =====
 RESEARCHER_TOOLS = [
     "tavily_search",
     "tavily_extract",
@@ -149,7 +149,7 @@ _agents: dict[str, object] = {}
 
 
 async def _get_agent(user_language: str):
-    """Build the agent with a curated tool subset, cached per language."""
+    """Erstellt den Agenten mit ausgewaehlten Tools, gecacht pro Sprache."""
     if user_language not in _agents:
         mcp_tools = await get_tools_by_names(RESEARCHER_TOOLS)
         all_tools = mcp_tools + [search_local_documents, search_by_category]
@@ -164,7 +164,7 @@ async def _get_agent(user_language: str):
 
 
 async def invoke_researcher_v2(user_message: str, user_language: str = "French") -> str:
-    """Async entry point for the Researcher agent."""
+    """Asynchroner Einstiegspunkt fuer den Researcher-Agenten."""
     agent = await _get_agent(user_language)
     result = await agent.ainvoke({
         "messages": [HumanMessage(content=user_message)],
@@ -173,7 +173,7 @@ async def invoke_researcher_v2(user_message: str, user_language: str = "French")
 
 
 def invoke_researcher_v2_sync(user_message: str, user_language: str = "French") -> str:
-    """Synchronous wrapper for CLI use."""
+    """Synchroner Wrapper fuer die Kommandozeile."""
     return asyncio.run(invoke_researcher_v2(user_message, user_language))
 
 
