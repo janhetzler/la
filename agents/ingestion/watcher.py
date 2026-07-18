@@ -15,7 +15,7 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-# Make the script self-sufficient regardless of how it's invoked
+# Skript unabhaengig vom Aufrufpfad machen
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 sys.path.insert(0, str(SCRIPT_DIR))
@@ -27,7 +27,7 @@ LIBRARY = PROJECT_ROOT / "data" / "library"
 INDEXED = LIBRARY / "_indexed"
 ERRORS = LIBRARY / "_errors"
 
-# Subfolders that map to a Qdrant category
+# Unterordner die einer ChromaDB-Kategorie entsprechen
 CATEGORY_FOLDERS = ["idn", "research", "personal", "admin", "inbox"]
 
 # Folders to skip
@@ -43,7 +43,7 @@ def log(msg: str):
 
 
 def is_file_stable(filepath: Path) -> bool:
-    """Check that a file is no longer being written."""
+    """Prueft ob eine Datei nicht mehr beschrieben wird."""
     try:
         size1 = filepath.stat().st_size
         if size1 == 0:
@@ -56,7 +56,7 @@ def is_file_stable(filepath: Path) -> bool:
 
 
 def ensure_dirs():
-    """Create the library structure if it doesn't exist yet."""
+    """Erstellt die Bibliotheksstruktur falls sie noch nicht existiert."""
     for folder in CATEGORY_FOLDERS:
         (LIBRARY / folder).mkdir(parents=True, exist_ok=True)
     INDEXED.mkdir(parents=True, exist_ok=True)
@@ -80,7 +80,7 @@ def safe_move(src: Path, dst_dir: Path, category: str) -> Path:
 
 
 def process_file(filepath: Path, category: str) -> bool:
-    """Index a single file, then move it. Returns True on success."""
+    """Indiziert eine Datei und verschiebt sie. Gibt True bei Erfolg zurueck."""
     log(f"→ indexing {filepath.name} (category: {category})")
     try:
         chunks = ingest_document(filepath, category=category)
