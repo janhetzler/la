@@ -23,12 +23,12 @@ from agent_loader import load_agent
 from tools import get_tools_by_names
 
 
-# Project paths (used to inject absolute paths into the system prompt)
+# Projektpfade (werden als absolute Pfade in den System-Prompt injiziert)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 VAULT_PATH = PROJECT_ROOT / "vault"
 
 
-# Granite tiny-h, deterministic for tool calls
+# Granite tiny-h, deterministisch fuer Tool-Calls
 llm = ChatOpenAI(
     base_url=f"{config.LITELLM_URL}/v1",
     api_key=config.LITELLM_KEY,
@@ -39,7 +39,7 @@ llm = ChatOpenAI(
 
 # ===== Custom tool: RAG search filtered to meeting notes =====
 def _embed_query(text: str) -> list[float]:
-    """Embed via the LiteLLM proxy."""
+    """Embedding ueber den LiteLLM-Proxy."""
     with httpx.Client(timeout=60) as client:
         r = client.post(
             f"{config.LITELLM_URL}/v1/embeddings",
@@ -120,7 +120,7 @@ _agents: dict[str, object] = {}
 
 
 async def _get_agent(user_language: str):
-    """Build the Notes agent with its filtered tools, cached per language."""
+    """Erstellt den Notes-Agenten mit gefilterten Tools, gecacht pro Sprache."""
     if user_language not in _agents:
         mcp_tools = await get_tools_by_names(NOTES_TOOLS)
         all_tools = [search_meetings] + mcp_tools
@@ -135,7 +135,7 @@ async def _get_agent(user_language: str):
 
 
 async def invoke_notes(user_message: str, user_language: str = "French") -> str:
-    """Async entry point for the Notes agent."""
+    """Asynchroner Einstiegspunkt fuer den Notes-Agenten."""
     agent = await _get_agent(user_language)
     result = await agent.ainvoke({
         "messages": [HumanMessage(content=user_message)],
@@ -144,7 +144,7 @@ async def invoke_notes(user_message: str, user_language: str = "French") -> str:
 
 
 def invoke_notes_sync(user_message: str, user_language: str = "French") -> str:
-    """Synchronous wrapper for CLI use."""
+    """Synchroner Wrapper fuer die Kommandozeile."""
     return asyncio.run(invoke_notes(user_message, user_language))
 
 
