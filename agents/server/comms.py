@@ -14,7 +14,7 @@ from agent_loader import load_agent, build_llm
 
 
 async def invoke_comms(user_message: str, user_language: str = "en") -> str:
-    """Generate a written response in the user's language."""
+    """Erstellt eine schriftliche Antwort in der Sprache des Benutzers."""
     meta, system_prompt = load_agent("comms")
 
     # Sprache injizieren
@@ -30,7 +30,7 @@ async def invoke_comms(user_message: str, user_language: str = "en") -> str:
 
 
 def invoke_comms_sync(user_message: str, user_language: str = "en") -> str:
-    """Synchronous wrapper for CLI use."""
+    """Synchroner Wrapper fuer die Kommandozeile."""
     return asyncio.run(invoke_comms(user_message, user_language))
 
 
