@@ -371,3 +371,30 @@ RAM-Verbrauch und CPU-Last werden nicht erfasst.
 - ik_llama.cpp: https://github.com/ikawrakow/ik_llama.cpp (Spiegel: Codeberg ikawrakow/illama)
 - Arize Phoenix: https://github.com/Arize-ai/phoenix
 - VS Code 1.127 Release Notes: https://code.visualstudio.com/updates/v1_127
+
+
+---
+
+## Evaluierung: Bifrost als LiteLLM-Ersatz (2026-07-19)
+
+**Status:** Teilweise evaluiert, Plugin-Problem offen
+
+**Was funktioniert:**
+- Bifrost v1.6.4 als Gateway vor llama-server
+- Custom OpenAI-kompatibler Provider via API registrieren
+- Routing zu lokalem llama-server
+
+**Was nicht funktioniert:**
+- Custom Go Plugins (statische NPX-Binary)
+- Bifrost OSS kompilieren (fehlende Enterprise-Pakete)
+
+**Alternativen fuer llmtrim-Integration:**
+1. Python FastAPI-Wrapper: empfaengt Request, piped durch llmtrim compress, leitet weiter
+2. llmtrim als MCP-Server:  -- Tools: llmtrim_compress, llmtrim_compress_text
+3. llmtrim Upstream-Proxy: LLMTRIM_UPSTREAM_PROXY vor Bifrost schalten
+
+**Naechste Schritte:**
+- [ ] Python FastAPI-Wrapper als HTTP-Proxy implementieren (einfachste Loesung)
+- [ ] llmtrim MCP-Server evaluieren
+- [ ] Bifrost Enterprise kontaktieren wegen dynamischer Binary
+
