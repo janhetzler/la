@@ -237,3 +237,23 @@ Offen fuer Host-Test. Auf 350m: Zero-Shot bleibt die stabile Loesung.
 
 **Bifrost v1.6.4 Binary:** go1.26.4
 
+
+---
+
+## BUG-011: Bifrost Docker Binary ebenfalls statisch gelinkt -- Plugin-System nur zur Compile-Zeit
+
+**Status:** Bestaetigt via Sandbox-Test (2026-07-19)
+**Getestete Binary:** https://github.com/janhetzler/la/releases/download/granite-models/bifrost-http-0
+
+**Analyse:**
+-  →  -- statisch gelinkt
+- / Symbole: nicht vorhanden
+- Plugin-Code (, , ) ist vorhanden aber zur Compile-Zeit gebunden
+- Go-Version: go1.26.4
+- Keine CLI-Flags fuer Plugin-Pfade
+
+**Fazit:** Bifrost Plugin-System ist statisch eingebaut. Externe Go Plugins (.so Dateien)
+koennen zur Runtime nicht geladen werden -- weder via NPX-Binary noch via Docker-Binary.
+Custom Plugins sind nur moeglich wenn Bifrost mit CGO_ENABLED=1 dynamisch kompiliert wird.
+
+**Naechster Schritt:** Python FastAPI-Wrapper als HTTP-Proxy mit llmtrim-Kompression.
