@@ -193,3 +193,47 @@ Reverted auf Zero-Shot Prompt. Commit: `02012de`
 ### Status
 
 Offen fuer Host-Test. Auf 350m: Zero-Shot bleibt die stabile Loesung.
+
+---
+
+## BUG-008: Bifrost NPX-Binary ist statisch gelinkt -- kein Custom Plugin Support
+
+**Status:** Bestaetigt
+**Datum:** 2026-07-19
+
+**Problem:** Die Bifrost Binary die via NPX () heruntergeladen wird ist statisch gelinkt. Go's Plugin-System benoetigt eine dynamisch gelinkte Binary. Custom Plugins (.so Dateien) werden nicht geladen -- kein Fehler, kein Log-Eintrag, einfach ignoriert.
+
+**Symptom:** Plugin steht in config_plugins SQLite-Tabelle mit enabled=1, aber kein "plugin status: llmtrim - active" im Log.
+
+**Direkter Binary-Start:** Crasht mit Segfault bei plugin._Cfunc_pluginOpen -- bestaetigt dass Binary versucht Plugin zu laden aber scheitert.
+
+**Workaround:** Keiner bekannt ohne eigene Bifrost-Kompilierung.
+
+**Verwandt:** Bifrost OSS kann nicht kompiliert werden wegen fehlendem framework/webhooks Paket (Enterprise-only).
+
+---
+
+## BUG-009: Bifrost OSS nicht kompilierbar -- framework/webhooks fehlt
+
+**Status:** Bestaetigt
+**Datum:** 2026-07-19
+
+**Problem:**  ist im OSS-Repository nicht vorhanden. Das Paket wird von  und  importiert. Kompilierung schlaegt fehl mit: 
+
+**Getestete Versionen:** transports/v1.6.4 (aktuell), transports/v1.5.4 hatte noch keine Webhook-Abhaengigkeit -- aber v1.5.4 NPX-Binary laeuft nicht unter Node 20.
+
+**Workaround:** Keiner ohne Enterprise-Lizenz oder vollstaendigen Fork.
+
+---
+
+## BUG-010: Go-Version-Mismatch bei Bifrost Plugins
+
+**Status:** Bestaetigt, Workaround bekannt
+**Datum:** 2026-07-19
+
+**Problem:** Go Plugin-System erfordert exakt gleiche Go-Version zwischen Binary und Plugin. Mismatch fuehrt zu Crash.
+
+**Loesung:** Go-Version der Binary via  ermitteln, dann Plugin mit exakt dieser Version kompilieren.
+
+**Bifrost v1.6.4 Binary:** go1.26.4
+
