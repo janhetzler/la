@@ -17,6 +17,61 @@ Sandbox 2 ist Spielwiese -- dort wird ausprobiert ohne Ruecksicht auf Stabilitae
 ---
 
 
+## 2026-07-20 Nachtrag 2 -- Docker ChromaDB RAG Test
+
+### Was erreicht wurde
+
+**Docker Test-Run mit 1B Modell:**
+- Granite 4.0-H-1B Q4_K_M (859 MB) als Ersatz fuer 350m getestet
+- 5/6 Agenten OK -- deutlich bessere Antwortqualitaet als 350m
+- Comms Agent: vollstaendige professionelle E-Mail (786 Zeichen)
+- Researcher Agent: ausfuehrliche Antwort (3957 Zeichen)
+- scripts/docker/test_docker.py erstellt und gepusht
+
+**ChromaDB RAG vollstaendig getestet:**
+- Embedding (Granite) → ChromaDB schreiben → ChromaDB lesen → Notes-Agent → Antwort
+- Komplette Kette funktioniert mit Score 0.84
+- Phoenix Traces beweisen: Tool-Call, Embedding, ChromaDB-Abfrage alles sichtbar
+
+**4 neue Bugs entdeckt und dokumentiert:**
+- BUG-016: mcp/docker/mcp.json fehlte (behoben -- ins Repo gepusht)
+- BUG-017: ChromaDB Collection nutzt euklidische statt Kosinus-Distanz
+- BUG-018: Notes-Agent Source-Filter zu restriktiv ("meeting" Pflicht)
+- BUG-019: save_note Tool fehlt -- kein Agent kann in ChromaDB schreiben
+
+**Wichtige Erkenntnis:**
+Das Original-Projekt (xaviervasques/chief-of-staff) nutzt Qdrant, nicht ChromaDB.
+ChromaDB-Schreiben ist ein neues Feature das wir selbst implementieren muessen.
+Der Notes-Agent war nie ein Schreiber -- nur ein Vault-Reader mit RAG-Suche.
+
+**Gemini Flash Lite Integration getestet:**
+- Google-Proxy auf Host (10.0.2.2:5050) erreichbar aus Container
+- Direkte LiteLLM-Anfrage funktioniert (vollstaendige E-Mail)
+- Rate Limit: 13 RPM -- zu wenig fuer automatisierte Tests
+- LiteLLM→Proxy Debug noch ausstehend
+
+### Was funktioniert
+
+- Docker Stack vollstaendig: alle 5 Dienste erreichbar von aussen
+- Phoenix Web-UI: http://localhost:6006 -- Traces live sichtbar
+- LiteLLM Swagger UI: http://localhost:4000
+- ChromaDB RAG lesen: ✅ (mit korrektem Embedding + cosine Collection)
+- 1B Modell: deutlich bessere Qualitaet als 350m
+
+### Was nicht funktioniert
+
+- Notes-Agent schreibt nicht in ChromaDB (BUG-019 -- save_note fehlt)
+- ChromaDB Collection standardmaessig mit L2 statt cosine (BUG-017)
+- mcp/docker/mcp.json war leer (BUG-016 -- behoben)
+
+### Offene Punkte
+
+- BUG-017 bis BUG-019 in Code umsetzen
+- 1B Modell permanent ins Docker Image (Dockerfile anpassen)
+- Neues Image bauen
+- Host-Deployment steht noch aus
+
+
 ## 2026-07-20 — llama-server Binary, Tool-Calling, Trace-System
 
 ### Kontext
