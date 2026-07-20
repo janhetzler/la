@@ -233,14 +233,14 @@ moeglich. Der Swap war der zentrale Schritt des Tages.
 
 ### Offene Punkte
 
-- Host-Deployment auf janhet mit Granite-Tiny -- Routing-Problem loest sich dort
+- Host-Deployment auf host mit Granite-Tiny -- Routing-Problem loest sich dort
 - OPERATIONS_HOST.md und OPERATIONS_DOCKER.md noch zu erstellen
 - user_profile.md und project_context.md mit echten Daten befuellen
 - Notes Agent auf Host testen (ChromaDB schreiben via Tool-Calling)
 
 ### Naechster Schritt
 
-Host-Deployment auf janhet (AMD EPYC 7443P, 4 vCores, 10 GB RAM) mit
+Host-Deployment auf host (AMD EPYC 7443P, 4 vCores, 10 GB RAM) mit
 Granite-Tiny -- dort wird sich zeigen ob Routing, Tool-Calling und
 ChromaDB-Schreiben durch den kompletten Stack funktionieren.
 
@@ -282,6 +282,6 @@ Alle vier Bugs behoben, neues Image gebaut (Run #27).
 Stack laeuft vollstaendig in drei Umgebungen:
 - Sandbox 2 (Claude Sandbox) — 4/6 Agenten, Binary b9895, --jinja aktiv
 - Docker (QEMU VM) — vollstaendiger Stack, alle Dienste erreichbar
-- Host (janhet) — noch ausstehend (naechster Schritt)
+- Host (host) — noch ausstehend (naechster Schritt)
 
 ---
