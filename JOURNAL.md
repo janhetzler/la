@@ -245,3 +245,43 @@ Granite-Tiny -- dort wird sich zeigen ob Routing, Tool-Calling und
 ChromaDB-Schreiben durch den kompletten Stack funktionieren.
 
 ---
+
+### Nachtrag 2026-07-20 — Erster erfolgreicher Docker-Run
+
+**Was passiert ist:**
+
+Das Docker Image wurde heute Nachmittag neu gebaut (GitHub Actions Run #26,
+15:21 MESZ) und in einer QEMU Guest VM (Debian, Docker 29.6.2) getestet.
+
+**Erste Erkenntnisse aus dem Docker-Run:**
+
+Drei Bugs in `docker/entrypoint.sh` entdeckt und behoben:
+- BUG-012: Phoenix + LiteLLM auf `127.0.0.1` statt `0.0.0.0` — von aussen
+  nicht erreichbar trotz Port-Mapping
+- BUG-013: Embedding Server startet nicht — `--embedding` braucht `True` als Argument
+- BUG-014: llama-cpp-python statt Binary b9895 — kein `--jinja`, kein Tool-Calling
+- BUG-015: Phoenix gRPC Port 4317 Konflikt beim Neustart im Container
+
+Alle vier Bugs behoben, neues Image gebaut (Run #27).
+
+**Zweiter Docker-Run — vollstaendig erfolgreich:**
+
+- llama-server Binary b9895 mit `--jinja` laeuft im Container
+- Embedding Server laeuft (--embedding True fix)
+- Phoenix Web-Interface erreichbar unter http://localhost:6006
+- LiteLLM Swagger UI erreichbar unter http://localhost:4000
+- Agent Server Health OK, alle 6 Agenten geladen
+- Sauberer Start ohne manuelle Eingriffe
+
+**Neue Dokumentation:**
+- `docs/OPERATIONS_DOCKER.md` — Betrieb & Logging fuer Docker-Umgebung
+- `BUGS.md` — BUG-012 bis BUG-015 dokumentiert
+
+**Stand am Ende des Tages:**
+
+Stack laeuft vollstaendig in drei Umgebungen:
+- Sandbox 2 (Claude Sandbox) — 4/6 Agenten, Binary b9895, --jinja aktiv
+- Docker (QEMU VM) — vollstaendiger Stack, alle Dienste erreichbar
+- Host (janhet) — noch ausstehend (naechster Schritt)
+
+---
