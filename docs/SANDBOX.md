@@ -1,6 +1,6 @@
 # SANDBOX.md — Local Agent, Claude Sandbox
 
-**Zuletzt aktualisiert:** 2026-07-16
+**Zuletzt aktualisiert:** 2026-07-20
 **Zweck:** Vollständige Anleitung um die Sandbox-Umgebung in einer neuen
 Claude.ai Session von Grund auf neu aufzubauen.
 
@@ -100,14 +100,30 @@ cd /home/claude/la
 ## 3. Pakete installieren
 
 ```bash
-# Prebuilt Wheel — kein C++ Build, kein Compiler nötig
-pip install --break-system-packages \
-  "https://github.com/abetlen/llama-cpp-python/releases/download/v0.3.23/llama_cpp_python-0.3.23-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
-
 pip install --break-system-packages -r requirements.txt
 ```
 
 > **Hinweis:** Die Datei heißt `requirements.txt` (nicht `requirements-janhet.txt`).
+
+### 3b. llama-server Binary herunterladen
+
+```bash
+mkdir -p /tmp/llama-b9895
+curl -L https://github.com/ggml-org/llama.cpp/releases/download/b9895/llama-b9895-bin-ubuntu-x64.tar.gz \
+  -o /tmp/llama.tar.gz
+tar -xzf /tmp/llama.tar.gz -C /tmp/llama-b9895 --strip-components=1
+chmod +x /tmp/llama-b9895/llama-server
+
+# Version und --jinja Flag prüfen
+/tmp/llama-b9895/llama-server --version
+/tmp/llama-b9895/llama-server --help | grep -i jinja
+# Erwartet: --jinja erscheint in der Ausgabe
+```
+
+> **Hinweis:** Die Binary liegt dauerhaft unter `/tmp/llama-b9895/llama-server`.
+> Sie wird von `start_full.py`, `start_quick.py`, `inspect_phoenix.py` und
+> `test_mcp_toolcall.py` als Subprocess gestartet (nicht mehr als Python-Import).
+> Details zum Swap: `docs/LLAMA.md`.
 
 ---
 
@@ -283,8 +299,7 @@ funktioniert. Kein funktionaler Fehler, aber beim Log-Lesen nicht verwirren lass
 | openinference-instrumentation-langchain | 0.1.67 | Phoenix → LangChain |
 | opentelemetry-sdk | 1.43.0 | Tracing |
 | opentelemetry-exporter-otlp | 1.43.0 | Tracing Export |
-| llama-cpp-python | 0.3.23 | Inferenz Server |
-| starlette-context | 0.5.1 | Abhängigkeit von llama-cpp-python (fehlte — Absturz beim Start) |
+| starlette-context | 0.5.1 | ASGI Middleware (uvicorn Abhängigkeit) |
 | mcp-server-git | 2026.7.10 | Git MCP Tools |
 | mcp-server-fetch | 2026.7.10 | Web Fetch MCP Tool |
 | openai | >=2.26.0 (2.45.0 getestet) | API Client |
@@ -337,7 +352,7 @@ aber Port 8081 wird in der Sandbox nicht gestartet. ChromaDB nutzt
 
 | Port | Dienst |
 |------|--------|
-| 8080 | Reasoning llama-server (llama-cpp-python) |
+| 8080 | Reasoning llama-server Binary b9895 (--jinja aktiv) |
 | 8081 | Embedding llama-server — NICHT gestartet in Sandbox-Tests |
 | 8787 | Headroom Proxy — DISABLED |
 | 6006 | Phoenix |
@@ -448,7 +463,7 @@ Alle Logs liegen einheitlich unter `/tmp/logs/`:
 |---|---|---|
 | `/tmp/logs/litellm.log` | LiteLLM | ✓ funktioniert |
 | `/tmp/logs/phoenix.log` | Phoenix | ✓ funktioniert |
-| `/tmp/logs/llama-server.log` | Reasoning Server | ⚠️ bleibt leer — uvicorn-Thread-Logging greift nicht |
+| `/tmp/llama-server-test.log` | Reasoning Server | ✓ stdout/stderr Redirect via subprocess.Popen |
 | `/tmp/logs/agent-server.log` | Agent Server | ⚠️ bleibt leer — gleicher Grund |
 
 `tests/test_stack.py` prüft nach jedem Service-Start die jeweilige Log-Datei
@@ -465,19 +480,22 @@ ChromaDB nachgeschaut ob die neue Notiz tatsächlich gespeichert wurde.
 
 | Test | Ergebnis |
 |------|----------|
-| llama-server :8080 | ✓ ~25 t/s |
+| llama-server :8080 (Binary b9895, --jinja) | ✓ ~27 t/s, Startup ~2s |
 | llama-server :8081 Embedding | ✓ ~15ms/embedding (Modell vorhanden, Server nicht aktiv) |
 | LiteLLM | ✓ |
 | Phoenix Traces | ✓ |
 | Agent Server | ✓ 6/6 Agenten registriert |
 | ChromaDB mit echten Embeddings | ✓ 384-dim |
 | MCP git_log | ✓ |
-| Tool-Calling | ✓ mit nativem Granite Format |
+| Tool-Calling | ✓ finish_reason: tool_calls (bewiesen mit --jinja, 2026-07-20) |
 | tool_formatter.py | ✓ 18/18 Tests |
 | Supervisor Routing | ⚠️ 350m-Modell zu klein für zuverlässiges Routing |
 
 **Routing-Hinweis:** Das 350m-Modell routet nicht zuverlässig — englische
 Prompts in Tests verwenden. Das ist eine Modellgrößen-Limitation, kein Bug.
+
+**Stand 2026-07-20:** Stack läuft mit llama-server Binary b9895 (nicht mehr
+llama-cpp-python). Tool-Calling via `--jinja` bewiesen. Startup ~2s (vorher ~20s).
 
 ---
 
@@ -499,9 +517,9 @@ Prompts in Tests verwenden. Das ist eine Modellgrößen-Limitation, kein Bug.
 
 - **`chat.py` Begrüßungstext** noch nicht auf "Local Agent" umbenannt (kosmetisch).
 
-- **llama-server / Agent Server Logs** bleiben leer — uvicorn-Thread-Logging
-  funktioniert in der aktuellen Konfiguration nicht (kein echtes Problem,
-  aber keine Logs für Debugging).
+- **llama-server Logs** funktionieren jetzt via `/tmp/llama-server-test.log`
+  (subprocess.Popen Redirect). Agent Server Logs bleiben leer — uvicorn-Thread-
+  Logging funktioniert weiterhin nicht.
 
 - **Phoenix Log-Check False Positive** — `test_stack.py` sucht nach dem
   String `"ERROR"` in Logs. Phoenix schreibt beim Start SQL-`CREATE TABLE`-
