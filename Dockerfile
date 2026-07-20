@@ -65,6 +65,15 @@ RUN mkdir -p /app/models && \
       "https://github.com/janhetzler/la/releases/download/granite-models/granite-embedding-30m-english-Q4_0.gguf" && \
     ls -lh /app/models/
 
+# llama-server Binary b9895 (fuer --jinja Tool-Calling)
+RUN mkdir -p /app/bin && \
+    curl -L https://github.com/ggml-org/llama.cpp/releases/download/b9895/llama-b9895-bin-ubuntu-x64.tar.gz \
+      -o /tmp/llama.tar.gz && \
+    tar -xzf /tmp/llama.tar.gz -C /app/bin --strip-components=1 && \
+    chmod +x /app/bin/llama-server && \
+    rm /tmp/llama.tar.gz && \
+    ls -lh /app/bin/llama-server
+
 # ChromaDB Datenverzeichnis
 RUN mkdir -p /app/data/chroma
 
