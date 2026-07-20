@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "fetch": {
+      "command": "python3",
+      "args": ["-m", "mcp_server_fetch"],
+      "transport": "stdio",
+      "description": "Web Content Fetching"
+    }
+  }
+}
