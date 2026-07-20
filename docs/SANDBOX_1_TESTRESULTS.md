@@ -65,7 +65,7 @@ Start: 2026-07-18T15:08:12 — Ende: 2026-07-18T15:09:59 (~1:47 min)
 ### 1. Routing-Limit 350m
 Das 350m Modell routet fast alles zu `meta` — nur `researcher` wird
 korrekt erkannt. Ursache: 350m zu klein für Intent-Klassifikation.
-Auf janhet mit Granite-Tiny-4B wird Routing korrekt funktionieren.
+Auf host mit Granite-Tiny-4B wird Routing korrekt funktionieren.
 
 ### 2. Notes Agent FAIL
 Notes Agent routet zu `meta` statt `notes` — ChromaDB collection bleibt
