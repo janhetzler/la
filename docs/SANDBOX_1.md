@@ -1,4 +1,4 @@
-# Status-Bericht — Chief-of-Staff Sandbox
+# Status-Bericht — Local Agent Sandbox
 **Erstellt:** 2026-07-16  
 **Basis:** Direkter Code-Check, keine Vermutungen
 
@@ -6,9 +6,9 @@
 
 ## 1. Alte Namen — wo noch verwendet
 
-### "janhet"
+### "host"
 Vorkommt legitim in Dokumentation und Kommentaren — das ist korrekt und beabsichtigt:
-- `deploy-janhet.sh` Z.2-3: Deploy-Script Header
+- `deploy-host.sh` Z.2-3: Deploy-Script Header
 - `agents/server/telemetry.py` Z.2: Modul-Docstring
 - `agents/server/tool_formatter.py` Z.2: Modul-Docstring
 - `agents/server/supervisor.py` Z.82: SYSTEM_FACTS Prompt ("running on janhet")
@@ -16,52 +16,52 @@ Vorkommt legitim in Dokumentation und Kommentaren — das ist korrekt und beabsi
 - `agents/notes/recorder.py` Z.2,7: Disabled-Kommentar
 - `agents/ingestion/search.py` Z.2: Modul-Header
 - `agents/ingestion/ingest.py` Z.2: Modul-Header
-- `requirements-janhet.txt` Z.1,4,43: Datei-Header
+- `requirements-host.txt` Z.1,4,43: Datei-Header
 - `README.md` Z.1,22,59,69,107,115,116,124,140: Dokumentation
 - `HANDOFF.md` Z.9,13,45,153,156,216,222,257,273,287: Dokumentation
 - `tests/test_stack.py` Z.2,71,83: Test-Header und Prompts
 - `tests/run_tests.py` Z.2: Modul-Header
 - `docker/entrypoint.sh` Z.43: Config-Pfad
-- `docker/litellm_config_janhet.yaml` Z.1: Header
+- `docker/litellm_config_host.yaml` Z.1: Header
 - `scripts/start_headroom.sh` Z.5,9: Kommentare
 - `scripts/start_litellm.sh` Z.6,16: Config-Pfad
 - `docs/INSTALL_JANHET.md`: Gesamte Datei
 
-**Bewertung:** Alle Vorkommen sind korrekt — "janhet" ist der Name des Produktions-Servers.
+**Bewertung:** Alle Vorkommen sind korrekt — "host" ist der Name des Produktions-Servers.
 
-### "chief-of-staff" / "Chief of Staff"
-- `agents/server/server.py` Z.54: `"agent-chief-of-staff": invoke_supervisor` — **aktiver Code**
-- `agents/server/server.py` Z.69: `"owned_by": "chief-of-staff"` — **aktiver Code**
+### "local-agent" / "Local Agent"
+- `agents/server/server.py` Z.54: `"agent-local": invoke_supervisor` — **aktiver Code**
+- `agents/server/server.py` Z.69: `"owned_by": "local-agent"` — **aktiver Code**
 - `agents/server/server.py` Z.25: FastAPI title
-- `agents/server/telemetry.py` Z.22: Phoenix `project_name="chief-of-staff"` — **aktiver Code**
+- `agents/server/telemetry.py` Z.22: Phoenix `project_name="local-agent"` — **aktiver Code**
 - `agents/server/supervisor.py` Z.82: SYSTEM_FACTS Prompt
 - `agents/server/user_profile.py` Z.40: Beschreibung
 - `agents/server/project_context.py` Z.4: Beschreibung
 - `docker/litellm_config.yaml` Z.1,66,68,72,136: **ORIGINAL-Datei** (nicht aktiv)
-- `scripts/chat.py` Z.26: `model="agent-chief-of-staff"` — **aktiver Code, aber Diskrepanz!**
-- `tests/test_stack.py` Z.31: `model="agent-chief-of-staff"` — **aktiver Code**
+- `scripts/chat.py` Z.26: `model="agent-local"` — **aktiver Code, aber Diskrepanz!**
+- `tests/test_stack.py` Z.31: `model="agent-local"` — **aktiver Code**
 
 ### IP-Adressen und Hostnamen
-- `HANDOFF.md` Z.13: `185.129.86.169 / janhet.de` — nur Dokumentation, korrekt
+- `HANDOFF.md` Z.13: `185.129.86.169 / host` — nur Dokumentation, korrekt
 
 ### Modellnamen — Diskrepanz
-**Aktuelle LiteLLM Config** (`litellm_config_janhet.yaml`) kennt:
+**Aktuelle LiteLLM Config** (`litellm_config_host.yaml`) kennt:
 - `granite-tiny` (Port 8080)
 - `granite-embed` (Port 8081)
 
 **Noch alte Modellnamen in:**
-- `scripts/chat.py` Z.26: nutzt `model="agent-chief-of-staff"` → **nicht in LiteLLM Config**
-- `tests/test_stack.py` Z.31: nutzt `model="agent-chief-of-staff"` → **geht an Port 8002 (Agent Server), nicht LiteLLM — korrekt**
-- `docker/litellm_config.yaml` (Original): enthält `agent-chief-of-staff`, `agent-researcher` etc. → **nicht aktiv**
+- `scripts/chat.py` Z.26: nutzt `model="agent-local"` → **nicht in LiteLLM Config**
+- `tests/test_stack.py` Z.31: nutzt `model="agent-local"` → **geht an Port 8002 (Agent Server), nicht LiteLLM — korrekt**
+- `docker/litellm_config.yaml` (Original): enthält `agent-local`, `agent-researcher` etc. → **nicht aktiv**
 
-**Wichtig:** `chat.py` schickt `agent-chief-of-staff` an Port 4000 (LiteLLM) — dieser Modellname existiert nicht in `litellm_config_janhet.yaml`. Das ist ein **echter Bug** in `chat.py`.  
-`test_stack.py` schickt `agent-chief-of-staff` an Port 8002 (Agent Server) — dort ist der Name in `server.py` Z.54 registriert — **korrekt**.
+**Wichtig:** `chat.py` schickt `agent-local` an Port 4000 (LiteLLM) — dieser Modellname existiert nicht in `litellm_config_host.yaml`. Das ist ein **echter Bug** in `chat.py`.  
+`test_stack.py` schickt `agent-local` an Port 8002 (Agent Server) — dort ist der Name in `server.py` Z.54 registriert — **korrekt**.
 
 ---
 
 ## 2. Neue Namen — aktueller Stand
 
-### litellm_config_janhet.yaml — vollständiger Inhalt
+### litellm_config_host.yaml — vollständiger Inhalt
 ```yaml
 model_list:
   - model_name: granite-tiny        # Port 8080, Reasoning
@@ -85,7 +85,7 @@ litellm_settings:
 **Diskrepanz:** Guardrails-Block referenziert Headroom auf Port 8787 — headroom-ai ist deinstalliert. Dieser Block wird beim Start Fehler/Warnungen erzeugen.
 
 ### chat.py Bug
-`chat.py` Z.26: `model="agent-chief-of-staff"` → LiteLLM kennt diesen Namen nicht.  
+`chat.py` Z.26: `model="agent-local"` → LiteLLM kennt diesen Namen nicht.  
 Fix nötig: entweder `model="granite-tiny"` (direkt LLM) oder Port auf 8002 ändern (Agent Server).
 
 ---
@@ -114,13 +114,13 @@ Fix nötig: entweder `model="granite-tiny"` (direkt LLM) oder Port auf 8002 änd
 - `agents/server/telemetry.py` — Phoenix + LangChain Instrumentierung
 - `agents/server/tool_formatter.py` — Generischer Tool Formatter (18/18 Tests)
 - `agents/server/tools.py` — get_tools_system_prompt()
-- `docker/litellm_config_janhet.yaml` — LiteLLM Config
+- `docker/litellm_config_host.yaml` — LiteLLM Config
 - `docker/entrypoint.sh` — Docker Start-Script
 - `Dockerfile` — Docker Image Definition
 - `.github/workflows/docker.yml` — GitHub Actions
 - `.dockerignore`
-- `requirements-janhet.txt` — ohne torch/qdrant/ollama
-- `deploy-janhet.sh` — Deploy Script
+- `requirements-host.txt` — ohne torch/qdrant/ollama
+- `deploy-host.sh` — Deploy Script
 - `deploy/systemd/*.service` — 4 systemd Units
 - `scripts/chat.py` — Terminal Chat Client
 - `scripts/start_litellm.sh`, `start_phoenix.sh`, `start_headroom.sh`
@@ -145,7 +145,7 @@ Fix nötig: entweder `model="granite-tiny"` (direkt LLM) oder Port auf 8002 änd
 | `agents/ingestion/search.py` | ChromaDB, Filter-Fix |
 | `agents/notes/recorder.py` | Disabled (print + exit) |
 | `agents/server/meeting.py` | Disabled |
-| `README.md` | Komplett neu für janhet |
+| `README.md` | Komplett neu für host |
 | `requirements.txt` | Fork-Header hinzugefügt |
 
 ### Entfernte Original-Dateien
@@ -189,8 +189,8 @@ Fix nötig: entweder `model="granite-tiny"` (direkt LLM) oder Port auf 8002 änd
 | Supervisor Routing | ⚠️ | 350m zu klein, englische Prompts nötig |
 
 ### Bekannte Probleme
-1. **Routing 350m** — nutzt `first_token` Parsing, 350m antwortet mit Sätzen statt Agent-Namen. Auf janhet mit 4B korrekt.
-2. **chat.py Bug** — `model="agent-chief-of-staff"` an Port 4000 — Modellname nicht in LiteLLM Config.
+1. **Routing 350m** — nutzt `first_token` Parsing, 350m antwortet mit Sätzen statt Agent-Namen. Auf host mit 4B korrekt.
+2. **chat.py Bug** — `model="agent-local"` an Port 4000 — Modellname nicht in LiteLLM Config.
 3. **Headroom Guardrail in Config** — Config referenziert Port 8787 obwohl headroom-ai deinstalliert.
 4. **run_tests.py** — hat Readiness-Check Änderung die noch nicht vollständig getestet wurde.
 
@@ -215,19 +215,19 @@ Fix nötig: entweder `model="granite-tiny"` (direkt LLM) oder Port auf 8002 änd
   }
 }
 ```
-**Problem:** Pfad `/home/claude/la` ist Sandbox-spezifisch. Auf janhet muss es `/home/user/chief/la` sein.
+**Problem:** Pfad `/home/claude/la` ist Sandbox-spezifisch. Auf host muss es `/home/user/la` sein.
 
 ### deploy/systemd/ — Status
 
 | Service | Gedacht für | Disabled? |
 |---------|------------|---------|
-| `litellm.service` | janhet | Nein — aktiv |
-| `phoenix.service` | janhet | Nein — aktiv |
-| `chief-agent.service` | janhet | Nein — aktiv |
-| `headroom.service` | janhet | **Ja — headroom-ai deinstalliert** |
+| `litellm.service` | host | Nein — aktiv |
+| `phoenix.service` | host | Nein — aktiv |
+| `chief-agent.service` | host | Nein — aktiv |
+| `headroom.service` | host | **Ja — headroom-ai deinstalliert** |
 
-### requirements-janhet.txt vs requirements.txt
-| | requirements.txt | requirements-janhet.txt |
+### requirements-host.txt vs requirements.txt
+| | requirements.txt | requirements-host.txt |
 |--|-----------------|------------------------|
 | **Zweck** | Original Mac/Docker | janhet/Sandbox |
 | **Maßgeblich** | Nein | **Ja** |
@@ -255,11 +255,11 @@ Fix nötig: entweder `model="granite-tiny"` (direkt LLM) oder Port auf 8002 änd
 - llama-cpp-python 0.3.23 (Prebuilt Wheel, kein C++ Build)
 - Granite 350m Q4_K_M (213 MB) — direkt im Image
 - Granite Embedding 30m Q4_0 (28 MB) — direkt im Image
-- Alle Pakete aus requirements-janhet.txt
+- Alle Pakete aus requirements-host.txt
 - Rust + build-essential (für chromadb Kompilierung)
 
 ### Bekannte Probleme im Dockerfile
 1. **Rust bleibt im Image** — wird nur für chromadb gebraucht, macht Image ~500 MB größer als nötig. Fix: Multi-Stage Build
-2. **Headroom Guardrail in litellm_config_janhet.yaml** — wird beim Start Warnungen erzeugen
-3. **chat.py Bug** — `model="agent-chief-of-staff"` funktioniert nicht direkt gegen LiteLLM
+2. **Headroom Guardrail in litellm_config_host.yaml** — wird beim Start Warnungen erzeugen
+3. **chat.py Bug** — `model="agent-local"` funktioniert nicht direkt gegen LiteLLM
 4. **mcp.json Pfad** — `/home/claude/la` ist falsch im Container, sollte `/app` sein
