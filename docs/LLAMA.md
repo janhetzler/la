@@ -24,7 +24,7 @@ Die Wahl zwischen Python-Wrapper und Binary bestimmt, ob natives Tool-Calling mi
 **Läuft in:**
 - Sandbox: ✅ llama-cpp-python (aktuell)
 - Docker: ❌ (nicht in Docker-Setup konfiguriert)
-- Host (janhet): ✅ llama-server Binary (geplant, nicht getestet)
+- Host (host): ✅ llama-server Binary (geplant, nicht getestet)
 - Sandbox 2: ✅ llama-server Binary b9895 (getestet, aktiv seit 2026-07-20)
 
 ---
@@ -101,7 +101,7 @@ Die Wahl zwischen Python-Wrapper und Binary bestimmt, ob natives Tool-Calling mi
 |----------|--------------|-----------|-------|
 | `LLAMA_MODEL_PATH` | `/tmp/granite-350m-Q4_K_M.gguf` | `/data/models/granite-350m-Q4_K_M.gguf` | Pfad zum GGUF-Modell |
 | `LLAMA_CONTEXT_SIZE` | `32768` | `32768` | Max. Context Window |
-| `LLAMA_N_THREADS` | `1` | `4` (or more on janhet) | CPU Parallelisierung |
+| `LLAMA_N_THREADS` | `1` | `4` (or more on host) | CPU Parallelisierung |
 | `LLAMA_JINJA_ENABLED` | `false` (aktuell) | `true` (Ziel) | `--jinja` Flag aktiv? |
 
 ### 4.3 Dependencies in requirements.txt
