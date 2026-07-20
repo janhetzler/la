@@ -113,3 +113,85 @@ Vorherige Annahme ("350m kann kein Tool-Calling") war falsch — war ein Konfigu
 2. Tool-Calling mit Granite-4.0-H-Tiny (4B) testen
 3. MCP-Tools (`git_log`, `fetch`) via `bind_tools()` + `--jinja` aktivieren
 4. Notes-Agent mit echtem Routing testen
+
+---
+
+## Router Trace — 2026-07-20
+
+**Test:** Supervisor-Routing mit Binary b9895 + Grammar Constraint Vergleich
+
+### Stack
+
+```
+llama-server b9895 :8080 (--jinja)
+LiteLLM :4000 (master_key: sk-cos-local-dev, kein DB)
+Agent Server :8002
+```
+
+### Vollständiger Router System-Prompt (1613 Zeichen, 402 Prompt-Token)
+
+```
+You are a router. Pick ONE agent to handle the user's request.
+
+Available agents:
+- meta: meta questions about the system itself (who are you, what can you do, introduce yourself, help, how does it work, capabilities)
+- researcher: information lookup (indexed papers, web, general filesystem). Technical or factual questions, documentation.
+- comms: pure writing (email, message, announcement, short note). No retrieval.
+- notes: save or search personal notes in ChromaDB. Questions about "my notes".
+- code: programming questions, algorithms, debugging, GitHub issue management.
+- handoff: builds an enriched prompt for Claude.ai/ChatGPT. Use for HEAVY tasks beyond local capabilities: long-form writing (>1000 words), deep analyses, complex reasoning, large document analysis, scientific articles.
+
+Reply with ONLY the agent name, in one word, no quotes, no explanation.
+
+Examples:
+- "Hi, what can you do?" -> meta
+- "Who are you?" -> meta
+- "How does it work?" -> meta
+- "What's the difference between RNN and Transformer?" -> researcher
+- "Search news about Granite 4" -> researcher
+- "Tell me about LangGraph" -> researcher
+- "Save this note: meeting tomorrow at 10am" -> notes
+- "Search my personal notes about project alpha" -> notes
+- "How do I implement an LRU cache in Python?" -> code
+- "Create an issue on GitHub for this bug" -> code
+- "Write a message to my team announcing the project" -> comms
+- "Draft a short email about the project status" -> comms
+- "Write a 5000-word scientific article on transformers" -> handoff
+- "Prepare a prompt for Claude.ai on this topic" -> handoff
+```
+
+### Test-Requests und Routing-Ergebnisse
+
+| Request | Erwartet | Ohne Grammar | Mit Grammar | Korrekt? |
+|---------|----------|--------------|-------------|----------|
+| "I would like to write an email to my boss" | comms | `code` | `code` | ✗ |
+| "ich möchte eine Mail schreiben" | comms | `meta` | — | ✗ |
+
+### Grammar Constraint — Vergleich 2026-07-17 vs. 2026-07-20
+
+| | 2026-07-17 (llama-cpp-python) | 2026-07-20 (Binary b9895) |
+|--|--|--|
+| `extra_body={"grammar": ...}` via LiteLLM | `No connected db.` — Stack-Crash | ✓ Kein Fehler mehr |
+| Routing-Ergebnis mit Grammar | — (Crash) | `code` (falsch, aber stabil) |
+| Grammar-Effekt auf Ergebnis | — | Keiner — identisch ohne Grammar |
+
+**Neue Erkenntnis:** Grammar Constraint via `extra_body` funktioniert jetzt ohne Fehler
+(Key-Alignment-Fix von 2026-07-18 hat das LiteLLM-Auth-Problem behoben).
+Grammar zwingt das Modell auf gueltige Token-Auswahl, aendert aber nicht
+die falsche Klassifikation — das Modell waehlt weiterhin `code` statt `comms`.
+
+### Diagnose
+
+**Ursache des Routing-Fehlers:** Modellkapazitaet, nicht Prompt-Qualitaet.
+
+Der Router-Prompt ist korrekt und vollstaendig — er enthaelt explizite
+`comms`-Beispiele fuer E-Mail-Anfragen. Das 350m-Modell ignoriert die
+Beispiele und assoziiert `"write"` + `"email"` + `"boss"` mit Code-Kontext
+(wahrscheinlich Trainings-Artefakt).
+
+**Grammar Constraint loest das Problem nicht** — er beschraenkt nur die
+Ausgabe auf gueltige Agent-Namen, beeinflusst aber nicht welchen Namen
+das Modell waehlt.
+
+**Loesung:** Granite-4.0-H-Tiny (4B) auf dem Host — dort funktioniert
+Zero-Shot-Routing korrekt (durch groessere Modellkapazitaet).
