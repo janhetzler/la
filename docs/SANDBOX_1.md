@@ -11,7 +11,7 @@ Vorkommt legitim in Dokumentation und Kommentaren — das ist korrekt und beabsi
 - `deploy-host.sh` Z.2-3: Deploy-Script Header
 - `agents/server/telemetry.py` Z.2: Modul-Docstring
 - `agents/server/tool_formatter.py` Z.2: Modul-Docstring
-- `agents/server/supervisor.py` Z.82: SYSTEM_FACTS Prompt ("running on janhet")
+- `agents/server/supervisor.py` Z.82: SYSTEM_FACTS Prompt ("running on host")
 - `agents/server/supervisor.py` Z.299: Kommentar
 - `agents/notes/recorder.py` Z.2,7: Disabled-Kommentar
 - `agents/ingestion/search.py` Z.2: Modul-Header
@@ -223,13 +223,13 @@ Fix nötig: entweder `model="granite-tiny"` (direkt LLM) oder Port auf 8002 änd
 |---------|------------|---------|
 | `litellm.service` | host | Nein — aktiv |
 | `phoenix.service` | host | Nein — aktiv |
-| `chief-agent.service` | host | Nein — aktiv |
+| `local-agent.service` | host | Nein — aktiv |
 | `headroom.service` | host | **Ja — headroom-ai deinstalliert** |
 
 ### requirements-host.txt vs requirements.txt
 | | requirements.txt | requirements-host.txt |
 |--|-----------------|------------------------|
-| **Zweck** | Original Mac/Docker | janhet/Sandbox |
+| **Zweck** | Original Mac/Docker | host/Sandbox |
 | **Maßgeblich** | Nein | **Ja** |
 | **torch** | Ja | Nein |
 | **qdrant** | Ja | Nein |
