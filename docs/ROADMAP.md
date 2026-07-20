@@ -452,3 +452,36 @@ handoff      (keyword score 1) <- Prepare a prompt for Claude.ai  ✅
 
 ### Status
 Getestet im Docker Container (2026-07-20). Implementierung ausstehend.
+
+---
+
+## Smoke Test beim Container-Start (geplant)
+
+### Idee
+`entrypoint.sh` fuehrt nach dem Stack-Start automatisch einen Smoke Test
+durch -- bevor "Ready" gemeldet wird. Ergebnis klar sichtbar in der Konsole.
+
+### Was getestet wird
+1. llama-server antwortet auf /v1/models
+2. LiteLLM antwortet auf /health
+3. Agent Server antwortet auf /health
+4. Echter LLM-Call funktioniert (granite-tiny, max 3 Tokens)
+5. Agent Server gibt sinnvolle Antwort (agent-local, max 10 Tokens)
+
+### Erwartete Konsolen-Ausgabe
+```
+=== SMOKE TEST ===
+✅ llama-server OK
+✅ LiteLLM OK
+✅ Agent Server OK
+✅ LLM-Call OK
+✅ Agent-Call OK
+=== SMOKE TEST DONE — Stack bereit ===
+```
+
+### Implementierung
+- Aenderung: `docker/entrypoint.sh` -- Smoke Test Block nach Stack-Start
+- Optional: Exit-Code 1 wenn Smoke Test fehlschlaegt (fuer CI/CD)
+
+### Status
+Geplant. Implementierung ausstehend.
