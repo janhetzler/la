@@ -44,20 +44,17 @@ def wait_for(url, label, retries=40, headers=None):
         except: time.sleep(1); print(f'{i+1}...', end=' ', flush=True)
     print(f'{label} TIMEOUT', flush=True); return False
 
-# 1. llama-server
-from llama_cpp.server.app import create_app
-from llama_cpp.server.settings import Settings
-import uvicorn
+# 1. llama-server (Binary mit --jinja fuer natives Tool-Calling)
+LLAMA_BIN = '/tmp/llama-b9895/llama-server'
+LLAMA_LOG = os.path.join(LOG_DIR, 'llama-server.log')
 
-settings = Settings(model=MODEL_PATH, host='127.0.0.1', port=8080,
-                    n_ctx=2048, n_threads=1, chat_format='chatml')
-
-def run_llama():
-    uvicorn.Server(uvicorn.Config(
-        create_app(settings=settings),
-        host='127.0.0.1', port=8080, log_level='error')).run()
-
-threading.Thread(target=run_llama, daemon=True).start()
+llama_proc = subprocess.Popen(
+    [LLAMA_BIN, '-m', MODEL_PATH,
+     '--host', '127.0.0.1', '--port', '8080',
+     '--jinja', '--ctx-size', '32768',
+     '--parallel', '1', '--log-disable'],
+    stdout=open(LLAMA_LOG, 'w'), stderr=subprocess.STDOUT
+)
 wait_for('http://127.0.0.1:8080/v1/models', 'llama-server')
 
 # 2. Phoenix
