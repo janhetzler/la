@@ -61,17 +61,26 @@ def check_log(log_file, label):
     print(f'  [{label}] Log sauber ({len(lines)} Zeilen)', flush=True)
     return True
 
-# 1. llama-server (Binary mit --jinja fuer natives Tool-Calling)
-LLAMA_BIN = '/tmp/llama-b9895/llama-server'
-LLAMA_LOG = os.path.join(LOG_DIR, 'llama-server.log')
+# 1. llama-server
+from llama_cpp.server.app import create_app
+from llama_cpp.server.settings import Settings
+import uvicorn
 
-llama_proc = subprocess.Popen(
-    [LLAMA_BIN, '-m', MODEL_PATH,
-     '--host', '127.0.0.1', '--port', '8080',
-     '--jinja', '--ctx-size', '32768',
-     '--parallel', '1', '--log-level', 'error'],
-    stdout=open(LLAMA_LOG, 'w'), stderr=subprocess.STDOUT
-)
+LLAMA_LOG = os.path.join(LOG_DIR, "llama-server.log")
+settings = Settings(model=MODEL_PATH, host='127.0.0.1', port=8080,
+                    n_ctx=2048, n_threads=1, chat_format='chatml')
+
+def run_llama_server():
+    log_config = uvicorn.config.LOGGING_CONFIG.copy()
+    log_config["handlers"]["file"] = {"class": "logging.FileHandler",
+        "filename": LLAMA_LOG, "formatter": "default"}
+    log_config["loggers"]["uvicorn"]["handlers"] = ["file"]
+    log_config["loggers"]["uvicorn.error"]["handlers"] = ["file"]
+    uvicorn.Server(uvicorn.Config(create_app(settings=settings),
+        host='127.0.0.1', port=8080, log_level='error',
+        log_config=log_config)).run()
+
+threading.Thread(target=run_llama_server, daemon=True).start()
 wait_for('http://127.0.0.1:8080/v1/models', 'llama-server')
 
 # 2. Phoenix
