@@ -446,3 +446,23 @@ def save_note(text: str, title: str = "") -> str:
 ```
 
 **Status:** Fix ausstehend — hohe Prioritaet.
+
+---
+
+## BUG-020: Researcher-Agent ruft read_text_file auf Verzeichnis auf (EISDIR)
+
+**Status:** Gemeldet via externes Review (2026-07-20)
+**Umgebung:** Alle Umgebungen
+
+**Symptom:** LLM ruft `read_text_file(path)` mit einem Verzeichnis-Pfad auf
+statt mit einer Datei. Ergebnis: `EISDIR` Fehler (Is a directory).
+
+**Ursache:** Das Modell unterscheidet nicht zuverlaessig zwischen Dateien
+und Verzeichnissen. Es sollte zuerst `list_directory` aufrufen und dann
+`read_text_file` auf einzelne Dateien.
+
+**Fix:** In `prompts/agents/researcher.md` explizit dokumentieren:
+"Always use list_directory first, then read_text_file on individual files."
+Zusaetzlich: LangChain Tool-Wrapper mit Try/Except fuer robustere Tool-Calls.
+
+**Status:** Fix ausstehend.
