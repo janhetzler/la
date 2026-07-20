@@ -3,22 +3,22 @@ set -e
 
 echo "=== Chief-of-Staff Starting ==="
 
-# 1. llama-server Reasoning (Port 8080)
+# 1. llama-server Reasoning (Port 8080) -- Binary b9895 mit --jinja
 echo "Starting llama-server :8080..."
-python3 -m llama_cpp.server \
+/app/bin/llama-server \
     --model /app/models/granite-350m-Q4_K_M.gguf \
     --host 127.0.0.1 --port 8080 \
-    --n_ctx 4096 --n_threads 4 \
-    --chat_format chatml \
+    --ctx-size 32768 --threads 4 --parallel 1 \
+    --jinja --log-disable \
     > /var/log/llama-reasoning.log 2>&1 &
 
-# 2. llama-server Embedding (Port 8081)
+# 2. llama-server Embedding (Port 8081) -- Python-Wrapper (Binary hat kein --embedding)
 echo "Starting llama-server :8081 (embedding)..."
 python3 -m llama_cpp.server \
     --model /app/models/granite-embedding-30m-Q4_0.gguf \
     --host 127.0.0.1 --port 8081 \
     --n_ctx 512 --n_threads 2 \
-    --embedding \
+    --embedding True \
     > /var/log/llama-embedding.log 2>&1 &
 
 # 3. Warten bis llama-server bereit
@@ -31,17 +31,17 @@ for i in $(seq 1 30); do
     sleep 2
 done
 
-# 4. Phoenix (Port 6006)
+# 4. Phoenix (Port 6006) -- auf 0.0.0.0 fuer externe Erreichbarkeit
 echo "Starting Phoenix :6006..."
+PHOENIX_HOST=0.0.0.0 PHOENIX_PORT=6006 \
 python3 -m phoenix.server.main serve \
-    --host 127.0.0.1 --port 6006 \
     > /var/log/phoenix.log 2>&1 &
-sleep 5
+sleep 8
 
-# 5. LiteLLM (Port 4000)
+# 5. LiteLLM (Port 4000) -- auf 0.0.0.0 fuer externe Erreichbarkeit
 echo "Starting LiteLLM :4000..."
 litellm --config /app/docker/litellm_config.yaml \
-    --host 127.0.0.1 --port 4000 \
+    --host 0.0.0.0 --port 4000 \
     > /var/log/litellm.log 2>&1 &
 
 # Warten bis LiteLLM bereit
