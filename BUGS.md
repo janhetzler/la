@@ -257,3 +257,83 @@ koennen zur Runtime nicht geladen werden -- weder via NPX-Binary noch via Docker
 Custom Plugins sind nur moeglich wenn Bifrost mit CGO_ENABLED=1 dynamisch kompiliert wird.
 
 **Naechster Schritt:** Python FastAPI-Wrapper als HTTP-Proxy mit llmtrim-Kompression.
+
+---
+
+## BUG-012: entrypoint.sh -- Phoenix und LiteLLM auf 127.0.0.1 statt 0.0.0.0
+
+**Status:** Bestaetigt via Docker-Run (2026-07-20)
+**Umgebung:** Docker Container ghcr.io/janhetzler/la:latest
+
+**Symptom:** Phoenix (:6006) und LiteLLM (:4000) sind nicht vom Host erreichbar,
+obwohl die Ports im `docker run` Befehl gemappt sind. Nur Agent Server (:8002)
+ist erreichbar weil er als einziger auf `0.0.0.0` lauscht.
+
+**Ursache:** `docker/entrypoint.sh` startet Phoenix und LiteLLM mit `--host 127.0.0.1`.
+Port-Mapping funktioniert nur wenn der Prozess auf `0.0.0.0` lauscht.
+
+**Fix:** In `docker/entrypoint.sh`:
+- Phoenix: `--host 127.0.0.1` → `0.0.0.0`
+- LiteLLM: `--host 127.0.0.1` → `0.0.0.0`
+
+**Status:** Fix eingeplant fuer naechsten Docker Build.
+
+---
+
+## BUG-013: entrypoint.sh -- Embedding Server startet nicht (--embedding Syntax falsch)
+
+**Status:** Bestaetigt via Docker-Run (2026-07-20)
+**Umgebung:** Docker Container ghcr.io/janhetzler/la:latest
+
+**Symptom:** Embedding Server (:8081) startet nicht.
+Log: `__main__.py: error: argument --embedding: expected one argument`
+
+**Ursache:** `docker/entrypoint.sh` ruft `--embedding` ohne Argument auf.
+Der llama-cpp-python Server erwartet `--embedding True`.
+
+**Fix:** In `docker/entrypoint.sh`:
+- `--embedding \` → `--embedding True \`
+
+**Status:** Fix eingeplant fuer naechsten Docker Build.
+
+---
+
+## BUG-014: entrypoint.sh -- llama-cpp-python statt llama-server Binary (kein --jinja)
+
+**Status:** Bestaetigt via Docker-Run (2026-07-20)
+**Umgebung:** Docker Container ghcr.io/janhetzler/la:latest
+
+**Symptom:** Reasoning Server (:8080) laeuft mit `llama_cpp.server` (Python-Wrapper).
+`--jinja` Flag ist nicht aktiv -- Tool-Calling funktioniert nicht im Docker.
+
+**Ursache:** `docker/entrypoint.sh` nutzt noch den alten Python-Wrapper.
+Der Binary Swap (2026-07-20) wurde nur fuer Sandbox Scripts durchgefuehrt,
+nicht fuer `docker/entrypoint.sh`.
+
+**Fix:**
+- `Dockerfile`: llama-server Binary b9895 herunterladen nach `/app/bin/llama-server`
+- `docker/entrypoint.sh`: `python3 -m llama_cpp.server` → `/app/bin/llama-server --jinja`
+
+**Status:** Fix eingeplant fuer naechsten Docker Build.
+
+---
+
+## BUG-015: Phoenix gRPC Port 4317 Konflikt beim Neustart im Container
+
+**Status:** Bestaetigt via Docker-Run (2026-07-20)
+**Umgebung:** Docker Container ghcr.io/janhetzler/la:latest
+
+**Symptom:** Wenn Phoenix neu gestartet wird (z.B. mit anderem --host),
+schlaegt der Start fehl:
+`RuntimeError: Failed to bind to address [::]:4317`
+
+**Ursache:** Der originale Phoenix-Prozess (PID 24, gestartet via entrypoint.sh)
+haelt Port 4317 (gRPC). Ein zweiter Phoenix-Start kann diesen Port nicht binden.
+`pkill -f phoenix` killt PID 24 nicht weil er Kind von PID 1 ist.
+
+**Workaround:** `kill -9 24` direkt, dann neuen Phoenix-Prozess starten.
+
+**Fix:** entrypoint.sh: Phoenix direkt auf `0.0.0.0` starten -- dann ist kein
+Neustart noetig.
+
+**Status:** Wird durch BUG-012 Fix behoben.
