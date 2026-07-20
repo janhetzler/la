@@ -40,18 +40,14 @@ def wait_for(url, label, retries=40, headers=None):
     print(f"{label} TIMEOUT", flush=True); return False
 
 # 1. llama-server
-from llama_cpp.server.app import create_app
-from llama_cpp.server.settings import Settings
-import uvicorn
-
-settings = Settings(model=MODEL_PATH, host="127.0.0.1", port=8080,
-                    n_ctx=2048, n_threads=1, chat_format="chatml")
-
-def run_llama():
-    uvicorn.Server(uvicorn.Config(
-        create_app(settings=settings),
-        host="127.0.0.1", port=8080, log_level="error")).run()
-
+LLAMA_BIN = '/tmp/llama-b9895/llama-server'
+llama_proc = subprocess.Popen(
+    [LLAMA_BIN, '-m', MODEL_PATH,
+     '--host', '127.0.0.1', '--port', '8080',
+     '--jinja', '--ctx-size', '32768',
+     '--parallel', '1', '--log-disable'],
+    stdout=open('/tmp/logs/llama-server.log', 'w'), stderr=subprocess.STDOUT
+)
 threading.Thread(target=run_llama, daemon=True).start()
 wait_for("http://127.0.0.1:8080/v1/models", "llama-server")
 
