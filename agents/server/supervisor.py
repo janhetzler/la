@@ -106,7 +106,8 @@ async def route(user_message: str) -> str:
         SystemMessage(content=ROUTER_PROMPT),
         HumanMessage(content=user_message),
     ]
-    response = await router_llm.ainvoke(messages)
+    grammar = 'root ::= "comms" | "researcher" | "notes" | "code" | "meta" | "handoff"'
+    response = await router_llm.ainvoke(messages, extra_body={"grammar": grammar})
     raw = response.content.strip()
 
     tokens = raw.split()
