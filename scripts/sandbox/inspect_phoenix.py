@@ -181,6 +181,7 @@ try:
         start_time=datetime.now() - timedelta(minutes=5)
     )
 
+    span_output = ""
     if spans_df is not None and not spans_df.empty:
         print(f'\n{len(spans_df)} Spans gefunden:\n', flush=True)
 
@@ -197,15 +198,20 @@ try:
         ] if c in spans_df.columns]
 
         for _, row in spans_df[cols].iterrows():
-            print(f'\n--- {row.get("name", "?")} [{row.get("span_kind", "?")}] ---', flush=True)
+            span_header = f'\n--- {row.get("name", "?")} [{row.get("span_kind", "?")}] ---'
+            print(span_header, flush=True)
+            span_output += span_header + "\n"
             for col in cols:
                 if col in ['name', 'span_kind']: continue
                 val = row.get(col)
                 if val and str(val) != 'nan':
                     label = col.replace('attributes.', '').replace('llm.', '')
-                    print(f'  {label}: {str(val)[:300]}', flush=True)
+                    line = f'  {label}: {str(val)[:2000]}'
+                    print(line[:300], flush=True)
+                    span_output += line + "\n"
     else:
         print('Keine Spans gefunden.', flush=True)
+        span_output = "Keine Spans gefunden."
 
 except ImportError as e:
     print(f'arize-phoenix-client Import Fehler: {e}', flush=True)
@@ -214,6 +220,80 @@ except Exception as e:
     print(f'Phoenix Client Fehler: {e}', flush=True)
     import traceback
     traceback.print_exc()
+
+# 8. Trace-Datei erzeugen
+from pathlib import Path
+
+slug = PROMPT[:40].lower()
+slug = ''.join(c if c.isalnum() else '-' for c in slug).strip('-')
+slug = '-'.join(filter(None, slug.split('-')))[:40]
+date_str = datetime.now().strftime('%Y-%m-%d')
+trace_dir = Path('/home/claude/la/docs/traces/sandbox')
+trace_dir.mkdir(parents=True, exist_ok=True)
+trace_path = trace_dir / f"{date_str}_{slug}.md"
+
+# Prompt-Versionen auslesen
+router_md = Path('/home/claude/la/prompts/agents/router.md')
+router_version = router_md.read_text() if router_md.exists() else "nicht gefunden"
+
+# Logs auslesen
+def tail_log(path, chars=1000):
+    p = Path(path)
+    if p.exists():
+        txt = p.read_text()
+        return txt[-chars:] if len(txt) > chars else txt
+    return "kein Log"
+
+antwort = text if 'text' in dir() else 'kein Ergebnis'
+dauer = f"{time.time()-t0:.1f}s"
+
+trace_content = f"""# Trace — {date_str}
+
+**Prompt:** {PROMPT}
+**Gesamtdauer:** {dauer}
+**Stack:** llama-server b9895 + --jinja | LiteLLM 1.92.0 | Agent Server :8002
+
+---
+
+## 1. Finale Antwort
+
+```
+{antwort}
+```
+
+---
+
+## 2. Vollstaendige Span-Kette (Phoenix)
+
+{span_output if 'span_output' in dir() else 'keine Spans'}
+
+---
+
+## 3. Aktive Prompt-Version (router.md)
+
+```
+{router_version}
+```
+
+---
+
+## 4. Infrastruktur-Logs (letzte 1000 Zeichen)
+
+### LiteLLM
+```
+{tail_log('/tmp/logs/litellm.log')}
+```
+
+### llama-server
+```
+{tail_log('/tmp/logs/llama-server.log')}
+```
+
+"""
+
+trace_path.write_text(trace_content, encoding='utf-8')
+print(f'\nTrace gespeichert: {trace_path}', flush=True)
+print(f'Trace Groesse: {len(trace_content)} Zeichen', flush=True)
 
 # Cleanup
 for proc in [litellm_proc, phoenix_proc]:
