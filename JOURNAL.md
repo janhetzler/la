@@ -17,6 +17,138 @@ Sandbox 2 ist Spielwiese -- dort wird ausprobiert ohne Ruecksicht auf Stabilitae
 ---
 
 
+## 2026-07-20 — llama-server Binary, Tool-Calling, Trace-System
+
+### Kontext
+
+Mutterchat-Wechsel nach langem Arbeitstag. Sandbox 2 als aktive Spielwiese.
+Zwei Sandboxen aktiv, alle Ergebnisse ins Repo gepusht.
+
+### Kernentscheidung des Tages
+
+Wechsel von `llama-cpp-python` (Python-Wrapper) zur nativen `llama-server`
+Binary b9895. Grund: `--jinja` Flag fuer natives Tool-Calling nur mit Binary
+moeglich. Der Swap war der zentrale Schritt des Tages.
+
+### Was erreicht wurde
+
+**llama-server Binary Swap (abgeschlossen):**
+- llama-cpp-python vollstaendig ersetzt durch llama-server Binary b9895
+- Download: `llama-b9895-bin-ubuntu-x64.tar.gz` (curl + tar --strip-components=1)
+- Binary: `/tmp/llama-b9895/llama-server`
+- Flags: `--jinja --ctx-size 32768 --parallel 1 --log-disable`
+- 4 Scripts umgeschrieben: start_full.py, start_quick.py, inspect_phoenix.py,
+  test_mcp_toolcall.py -- alle via subprocess.Popen statt Python-Import
+- Startup-Zeit: ~2s (vorher ~20s mit Python-Wrapper)
+- Baseline gehalten: 4/6 Agenten OK
+
+**Tool-Calling bewiesen:**
+- `finish_reason: tool_calls` mit Granite 350m + --jinja bestaetigt
+- Das war mit llama-cpp-python nie moeglich
+- Grammar Constraint (`extra_body={"grammar":...}`) funktioniert jetzt
+  ohne `No connected db.` Fehler (Key-Alignment-Fix von 2026-07-18 hat
+  LiteLLM-Auth-Problem behoben)
+- Grammar dauerhaft in supervisor.py eingebaut: stabiler Token-Output,
+  kein Einfluss auf inhaltliche Routing-Qualitaet
+
+**Routing-Debugging:**
+- Phoenix Traces analysiert: Router-Prompt korrekt (1613 Zeichen, 402 Token)
+- Routing-Problem bestaetigt als Modellkapazitaets-Limit (nicht Prompt-Qualitaet)
+- 350m assoziiert "write email" mit "code" -- Trainings-Artefakt
+- Loesung: Granite-Tiny (4B) auf Host -- dort wird korrekt geroutet
+
+**Trace-System aufgebaut:**
+- `docs/traces/` Ordner mit sandbox/host/docker Unterstruktur
+- `inspect_phoenix.py` erweitert: erzeugt automatisch Trace-Datei nach jedem Request
+- Dateiname: `YYYY-MM-DD_[request-slug].md`
+- Inhalt: vollstaendige Span-Kette, Performance, Infrastruktur-Logs, Prompt-Version
+- Erste echte Trace-Datei: `2026-07-20_write-a-short-professional-email-to-the.md`
+
+**Neue Dokumentation:**
+- `docs/COMPONENT_SWAP_TEMPLATE.md` -- universelles Template fuer Komponenten-Docs
+- `docs/LLAMA.md` -- vollstaendige Dokumentation llama-cpp-python vs. Binary
+- `docs/AGENT_DEVELOPMENT.md` -- Anleitung neuen Agenten entwickeln
+- `docs/OPERATIONS_SANDBOX.md` -- Betrieb & Logging fuer Sandbox-Umgebung
+- `docs/traces/README.md` -- Erklaerung des Trace-Log-Systems
+- `STYLEGUIDE.md` -- Component Documentation + Agenten-Entwicklung Sektionen
+- `SANDBOX.md` -- aktualisiert auf Stand 2026-07-20 (Binary, --jinja)
+
+**Bekannte Bugs gefunden/behoben:**
+- `import uvicorn` fehlte nach llama-Block-Swap in start_full.py und
+  inspect_phoenix.py -- behoben
+- `--log-level error` existiert nicht in b9895 -- `--log-disable` ist korrekt
+- Grammar Constraint Bug (2026-07-17) als behoben markiert
+
+### Was funktioniert
+
+- Stack startet mit Binary b9895 (llama-server, Phoenix, LiteLLM, Agent Server)
+- 4/6 Agenten-Tests OK (Comms, Code, Researcher, Handoff)
+- Tool-Calling via --jinja bewiesen
+- Grammar Constraint stabil (keine Garbage-Tokens mehr)
+- Phoenix Tracing erfasst alle LangChain-Calls
+- Trace-System erzeugt vollstaendige Request-Dokumentation
+
+### Was nicht funktioniert
+
+- Notes Agent schreibt nicht in ChromaDB -- Routing-Limit 350m
+- Supervisor-Routing: 350m routet falsch (code statt comms fuer E-Mail)
+- llama-server.log bleibt leer -- `--log-disable` unterdrückt alle Ausgaben
+- Agent Server Log bleibt leer -- uvicorn Thread-Logging funktioniert nicht
+
+### Offene Punkte
+
+- Host-Deployment mit Granite-Tiny -- Routing-Problem loest sich dort
+- OPERATIONS_HOST.md und OPERATIONS_DOCKER.md noch zu erstellen
+- user_profile.md und project_context.md mit echten Daten befuellen
+- Notes Agent auf Host testen (ChromaDB schreiben via Tool-Calling)
+
+### Naechster Schritt
+
+Host-Deployment mit Granite-Tiny -- dort wird sich zeigen ob Routing, Tool-Calling und
+ChromaDB-Schreiben durch den kompletten Stack funktionieren.
+
+---
+
+### Nachtrag 2026-07-20 — Erster erfolgreicher Docker-Run
+
+**Was passiert ist:**
+
+Das Docker Image wurde heute Nachmittag neu gebaut (GitHub Actions Run #26,
+15:21 MESZ) und in einer QEMU Guest VM (Debian, Docker 29.6.2) getestet.
+
+**Erste Erkenntnisse aus dem Docker-Run:**
+
+Drei Bugs in `docker/entrypoint.sh` entdeckt und behoben:
+- BUG-012: Phoenix + LiteLLM auf `127.0.0.1` statt `0.0.0.0` — von aussen
+  nicht erreichbar trotz Port-Mapping
+- BUG-013: Embedding Server startet nicht — `--embedding` braucht `True` als Argument
+- BUG-014: llama-cpp-python statt Binary b9895 — kein `--jinja`, kein Tool-Calling
+- BUG-015: Phoenix gRPC Port 4317 Konflikt beim Neustart im Container
+
+Alle vier Bugs behoben, neues Image gebaut (Run #27).
+
+**Zweiter Docker-Run — vollstaendig erfolgreich:**
+
+- llama-server Binary b9895 mit `--jinja` laeuft im Container
+- Embedding Server laeuft (--embedding True fix)
+- Phoenix Web-Interface erreichbar unter http://localhost:6006
+- LiteLLM Swagger UI erreichbar unter http://localhost:4000
+- Agent Server Health OK, alle 6 Agenten geladen
+- Sauberer Start ohne manuelle Eingriffe
+
+**Neue Dokumentation:**
+- `docs/OPERATIONS_DOCKER.md` — Betrieb & Logging fuer Docker-Umgebung
+- `BUGS.md` — BUG-012 bis BUG-015 dokumentiert
+
+**Stand am Ende des Tages:**
+
+Stack laeuft vollstaendig in drei Umgebungen:
+- Sandbox 2 (Claude Sandbox) — 4/6 Agenten, Binary b9895, --jinja aktiv
+- Docker (QEMU VM) — vollstaendiger Stack, alle Dienste erreichbar
+- Host — noch ausstehend (naechster Schritt)
+
+---
+
 ## 2026-07-19
 
 ### Was wurde gemacht
@@ -150,138 +282,5 @@ var Befehl in VS Code Agent-Modus
 
 Host-Deployment mit Granite-Tiny -- dort wird sich zeigen ob
 Routing, Tool-Calling und ChromaDB-Schreiben wirklich funktionieren.
-
----
-
-## 2026-07-20 — llama-server Binary, Tool-Calling, Trace-System
-
-### Kontext
-
-Mutterchat-Wechsel nach langem Arbeitstag. Sandbox 2 als aktive Spielwiese.
-Zwei Sandboxen aktiv, alle Ergebnisse ins Repo gepusht.
-
-### Kernentscheidung des Tages
-
-Wechsel von `llama-cpp-python` (Python-Wrapper) zur nativen `llama-server`
-Binary b9895. Grund: `--jinja` Flag fuer natives Tool-Calling nur mit Binary
-moeglich. Der Swap war der zentrale Schritt des Tages.
-
-### Was erreicht wurde
-
-**llama-server Binary Swap (abgeschlossen):**
-- llama-cpp-python vollstaendig ersetzt durch llama-server Binary b9895
-- Download: `llama-b9895-bin-ubuntu-x64.tar.gz` (curl + tar --strip-components=1)
-- Binary: `/tmp/llama-b9895/llama-server`
-- Flags: `--jinja --ctx-size 32768 --parallel 1 --log-disable`
-- 4 Scripts umgeschrieben: start_full.py, start_quick.py, inspect_phoenix.py,
-  test_mcp_toolcall.py -- alle via subprocess.Popen statt Python-Import
-- Startup-Zeit: ~2s (vorher ~20s mit Python-Wrapper)
-- Baseline gehalten: 4/6 Agenten OK
-
-**Tool-Calling bewiesen:**
-- `finish_reason: tool_calls` mit Granite 350m + --jinja bestaetigt
-- Das war mit llama-cpp-python nie moeglich
-- Grammar Constraint (`extra_body={"grammar":...}`) funktioniert jetzt
-  ohne `No connected db.` Fehler (Key-Alignment-Fix von 2026-07-18 hat
-  LiteLLM-Auth-Problem behoben)
-- Grammar dauerhaft in supervisor.py eingebaut: stabiler Token-Output,
-  kein Einfluss auf inhaltliche Routing-Qualitaet
-
-**Routing-Debugging:**
-- Phoenix Traces analysiert: Router-Prompt korrekt (1613 Zeichen, 402 Token)
-- Routing-Problem bestaetigt als Modellkapazitaets-Limit (nicht Prompt-Qualitaet)
-- 350m assoziiert "write email" mit "code" -- Trainings-Artefakt
-- Loesung: Granite-Tiny (4B) auf Host -- dort wird korrekt geroutet
-
-**Trace-System aufgebaut:**
-- `docs/traces/` Ordner mit sandbox/host/docker Unterstruktur
-- `inspect_phoenix.py` erweitert: erzeugt automatisch Trace-Datei nach jedem Request
-- Dateiname: `YYYY-MM-DD_[request-slug].md`
-- Inhalt: vollstaendige Span-Kette, Performance, Infrastruktur-Logs, Prompt-Version
-- Erste echte Trace-Datei: `2026-07-20_write-a-short-professional-email-to-the.md`
-
-**Neue Dokumentation:**
-- `docs/COMPONENT_SWAP_TEMPLATE.md` -- universelles Template fuer Komponenten-Docs
-- `docs/LLAMA.md` -- vollstaendige Dokumentation llama-cpp-python vs. Binary
-- `docs/AGENT_DEVELOPMENT.md` -- Anleitung neuen Agenten entwickeln
-- `docs/OPERATIONS_SANDBOX.md` -- Betrieb & Logging fuer Sandbox-Umgebung
-- `docs/traces/README.md` -- Erklaerung des Trace-Log-Systems
-- `STYLEGUIDE.md` -- Component Documentation + Agenten-Entwicklung Sektionen
-- `SANDBOX.md` -- aktualisiert auf Stand 2026-07-20 (Binary, --jinja)
-
-**Bekannte Bugs gefunden/behoben:**
-- `import uvicorn` fehlte nach llama-Block-Swap in start_full.py und
-  inspect_phoenix.py -- behoben
-- `--log-level error` existiert nicht in b9895 -- `--log-disable` ist korrekt
-- Grammar Constraint Bug (2026-07-17) als behoben markiert
-
-### Was funktioniert
-
-- Stack startet mit Binary b9895 (llama-server, Phoenix, LiteLLM, Agent Server)
-- 4/6 Agenten-Tests OK (Comms, Code, Researcher, Handoff)
-- Tool-Calling via --jinja bewiesen
-- Grammar Constraint stabil (keine Garbage-Tokens mehr)
-- Phoenix Tracing erfasst alle LangChain-Calls
-- Trace-System erzeugt vollstaendige Request-Dokumentation
-
-### Was nicht funktioniert
-
-- Notes Agent schreibt nicht in ChromaDB -- Routing-Limit 350m
-- Supervisor-Routing: 350m routet falsch (code statt comms fuer E-Mail)
-- llama-server.log bleibt leer -- `--log-disable` unterdrückt alle Ausgaben
-- Agent Server Log bleibt leer -- uvicorn Thread-Logging funktioniert nicht
-
-### Offene Punkte
-
-- Host-Deployment auf host mit Granite-Tiny -- Routing-Problem loest sich dort
-- OPERATIONS_HOST.md und OPERATIONS_DOCKER.md noch zu erstellen
-- user_profile.md und project_context.md mit echten Daten befuellen
-- Notes Agent auf Host testen (ChromaDB schreiben via Tool-Calling)
-
-### Naechster Schritt
-
-Host-Deployment auf host (AMD EPYC 7443P, 4 vCores, 10 GB RAM) mit
-Granite-Tiny -- dort wird sich zeigen ob Routing, Tool-Calling und
-ChromaDB-Schreiben durch den kompletten Stack funktionieren.
-
----
-
-### Nachtrag 2026-07-20 — Erster erfolgreicher Docker-Run
-
-**Was passiert ist:**
-
-Das Docker Image wurde heute Nachmittag neu gebaut (GitHub Actions Run #26,
-15:21 MESZ) und in einer QEMU Guest VM (Debian, Docker 29.6.2) getestet.
-
-**Erste Erkenntnisse aus dem Docker-Run:**
-
-Drei Bugs in `docker/entrypoint.sh` entdeckt und behoben:
-- BUG-012: Phoenix + LiteLLM auf `127.0.0.1` statt `0.0.0.0` — von aussen
-  nicht erreichbar trotz Port-Mapping
-- BUG-013: Embedding Server startet nicht — `--embedding` braucht `True` als Argument
-- BUG-014: llama-cpp-python statt Binary b9895 — kein `--jinja`, kein Tool-Calling
-- BUG-015: Phoenix gRPC Port 4317 Konflikt beim Neustart im Container
-
-Alle vier Bugs behoben, neues Image gebaut (Run #27).
-
-**Zweiter Docker-Run — vollstaendig erfolgreich:**
-
-- llama-server Binary b9895 mit `--jinja` laeuft im Container
-- Embedding Server laeuft (--embedding True fix)
-- Phoenix Web-Interface erreichbar unter http://localhost:6006
-- LiteLLM Swagger UI erreichbar unter http://localhost:4000
-- Agent Server Health OK, alle 6 Agenten geladen
-- Sauberer Start ohne manuelle Eingriffe
-
-**Neue Dokumentation:**
-- `docs/OPERATIONS_DOCKER.md` — Betrieb & Logging fuer Docker-Umgebung
-- `BUGS.md` — BUG-012 bis BUG-015 dokumentiert
-
-**Stand am Ende des Tages:**
-
-Stack laeuft vollstaendig in drei Umgebungen:
-- Sandbox 2 (Claude Sandbox) — 4/6 Agenten, Binary b9895, --jinja aktiv
-- Docker (QEMU VM) — vollstaendiger Stack, alle Dienste erreichbar
-- Host (host) — noch ausstehend (naechster Schritt)
 
 ---
