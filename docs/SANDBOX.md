@@ -261,7 +261,7 @@ Die Sandbox hat keinen Web-Zugang für eine VS Code Verbindung. `scripts/chat.py
 ist der direkte Ersatz — ein Terminal-Client der gegen LiteLLM (Port 4000) spricht,
 LiteLLM leitet zum Agent Server (Port 8002) weiter, der Supervisor routet zum
 richtigen Spezialisten. Das entspricht dem Original-Konzept aus
-`docker/litellm_config.yaml` (dort: `agent-chief-of-staff` → Port 8002).
+`docker/litellm_config.yaml` (dort: `agent-local` → Port 8002).
 
 ```bash
 python3 scripts/chat.py
@@ -272,7 +272,7 @@ python3 scripts/chat.py
 Supervisor antwortet korrekt über diesen Pfad.
 
 ⚠️ **Bekannte Kleinigkeit:** `chat.py` Z.10 zeigt noch den alten Begrüßungstext
-`"=== Chief-of-Staff Terminal Chat ==="` — kosmetisch, keine Funktionsauswirkung,
+`"=== Local Agent Terminal Chat ==="` — kosmetisch, keine Funktionsauswirkung,
 noch nicht nachgezogen bei der Umbenennung.
 
 ⚠️ **Timing beim Start:** `litellm.log` zeigt beim Hochfahren kurzzeitig
@@ -363,7 +363,7 @@ aber Port 8081 wird in der Sandbox nicht gestartet. ChromaDB nutzt
 
 ## D. Datenstrukturen
 
-### ChromaDB Collections (`/tmp/chroma_chief/`)
+### ChromaDB Collections (`/tmp/chroma_la/`)
 
 | Collection | Inhalt | Wer schreibt |
 |------------|--------|--------------|
