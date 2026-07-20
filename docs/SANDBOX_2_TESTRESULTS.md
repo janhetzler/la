@@ -107,9 +107,9 @@ Vorherige Annahme ("350m kann kein Tool-Calling") war falsch — war ein Konfigu
 
 ---
 
-## Naechste Schritte fuer Host (janhet)
+## Naechste Schritte fuer Host (host)
 
-1. Binary b9895 auf janhet installieren (oder neuer)
+1. Binary b9895 auf host installieren (oder neuer)
 2. Tool-Calling mit Granite-4.0-H-Tiny (4B) testen
 3. MCP-Tools (`git_log`, `fetch`) via `bind_tools()` + `--jinja` aktivieren
 4. Notes-Agent mit echtem Routing testen
