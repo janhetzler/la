@@ -337,3 +337,112 @@ haelt Port 4317 (gRPC). Ein zweiter Phoenix-Start kann diesen Port nicht binden.
 Neustart noetig.
 
 **Status:** Wird durch BUG-012 Fix behoben.
+
+---
+
+## BUG-016: mcp/docker/mcp.json fehlt im Docker Image
+
+**Status:** Bestaetigt via Docker-Run (2026-07-20)
+**Umgebung:** Docker Container ghcr.io/janhetzler/la:latest
+
+**Symptom:** Researcher-Agent und Notes-Agent schlagen fehl mit:
+`FileNotFoundError: /app/mcp/docker/mcp.json`
+
+**Ursache:** Die Datei `mcp/docker/mcp.json` existiert nicht im Repo und
+wurde daher nicht ins Image gebaut.
+
+**Workaround:** Im laufenden Container:
+```bash
+mkdir -p /app/mcp/docker
+echo '{"mcpServers": {}}' > /app/mcp/docker/mcp.json
+```
+
+**Fix:** `mcp/docker/mcp.json` mit `fetch`-Server ins Repo pushen.
+`mcp_server_git` nicht verwenden — kein Git-Repo im Container.
+
+**Status:** Workaround aktiv, permanenter Fix ausstehend.
+
+---
+
+## BUG-017: ChromaDB Collection nutzt euklidische statt Kosinus-Distanz
+
+**Status:** Bestaetigt via Docker-Run (2026-07-20)
+**Umgebung:** Docker + Sandbox
+
+**Symptom:** Notes-Agent findet keine Dokumente obwohl ChromaDB sie enthaelt.
+Direkte Suche ohne Agent findet sie (Distance ~820).
+
+**Ursache:** ChromaDB erstellt Collections standardmaessig mit euklidischer
+Distanz (L2). Bei nicht-normalisierten Granite-Embeddings (Norm ~50) ergibt
+das eine Distance von ~820 statt ~0.16 (Kosinus).
+Kosinus-Aehnlichkeit der gleichen Vektoren: 0.84 — eigentlich sehr gut.
+
+**Fix:** Collection mit Kosinus-Distanz erstellen:
+```python
+client.create_collection(name, metadata={"hnsw:space": "cosine"})
+```
+
+In `entrypoint.sh` und `notes.py` anpassen.
+
+**Status:** Manuell gefixt im laufenden Container, Code-Fix ausstehend.
+
+---
+
+## BUG-018: Notes-Agent search_meetings filtert zu restriktiv
+
+**Status:** Bestaetigt via Docker-Run (2026-07-20)
+**Umgebung:** Docker + Sandbox
+
+**Symptom:** `search_meetings` gibt keine Ergebnisse zurueck obwohl
+ChromaDB Dokumente enthaelt und die Kosinus-Aehnlichkeit 0.84 betraegt.
+
+**Ursache:** In `agents/server/notes.py` Z.88:
+```python
+if "meeting" in source.lower() or meta.get("type") == "meeting":
+```
+Nur Dokumente mit "meeting" im Source-Feld werden zurueckgegeben.
+Alle anderen Dokumente werden still verworfen.
+
+**Fix:** Filter entfernen oder generalisieren:
+```python
+meetings.append(f"[{source}, score {score:.2f}]
+{doc[:500]}")
+```
+
+**Status:** Manuell umgangen (source auf "meeting-docker-test" gesetzt),
+Code-Fix ausstehend.
+
+---
+
+## BUG-019: save_note Tool fehlt — kein Agent kann in ChromaDB schreiben
+
+**Status:** Bestaetigt (2026-07-20)
+**Umgebung:** Alle Umgebungen
+
+**Symptom:** Kein Agent kann Notizen in ChromaDB speichern. Notes-Agent
+antwortet "I can't save the note as it requires access to a tool I don't have."
+
+**Ursache:** `agents/server/notes.py` hat nur Lese-Tools:
+- `search_meetings` — RAG-Suche
+- `list_directory`, `read_text_file`, etc. — Vault-Lesen
+
+Ein `save_note` Tool mit `collection.add()` wurde nie implementiert.
+Das Original-Projekt (xaviervasques/chief-of-staff) nutzt Qdrant, nicht
+ChromaDB — ChromaDB-Schreiben ist ein komplett neues Feature.
+
+**Fix:** Neues Tool in `notes.py`:
+```python
+@tool
+def save_note(text: str, title: str = "") -> str:
+    """Speichert eine Notiz in ChromaDB."""
+    vec = _embed_query(text)
+    collection.add(
+        documents=[text],
+        embeddings=[vec],
+        metadatas=[{"category": "notes", "source": f"meeting-{title}"}],
+        ids=[f"note-{datetime.now().isoformat()}"]
+    )
+    return f"Notiz gespeichert: {text[:50]}..."
+```
+
+**Status:** Fix ausstehend — hohe Prioritaet.
