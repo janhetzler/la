@@ -4,6 +4,19 @@ Neuester Eintrag oben. Fuer Agenten: lies den ersten Eintrag um den aktuellen St
 
 ---
 
+## Sandbox-Status (aktuell)
+
+| Sandbox | Rolle | Beschreibung |
+|---------|-------|--------------|
+| **Sandbox 1** | Produktiv | Aktueller Repo-Stand, getesteter Stack, 5/6 Agenten OK |
+| **Sandbox 2** | Labor | Experimente, kein stabiler Stand garantiert |
+
+Sandbox 1 hat immer den aktuellsten `git pull` Stand und ist die Referenz fuer Testergebnisse.
+Sandbox 2 ist Spielwiese -- dort wird ausprobiert ohne Ruecksicht auf Stabilitaet.
+
+---
+
+
 ## 2026-07-19
 
 ### Was wurde gemacht
