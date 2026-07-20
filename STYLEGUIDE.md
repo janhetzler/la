@@ -171,6 +171,13 @@ von vorne zu debuggen, haben wir eine **verbindliche Schablone** die zeigt:
 - Welche Tests laufen danach
 - Welcher Fallback-Plan im Fehlerfall
 
+**Agenten-Entwicklung:**
+
+Neue Agenten und Prompt-Aenderungen folgen `docs/AGENT_DEVELOPMENT.md`:
+- Nach jeder Prompt-Aenderung: `scripts/sandbox/inspect_phoenix.py` laufen lassen
+- Trace-Datei unter `docs/traces/sandbox/` mit vorheriger vergleichen
+- Erst wenn Trace zeigt dass Routing korrekt: pushen
+
 **Neue Komponenten-Doc erstellen:**
 1. Kopiere `docs/COMPONENT_SWAP_TEMPLATE.md`
 2. Ersetze alle Platzhalter [COMPONENT], [VERSION], etc.
@@ -184,4 +191,5 @@ von vorne zu debuggen, haben wir eine **verbindliche Schablone** die zeigt:
 | Datum | Aenderung |
 |-------|-----------|
 | 2026-07-20 | Added: Component Documentation Sektion |
+| 2026-07-20 | Added: Agenten-Entwicklung Sektion + Trace-Workflow |
 
