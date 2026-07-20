@@ -103,7 +103,7 @@ cd /home/claude/la
 pip install --break-system-packages -r requirements.txt
 ```
 
-> **Hinweis:** Die Datei heißt `requirements.txt` (nicht `requirements-janhet.txt`).
+> **Hinweis:** Die Datei heißt `requirements.txt` (nicht `requirements-host.txt`).
 
 ### 3b. llama-server Binary herunterladen
 
