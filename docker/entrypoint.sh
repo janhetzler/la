@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-echo "=== Chief-of-Staff Starting ==="
+echo "=== Local Agent Starting ==="
 
 # 1. llama-server Reasoning (Port 8080) -- Binary b9895 mit --jinja
 echo "Starting llama-server :8080..."
@@ -69,7 +69,7 @@ uvicorn server:app --host 0.0.0.0 --port 8002 \
     > /var/log/agent-server.log 2>&1 &
 
 sleep 3
-echo "=== Chief-of-Staff Ready ==="
+echo "=== Local Agent Ready ==="
 echo "Agent Server: http://localhost:8002"
 echo "LiteLLM:      http://localhost:4000"
 echo "Phoenix:      http://localhost:6006"
