@@ -25,6 +25,7 @@ Die Wahl zwischen Python-Wrapper und Binary bestimmt, ob natives Tool-Calling mi
 - Sandbox: ✅ llama-cpp-python (aktuell)
 - Docker: ❌ (nicht in Docker-Setup konfiguriert)
 - Host (janhet): ✅ llama-server Binary (geplant, nicht getestet)
+- Sandbox 2: ✅ llama-server Binary b9895 (getestet, aktiv seit 2026-07-20)
 
 ---
 
@@ -33,7 +34,7 @@ Die Wahl zwischen Python-Wrapper und Binary bestimmt, ob natives Tool-Calling mi
 | Implementierung | Version | Status | Notes |
 |-----------------|---------|--------|-------|
 | llama-cpp-python | 0.3.23 | ✅ Aktuell (Sandbox) | Kein `--jinja` Flag → kein natives Tool-Calling |
-| llama-server Binary | b9895+ | ✅ Tested (Hugging Face Space) | Supports `--jinja` → natives Tool-Calling möglich |
+| llama-server Binary | b9895 | ✅ Aktiv (Sandbox 2 + Hugging Face Space) | `--jinja` → Tool-Calling bewiesen (`finish_reason: tool_calls`) |
 | ollama | latest | ⏳ Nicht getestet | Alternative, aber API-Unterschiede |
 | vLLM | latest | ⏳ Nicht getestet | Schneller, aber anderer Inference-Stil |
 
@@ -132,17 +133,18 @@ llama-cpp-python==0.3.23  # Reason: einfache Python-Integration, funktioniert in
 
 ```bash
 # 1. llama-server Binary herunterladen
-cd /tmp
-wget https://github.com/ggml-org/llama.cpp/releases/download/b9895/llama-server-b9895-linux-x86_64.zip
-unzip llama-server-b9895-linux-x86_64.zip
-chmod +x ./llama-server
+mkdir -p /tmp/llama-b9895
+curl -L https://github.com/ggml-org/llama.cpp/releases/download/b9895/llama-b9895-bin-ubuntu-x64.tar.gz \
+  -o /tmp/llama.tar.gz
+tar -xzf /tmp/llama.tar.gz -C /tmp/llama-b9895 --strip-components=1
+chmod +x /tmp/llama-b9895/llama-server
 
 # 2. Teste das Binary mit --jinja Flag
-./llama-server --help | grep -i jinja
+/tmp/llama-b9895/llama-server --help | grep -i jinja
 # Output sollte sein: --jinja
 
 # 3. Schnell-Test: Starte Server mit Modell
-./llama-server -m /tmp/granite-350m-Q4_K_M.gguf --jinja --port 8080 &
+/tmp/llama-b9895/llama-server -m /tmp/granite-350m-Q4_K_M.gguf --jinja --port 8080 &
 sleep 5
 
 # 4. Teste API-Endpunkt
@@ -183,14 +185,14 @@ import subprocess
 
 llama_process = subprocess.Popen(
     [
-        "./llama-server",
+        "/tmp/llama-b9895/llama-server",
         "-m", str(MODEL_PATH),
         "--host", "127.0.0.1",
         "--port", "8080",
         "--jinja",  # ← KRITISCH: Tool-Calling
         "--ctx-size", "32768",
         "--parallel", "1",
-        "--log-level", "error"
+        "--log-disable"
     ],
     stdout=subprocess.PIPE,
     stderr=subprocess.PIPE,
@@ -264,6 +266,7 @@ cd /home/claude/la && python3 scripts/sandbox/start_full.py
 | `llama-server: command not found` | Script startet, dann Error | Binary muss in PATH oder absolute Pfad | Pfad in Script zu `./llama-server` korrigieren |
 | Port 8080 bereits in Use | `Address already in use` | `lsof -i :8080 \| kill -9 [PID]` | Vorherigen llama-Prozess killen |
 | `--jinja` Flag nicht erkannt | Binary läuft, aber `--jinja` wird ignoriert | Binary ist zu alt (vor b9895) | Neuere Binary herunterladen |
+| `--log-level` nicht erkannt | Server startet nicht, Log bleibt leer | Nutze `--log-disable` statt `--log-level error` | Flag existiert in b9895 nicht — `--log-disable` ist korrekt |
 | Logs sind leer | Debugging unmöglich | Stderr/Stdout manuell auf Datei umleiten | `start_full.py` updaten: `stderr=open('/tmp/llama.log', 'w')` |
 | Tool-Calling trotz `--jinja` nicht funktioniert | Model ignoriert tools-Array | Phoenix Trace checken: hat das Model die tools empfangen? | LiteLLM Config: `supports_tools: true`? |
 
@@ -328,4 +331,5 @@ curl -X POST http://127.0.0.1:8080/v1/chat/completions \
 | Datum | Version | Änderung |
 |-------|---------|----------|
 | 2026-07-20 | v1 | Initial doc: llama-cpp-python vs. Binary comparison, Swap Scenario A |
+| 2026-07-20 | v2 | Swap durchgeführt auf Sandbox 2: curl+tar statt wget+zip, --log-disable statt --log-level, /tmp/llama-b9895/ Pfad, Tool-Calling bewiesen |
 
