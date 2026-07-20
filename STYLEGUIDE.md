@@ -143,3 +143,45 @@ Checkliste:
 3. Konstanten oben
 4. Funktionen/Klassen
 5. if __name__ == "__main__": Block
+
+---
+
+## Component Documentation (2026-07-20)
+
+Jede **kritische Infrastruktur-Komponente** erhaelt ein eigenes Dokumentdatei unter `docs/`.
+Diese Dokumentation folgt dem **COMPONENT_SWAP_TEMPLATE.md** und dokumentiert:
+
+- Was ist diese Komponente? (Zweck, Version, Rolle im Stack)
+- Welche Alternativen/Versionen gibt es?
+- Wie sind die Abhängigkeiten strukturiert?
+- Welche Config-Dateien muss ich ändern, wenn ich die Komponente austausche?
+- Schritt-für-Schritt Swap-Szenarios
+
+**Aktuell dokumentierte Komponenten:**
+- `docs/LLAMA.md` — Reasoning Server (llama-cpp-python vs. llama-server Binary)
+- `docs/LITELLM.md` — (geplant) API Gateway
+- `docs/CHROMADB.md` — (geplant) Vector Database
+- `docs/PHOENIX.md` — (geplant) Observability
+- etc.
+
+**Warum?** Komponenten-Austausche geschehen regelmäßig (Versionsupgrades, 
+alternative Implementierungen, Performance-Optimierungen). Statt jedes Mal 
+von vorne zu debuggen, haben wir eine **verbindliche Schablone** die zeigt:
+- Welche Scripts/Dateien ändern
+- Welche Tests laufen danach
+- Welcher Fallback-Plan im Fehlerfall
+
+**Neue Komponenten-Doc erstellen:**
+1. Kopiere `docs/COMPONENT_SWAP_TEMPLATE.md`
+2. Ersetze alle Platzhalter [COMPONENT], [VERSION], etc.
+3. Schreibe mindestens Punkt 1-6 (Overview, Versions, Architecture, Config, Swap Scenario, Troubleshooting)
+4. Pushe mit Commit-Message: `Add: docs/[COMPONENT].md`
+
+---
+
+## Changelog (STYLEGUIDE.md)
+
+| Datum | Aenderung |
+|-------|-----------|
+| 2026-07-20 | Added: Component Documentation Sektion |
+
