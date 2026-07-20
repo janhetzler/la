@@ -127,6 +127,7 @@ except Exception as e:
     print(f'Phoenix Tracing: {e}', flush=True)
 
 # 5. Agent Server
+import uvicorn
 import server as agent_server
 
 def run_agent():
