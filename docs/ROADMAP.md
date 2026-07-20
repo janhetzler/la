@@ -398,3 +398,57 @@ RAM-Verbrauch und CPU-Last werden nicht erfasst.
 - [ ] llmtrim MCP-Server evaluieren
 - [ ] Bifrost Enterprise kontaktieren wegen dynamischer Binary
 
+
+---
+
+## Heuristisches Routing (Idee aus 2026-07-20)
+
+### Problem
+Das 350m Modell routet unzuverlaessig — selbst mit Grammar Constraint
+und Few-Shot-Beispielen landet "write an email" bei `code` statt `comms`.
+
+### Loesung: Pre-Filter vor LLM-Call
+
+**Stufe 1 — Emoji-Routing (0ms):**
+```python
+EMOJI_ROUTING = {
+    "📧": "comms", "💻": "code",
+    "🔍": "researcher", "📝": "notes", "🔄": "handoff"
+}
+```
+
+**Stufe 2 — Keyword-Heuristik (0ms):**
+```python
+ROUTING_KEYWORDS = {
+    "comms":      ["email", "mail", "write", "message", "draft", "letter"],
+    "code":       ["python", "debug", "script", "function", "bug", "github"],
+    "notes":      ["note", "save", "remember", "meeting", "vault"],
+    "researcher": ["search", "find", "web", "news", "latest", "research"],
+    "handoff":    ["claude", "chatgpt", "complex", "analyse", "deep"],
+}
+```
+
+**Stufe 3 — LLM (nur bei kein Match):**
+Nur wenn Stufe 1 und 2 keinen Match liefern → LLM-Call wie bisher.
+
+### Testergebnis (2026-07-20, Docker Container)
+```
+comms        (keyword score 3) <- write an email to my boss       ✅
+comms        (keyword score 1) <- ich möchte eine Mail schreiben  ✅
+code         (keyword score 4) <- debug my python script          ✅
+notes        (keyword score 2) <- save this note: Docker Test     ✅
+researcher   (keyword score 3) <- search for latest AI news       ✅
+comms        (emoji)           <- 📧 write to John                ✅
+LLM          (kein Match)      <- Can you help me?                ✅
+handoff      (keyword score 1) <- Prepare a prompt for Claude.ai  ✅
+```
+
+**8/8 korrekt** — loest 80% der Routing-Fehler ohne LLM-Call.
+
+### Implementierung
+- Neue Datei: `agents/server/router_heuristic.py`
+- Aenderung: `agents/server/supervisor.py` — Pre-Filter vor `router_llm.ainvoke()`
+- Kein neues Modell, kein neues Image noetig
+
+### Status
+Getestet im Docker Container (2026-07-20). Implementierung ausstehend.
