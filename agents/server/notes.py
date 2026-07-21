@@ -32,7 +32,7 @@ VAULT_PATH = PROJECT_ROOT / "vault"
 llm = ChatOpenAI(
     base_url=f"{config.LITELLM_URL}/v1",
     api_key=config.LITELLM_KEY,
-    model="granite-tiny",
+    model=config.DEFAULT_LLM,
     temperature=0,
 )
 
