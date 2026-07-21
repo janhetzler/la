@@ -70,7 +70,7 @@ llama_proc = subprocess.Popen(
     [LLAMA_BIN, '-m', MODEL_PATH,
      '--host', '127.0.0.1', '--port', '8080',
      '--jinja', '--ctx-size', '32768',
-     '--parallel', '1', '--log-disable'],
+     '--parallel', '1', '--log-disable', '--embeddings'],
     stdout=open(LLAMA_LOG, 'w'), stderr=subprocess.STDOUT
 )
 wait_for('http://127.0.0.1:8080/v1/models', 'llama-server')
