@@ -111,6 +111,34 @@ NOTES_TOOLS = [
 _shared_cache = {}
 
 
+
+@tool
+def save_note(text: str, title: str = "") -> str:
+    """Speichert eine Notiz in ChromaDB.
+
+    Args:
+        text:  Inhalt der Notiz.
+        title: Optionaler Titel (wird als source-Feld gespeichert).
+    """
+    from datetime import datetime
+    vec = _embed_query(text)
+    source = f"note-{title}" if title else "note"
+    note_id = f"note-{datetime.now().isoformat()}"
+    client = chromadb.PersistentClient(path=config.CHROMA_PATH)
+    collection = client.get_or_create_collection(
+        name=config.CHROMA_COLLECTION,
+        metadata={"hnsw:space": "cosine"}
+    )
+    collection.add(
+        documents=[text],
+        embeddings=[vec],
+        metadatas=[{"category": "notes", "source": source}],
+        ids=[note_id]
+    )
+    preview = text[:50] + ("..." if len(text) > 50 else "")
+    return f"Notiz gespeichert: {preview}"
+
+
 def _get_system_prompt(user_language: str = "en") -> str:
     _, prompt = load_agent("notes")
     return prompt.replace("{user_language}", user_language)
@@ -125,7 +153,7 @@ async def _get_agent(user_language: str):
     """Erstellt den Notes-Agenten mit gefilterten Tools, gecacht pro Sprache."""
     if user_language not in _agents:
         mcp_tools = await get_tools_by_names(NOTES_TOOLS)
-        all_tools = [search_meetings] + mcp_tools
+        all_tools = [search_meetings, save_note] + mcp_tools
         system_prompt = _get_system_prompt(user_language)
         system_prompt = system_prompt.replace("{vault_path}", str(VAULT_PATH))
         _agents[user_language] = create_agent(
