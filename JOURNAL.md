@@ -17,6 +17,36 @@ Sandbox 2 ist Spielwiese -- dort wird ausprobiert ohne Ruecksicht auf Stabilitae
 ---
 
 
+## 2026-07-21 — Heuristisches Routing + Notes-Fixes
+
+### Was erreicht wurde
+
+**Heuristisches Routing implementiert:**
+- `agents/server/router_heuristic.py` neu — Emoji + Keyword Pre-Filter
+- `agents/server/supervisor.py` — heuristic_route() vor LLM-Call
+- 8/8 Testfaelle korrekt, inkl. Deutsch ("Mail schreiben" → comms)
+- Kein LLM-Routing-Call mehr fuer 5/6 Agenten
+
+**Notes-Agent fixes (BUG-017, BUG-018, BUG-019):**
+- ChromaDB Collection mit cosine Distanz (BUG-017)
+- Source-Filter in search_meetings entfernt (BUG-018)
+- save_note Tool implementiert (BUG-019)
+
+**Embedding-Stack repariert (BUG-021):**
+- llama-server braucht --embeddings + --pooling mean
+- granite-embed in LiteLLM Config ergaenzt
+- 768-dim Embeddings via LiteLLM funktionieren
+
+**Ergebnis:** 4/6 Agenten OK — Notes antwortet (HTTP 200) aber
+save_note wird vom 350m Modell nicht aufgerufen (Modell-Limit).
+
+### Offene Punkte
+
+- Docker entrypoint.sh: --embeddings + --pooling mean ergaenzen
+- Sandbox 1 neu aufsetzen mit aktuellem Stand
+- 1B Modell testen — save_note sollte dann funktionieren
+
+
 ## 2026-07-20 Nachtrag 2 -- Docker ChromaDB RAG Test
 
 ### Was erreicht wurde
