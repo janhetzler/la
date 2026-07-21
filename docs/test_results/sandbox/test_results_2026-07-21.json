@@ -1,0 +1,57 @@
+{
+  "timestamp": "2026-07-21T19:34:21.922515",
+  "results": [
+    {
+      "agent": "Supervisor Routing",
+      "frage": "Can you help me?",
+      "zeit": 6.4,
+      "status": "FAIL",
+      "http": 200,
+      "reason": "Zu kurz (6 Zeichen)"
+    },
+    {
+      "agent": "Comms Agent",
+      "frage": "Write a short professional email to the team about the proje",
+      "zeit": 14.7,
+      "status": "OK",
+      "http": 200,
+      "reason": "OK (978 Zeichen)"
+    },
+    {
+      "agent": "Code Agent",
+      "frage": "Write a Python function with type hints and docstring that s",
+      "zeit": 4.2,
+      "status": "OK",
+      "http": 200,
+      "reason": "OK (332 Zeichen)"
+    },
+    {
+      "agent": "Researcher Agent",
+      "frage": "What is LangGraph and how do multi-agent systems work with i",
+      "zeit": 47.0,
+      "status": "OK",
+      "http": 200,
+      "reason": "OK (3234 Zeichen)"
+    },
+    {
+      "agent": "Notes Agent",
+      "frage": "Save this note: Local Agent runs on AMD EPYC, 4 vCores, 10GB",
+      "zeit": 24.0,
+      "status": "FAIL",
+      "http": 200,
+      "reason": "OK (24 Zeichen) | ChromaDB notes: 0 Dokumente"
+    },
+    {
+      "agent": "Handoff Agent",
+      "frage": "Prepare a prompt for Claude.ai: analyse local LLMs vs Cloud ",
+      "zeit": 7.7,
+      "status": "OK",
+      "http": 200,
+      "reason": "OK (702 Zeichen)"
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "ok": 4
+  }
+}
