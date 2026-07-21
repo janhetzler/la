@@ -67,7 +67,10 @@ def search_meetings(query: str, top_k: int = 5) -> str:
     try:
         query_vec = _embed_query(query)
         client = chromadb.PersistentClient(path=config.CHROMA_PATH)
-        collection = client.get_or_create_collection(name=config.CHROMA_COLLECTION)
+        collection = client.get_or_create_collection(
+            name=config.CHROMA_COLLECTION,
+            metadata={"hnsw:space": "cosine"}
+        )
         results = collection.query(
             query_embeddings=[query_vec],
             n_results=top_k,
