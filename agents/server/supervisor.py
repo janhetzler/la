@@ -18,6 +18,7 @@ from comms import invoke_comms
 from handoff import invoke_handoff
 from notes import invoke_notes
 from researcher_v2 import invoke_researcher_v2
+from router_heuristic import heuristic_route
 
 
 # ===== LLM fuer Routing und Reformulierungen =====
@@ -102,6 +103,13 @@ async def detect_user_language(user_message: str) -> str:
 # ===== Routing =====
 async def route(user_message: str) -> str:
     """Fragt das LLM welcher Agent die Anfrage bearbeiten soll."""
+    # Stufe 1: Heuristik (Emoji + Keywords) — kein LLM-Call noetig
+    heuristic = heuristic_route(user_message)
+    if heuristic:
+        print(f"[supervisor] heuristic -> {heuristic}", flush=True)
+        return heuristic
+
+    # Stufe 2: LLM mit Grammar Constraint
     messages = [
         SystemMessage(content=ROUTER_PROMPT),
         HumanMessage(content=user_message),
