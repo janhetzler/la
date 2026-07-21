@@ -466,3 +466,27 @@ und Verzeichnissen. Es sollte zuerst `list_directory` aufrufen und dann
 Zusaetzlich: LangChain Tool-Wrapper mit Try/Except fuer robustere Tool-Calls.
 
 **Status:** Fix ausstehend.
+
+---
+
+## BUG-021: llama-server braucht --embeddings und --pooling mean fuer OAI-kompatible Embeddings
+
+**Status:** Bestaetigt via Sandbox-Test (2026-07-21)
+**Umgebung:** Sandbox + Docker
+
+**Symptom 1:** `/v1/embeddings` gibt 501 zurueck ohne `--embeddings` Flag.
+
+**Symptom 2:** Mit `--embeddings` aber ohne `--pooling`: llama-server antwortet mit
+`Pooling type 'none' is not OAI compatible`.
+
+**Fix:** llama-server mit beiden Flags starten:
+```bash
+/tmp/llama-b9895/llama-server ... --embeddings --pooling mean
+```
+
+**Betrifft:**
+- `scripts/sandbox/start_full.py` — behoben (Commit a8b486c3f083)
+- `docker/entrypoint.sh` — Fix ausstehend
+- `docs/LLAMA.md` und `docs/OPERATIONS_SANDBOX.md` — Dokumentation ausstehend
+
+**Status:** In Sandbox gefixt, Docker und Doku ausstehend.
