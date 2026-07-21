@@ -91,6 +91,11 @@ model_list:
       model: openai/granite
       api_base: http://127.0.0.1:8080/v1
       api_key: not-needed
+  - model_name: granite-embed
+    litellm_params:
+      model: openai/granite-embed
+      api_base: http://127.0.0.1:8080/v1
+      api_key: not-needed
   - model_name: agent-local
     litellm_params:
       model: openai/agent-local
