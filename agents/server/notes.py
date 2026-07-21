@@ -87,8 +87,7 @@ def search_meetings(query: str, top_k: int = 5) -> str:
             ):
                 source = meta.get("source", "unknown")
                 score = 1 - dist
-                if "meeting" in source.lower() or meta.get("type") == "meeting":
-                    meetings.append(f"[{source}, score {score:.2f}]\n{doc[:500]}")
+                meetings.append(f"[{source}, score {score:.2f}]\n{doc[:500]}")
 
         if not meetings:
             return "No relevant meeting notes found."
