@@ -485,3 +485,50 @@ durch -- bevor "Ready" gemeldet wird. Ergebnis klar sichtbar in der Konsole.
 
 ### Status
 Geplant. Implementierung ausstehend.
+
+---
+
+## llama-server Multi-Modell-Betrieb via --models-preset (getestet 2026-07-20)
+
+### Erkenntnis
+llama-server b9895 kann **mehrere Modelle gleichzeitig** laden und servieren
+ueber eine einzige `.ini` Konfigurationsdatei (`--models-preset`).
+Getestet und funktionsfaehig mit unserer Binary-Version.
+
+### Konfiguration (models.ini)
+```ini
+[defaults]
+threads = 2
+
+[granite-1b]
+model = /data/models/granite-4.0-h-1b-Q4_K_M.gguf
+ctx-size = 16384
+jinja = true
+
+[granite-350m]
+model = /data/models/granite-4.0-h-350m-Q6_K.gguf
+ctx-size = 16384
+jinja = true
+```
+
+### Start-Befehl
+```bash
+/opt/llama/llama-server \
+  --models-preset /data/models.ini \
+  --host 0.0.0.0 --port 8080
+```
+
+### Was das fuer uns bedeutet
+- Reasoning-Modell (1B) und Router-Modell (350m) koennen gleichzeitig laufen
+- Ein einziger llama-server Prozess statt zwei separate Prozesse
+- LiteLLM kann per Modellname zwischen beiden wechseln
+- Router nutzt 350m (schneller), Agenten nutzen 1B (besser)
+
+### Relevanz fuer Heuristisches Routing
+Kombiniert mit dem geplanten Keyword/Emoji-Pre-Filter:
+- Klare Faelle → Heuristik (kein LLM-Call)
+- Unklare Faelle → 350m Router (schnell, guenstig)
+- Agent-Ausfuehrung → 1B Modell (qualitativ besser)
+
+### Status
+Getestet. Implementierung in Dockerfile und entrypoint.sh ausstehend.
