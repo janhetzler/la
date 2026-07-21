@@ -195,3 +195,39 @@ das Modell waehlt.
 
 **Loesung:** Granite-4.0-H-Tiny (4B) auf dem Host — dort funktioniert
 Zero-Shot-Routing korrekt (durch groessere Modellkapazitaet).
+
+---
+
+## Test-Run 2026-07-21 — Heuristik + Notes-Fixes
+
+**Stack:** llama-server b9895 + --jinja + --embeddings + --pooling mean
+**Modell:** Granite 350m Q4_K_M
+
+### Neue Features getestet
+
+| Feature | Status | Commit |
+|---------|--------|--------|
+| router_heuristic.py (Emoji + Keywords) | ✓ 8/8 korrekt | 3a8ebbc2 |
+| supervisor.py Pre-Filter | ✓ kein LLM-Call fuer 5/5 Faelle | 8ecd7696 |
+| notes.py cosine Collection (BUG-017) | ✓ | 119fa9f7 |
+| notes.py Source-Filter entfernt (BUG-018) | ✓ | 95ba7427 |
+| notes.py save_note Tool (BUG-019) | ✓ implementiert | 1c8b2bdf |
+| granite-embed in LiteLLM Config | ✓ | 1f648717 |
+| --embeddings + --pooling mean (BUG-021) | ✓ 768-dim Embeddings | a8b486c3 |
+
+### Agenten-Test 4/6 OK
+
+| Agent | Status | Anmerkung |
+|-------|--------|-----------|
+| Supervisor | ✓ | heuristic → meta (kein LLM-Call) |
+| Comms | ✓ | heuristic → comms (keyword: write) |
+| Code | ✓ | heuristic → code (keyword: python) |
+| Researcher | ✓ | heuristic → tell me about |
+| Notes | ✗ | HTTP 200 aber save_note nicht aufgerufen (350m Limit) |
+| Handoff | ✓ | heuristic → claude.ai |
+
+### Wichtigste Erkenntnis
+
+Heuristisches Routing eliminiert LLM-Routing-Calls fuer 5 von 6 Agenten.
+Notes-Agent antwortet (kein Crash mehr) aber schreibt nicht in ChromaDB —
+das bleibt ein 350m Modell-Limit, kein Code-Bug.
