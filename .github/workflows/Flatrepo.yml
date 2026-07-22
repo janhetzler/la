@@ -3,7 +3,7 @@ name: Repository Flattener
 on:
   workflow_dispatch: # Erlaubt das manuelle Ausführen im GitHub-Tab "Actions"
   push:
-    branches: [ main, master ] # Optional: Automatisch bei jedem Push ausführen
+    branches: [ main, master ] # Automatisch bei Push ausführen
 
 jobs:
   flatten:
@@ -12,30 +12,44 @@ jobs:
       - name: Code auschecken
         uses: actions/checkout@v4
 
-      - name: Dateien zusammenführen
+      - name: Dateien mit Python zusammenführen
         run: |
-          OUTPUT_FILE="repository_flattened.txt"
-          echo "================================================================" > $OUTPUT_FILE
-          echo "Repository Inhalt" >> $OUTPUT_FILE
-          echo "================================================================" >> $OUTPUT_FILE
-          echo "" >> $OUTPUT_FILE
+          python3 -c '
+          import os
 
-          # Durchsucht das Repo (schließt .git, node_modules, etc. aus)
-          find . -type f \
-            ! -path "*/.git/*" \
-            ! -path "*/node_modules/*" \
-            ! -path "*/venv/*" \
-            ! -name "repository_flattened.txt" \
-            ! -name "*.png" ! -name "*.jpg" ! -name "*.zip" | while read -r file; do
-              echo "================================================================" >> $OUTPUT_FILE
-              echo "File: ${file#./}" >> $OUTPUT_FILE
-              echo "================================================================" >> $OUTPUT_FILE
-              echo '```' >> $OUTPUT_FILE
-              cat "$file" >> $OUTPUT_FILE 2>/dev/null \vert{}\vert{} echo "[Binärdatei oder nicht lesbar]" >> $OUTPUT_FILE
-              echo '' >> $OUTPUT_FILE
-              echo '```' >> $OUTPUT_FILE
-              echo "" >> $OUTPUT_FILE
-          done
+          output_file = "repository_flattened.txt"
+          ignored_dirs = {".git", "node_modules", "venv", ".idea", ".vscode", "__pycache__"}
+          ignored_exts = {".png", ".jpg", ".jpeg", ".gif", ".zip", ".tar", ".gz", ".pdf", ".ico", ".exe"}
+
+          with open(output_file, "w", encoding="utf-8", errors="ignore") as out:
+              out.write("================================================================\n")
+              out.write("Repository Inhalt\n")
+              out.write("================================================================\n\n")
+
+              for root, dirs, files in os.walk("."):
+                  # Ignorierte Ordner überspringen
+                  dirs[:] = [d for d in dirs if d not in ignored_dirs]
+                  
+                  for file in files:
+                      if file == output_file or any(file.endswith(ext) for ext in ignored_exts):
+                          continue
+                      
+                      file_path = os.path.join(root, file)
+                      rel_path = os.path.relpath(file_path, ".")
+
+                      out.write("================================================================\n")
+                      out.write(f"File: {rel_path}\n")
+                      out.write("================================================================\n")
+                      out.write("```\n")
+
+                      try:
+                          with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                              out.write(f.read())
+                      except Exception as e:
+                          out.write(f"[Fehler beim Lesen: {e}]\n")
+
+                      out.write("\n```\n\n")
+          '
 
       - name: Datei als Artifact bereitstellen
         uses: actions/upload-artifact@v4
