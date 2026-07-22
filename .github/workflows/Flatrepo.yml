@@ -1,0 +1,44 @@
+name: Repository Flattener
+
+on:
+  workflow_dispatch: # Erlaubt das manuelle Ausführen im GitHub-Tab "Actions"
+  push:
+    branches: [ main, master ] # Optional: Automatisch bei jedem Push ausführen
+
+jobs:
+  flatten:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Dateien zusammenführen
+        run: |
+          OUTPUT_FILE="repository_flattened.txt"
+          echo "================================================================" > $OUTPUT_FILE
+          echo "Repository Inhalt" >> $OUTPUT_FILE
+          echo "================================================================" >> $OUTPUT_FILE
+          echo "" >> $OUTPUT_FILE
+
+          # Durchsucht das Repo (schließt .git, node_modules, etc. aus)
+          find . -type f \
+            ! -path "*/.git/*" \
+            ! -path "*/node_modules/*" \
+            ! -path "*/venv/*" \
+            ! -name "repository_flattened.txt" \
+            ! -name "*.png" ! -name "*.jpg" ! -name "*.zip" | while read -r file; do
+              echo "================================================================" >> $OUTPUT_FILE
+              echo "File: ${file#./}" >> $OUTPUT_FILE
+              echo "================================================================" >> $OUTPUT_FILE
+              echo '```' >> $OUTPUT_FILE
+              cat "$file" >> $OUTPUT_FILE 2>/dev/null \vert{}\vert{} echo "[Binärdatei oder nicht lesbar]" >> $OUTPUT_FILE
+              echo '' >> $OUTPUT_FILE
+              echo '```' >> $OUTPUT_FILE
+              echo "" >> $OUTPUT_FILE
+          done
+
+      - name: Datei als Artifact bereitstellen
+        uses: actions/upload-artifact@v4
+        with:
+          name: repo-flattened-txt
+          path: repository_flattened.txt
