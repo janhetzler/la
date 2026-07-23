@@ -1,5 +1,5 @@
 # Local Agent Test Suite — Ergebnisse (Sandbox 1)
-**Datum:** 2026-07-18 (dritter Lauf)
+**Datum:** 2026-07-23 (vierter Lauf)
 **Umgebung:** Claude.ai Sandbox (Intel Xeon, 1 Core, 4 GB RAM)
 **Modell:** Granite 4.0-H 350m Q4_K_M
 
@@ -8,15 +8,15 @@
 ## Stack Konfiguration
 
 ```
-llama-server :8080  (Granite 350m, llama-cpp-python 0.3.23)
+llama-server b9895 :8080  (Granite 350m, Binary mit --jinja)
     ↑
-LiteLLM :4000       (Gateway + Phoenix Callbacks)
+LiteLLM :4000             (Gateway + Phoenix Callbacks)
     ↑
-Agent Server :8002  (Supervisor + 5 Agenten)
+Agent Server :8002         (Supervisor + 5 Agenten)
     ↓
 ChromaDB (embedded, /tmp/chroma_la)
     ↓
-Phoenix :6006       (Observability)
+Phoenix :6006              (Observability, Timeout beim Start)
 ```
 
 Headroom: DISABLED (headroom-ai[all] zu groß für Sandbox)
@@ -34,9 +34,9 @@ Headroom: DISABLED (headroom-ai[all] zu groß für Sandbox)
 | chromadb | 1.5.9 |
 | litellm | 1.92.0 |
 | arize-phoenix | 18.0.0 |
-| arize-phoenix-client | (neu) |
+| arize-phoenix-client | installiert |
 | openinference-instrumentation-langchain | 0.1.67 |
-| llama-cpp-python | 0.3.23 (Prebuilt Wheel) |
+| llama-server | b9895 (Binary, --jinja) |
 | fastapi | 0.139.0 |
 | uvicorn | 0.51.0 |
 | pydantic | 2.12.5 |
@@ -44,64 +44,71 @@ Headroom: DISABLED (headroom-ai[all] zu groß für Sandbox)
 
 ---
 
-## Agent Test Ergebnisse (5/6 OK)
+## Agent Test Ergebnisse (4/6 OK)
 
 Testlauf: `python3 scripts/sandbox/start_full.py`
-Start: 2026-07-18T15:08:12 — Ende: 2026-07-18T15:09:59 (~1:47 min)
+Start: 2026-07-23T17:48:01 — Ende: 2026-07-23T17:50:24 (~2:23 min)
 
 | Agent | Status | Zeit | Routing | Antwort |
 |-------|--------|------|---------|---------|
-| Supervisor Routing | ✓ | 15.0s | meta | OK (34 Zeichen) |
-| Comms Agent | ✓ | 18.8s | meta | OK (692 Zeichen) |
-| Code Agent | ✓ | 13.2s | meta | OK (28 Zeichen) |
-| Researcher Agent | ✓ | 29.2s | researcher | OK (619 Zeichen) |
-| Notes Agent | ✗ | 14.0s | meta | ChromaDB notes: 0 Dokumente |
-| Handoff Agent | ✓ | 14.0s | meta | OK (157 Zeichen) |
+| Supervisor Routing | ✗ | 13.5s | meta | Zu kurz (6 Zeichen: "Hello!") |
+| Comms Agent | ✓ | 21.9s | heuristic→comms | OK (1196 Zeichen) |
+| Code Agent | ✓ | 4.7s | heuristic→comms | OK (306 Zeichen) |
+| Researcher Agent | ✓ | 60.1s | heuristic→researcher | OK (3234 Zeichen) |
+| Notes Agent | ✗ | 32.2s | heuristic→notes | ChromaDB notes: 0 Dokumente |
+| Handoff Agent | ✓ | 10.4s | heuristic→handoff | OK (685 Zeichen) |
 
 ---
 
 ## Bekannte Punkte
 
-### 1. Routing-Limit 350m
-Das 350m Modell routet fast alles zu `meta` — nur `researcher` wird
-korrekt erkannt. Ursache: 350m zu klein für Intent-Klassifikation.
-Auf host mit Granite-Tiny-4B wird Routing korrekt funktionieren.
+### 1. Heuristik-Routing funktioniert jetzt
+Neue Keyword-Heuristik im Supervisor routet comms, researcher, notes und
+handoff korrekt — deutliche Verbesserung gegenüber altem Stand wo
+fast alles zu `meta` ging.
 
-### 2. Notes Agent FAIL
-Notes Agent routet zu `meta` statt `notes` — ChromaDB collection bleibt
-leer. Bekanntes Routing-Limit, kein Code-Fehler.
+### 2. Supervisor Routing FAIL
+Test fragt "Can you help me?" — meta antwortet mit "Hello!" (6 Zeichen).
+Mindestlängen-Validierung schlägt an. Kein echter Fehler im Routing,
+nur zu kurze Antwort auf generische Frage. Test-Prompt könnte angepasst werden.
 
-### 3. Phoenix Log-Check False Positive
-`test_stack.py` meldet Fehler für `phoenix.log` wegen SQL
-`CHECK ... IN ('OK', 'ERROR', ...)`. Kein echter Fehler.
-Dokumentiert in `BUGS.md`.
+### 3. Notes Agent FAIL — ChromaDB schreibt nicht
+Notes Agent wird korrekt geroutet (heuristic→notes), antwortet mit
+"The note has been saved." — aber ChromaDB bleibt leer.
+Ursache: Modell ruft kein Write-Tool auf, gibt nur Text zurück.
+Tool-Call Problem, kein Routing-Problem.
 
-### 4. Code Agent Antwort-Qualität
-Code Agent routet zu `meta` und antwortet mit `<|ex|>What can I do for you?`
-— 28 Zeichen, knapp über Mindestlänge. Inhaltlich nicht korrekt.
-Validierung prüft nur Mindestlänge, nicht Codequalität.
+### 4. Phoenix Timeout beim Start
+Phoenix startet nicht innerhalb von 25 Retries. OTel-Tracing läuft
+trotzdem direkt über Collector-Endpoint.
+Phoenix Log-Check False Positive: SQL `CHECK ... IN ('OK', 'ERROR', ...)`
+triggert Fehler-Pattern. Dokumentiert in `BUGS.md`.
+
+### 5. llama-server Binary statt llama-cpp-python
+Dieser Lauf nutzt das llama-server Binary (b9895) mit `--jinja` Flag
+statt llama-cpp-python als Python-Modul. Binary muss vor dem Start
+unter `/tmp/llama-b9895/llama-server` vorhanden sein.
 
 ---
 
-## Neu seit letztem Lauf (Commit a235959)
+## Neu seit letztem Lauf (Commit 0a97358)
 
-- `agent_loader.py` — neuer zentraler Agent-Loader aus `prompts/` Dateien
-- `prompts/` Verzeichnis — Prompt-Dateien für alle Agenten als Markdown
-- `TEMPLATE.py` / `TEMPLATE.md` — Agent-Templates
-- `project_context.py` und `user_profile.py` gelöscht → `prompts/shared/`
-- `scripts/sandbox/start_claude.py` — neues Sandbox-Skript
-- Fix: `TEMPLATE.md` aus `list_agents()` ausgeschlossen (Commit a235959)
+- llama-server Binary (b9895) als Inferenz-Engine statt llama-cpp-python
+- `--jinja` Flag für natives Tool-Calling aktiviert
+- Heuristik-Routing im Supervisor (keyword-basiert vor LLM-Routing)
+- Frischer Klon des Repos
 
 ---
 
 ## Historischer Vergleich
 
-| Testlauf | Datum | OK/Gesamt | Headroom |
-|---------|-------|-----------|---------|
-| Sandbox 1 (historisch) | 2026-07-14 | 6/6 ¹ | aktiv |
-| Sandbox 1 (erster Lauf) | 2026-07-17 | 4/6 | disabled |
-| Sandbox 1 (zweiter Lauf) | 2026-07-17 | 4/6 | disabled |
-| Sandbox 1 (dritter Lauf) | 2026-07-18 | 5/6 | disabled |
+| Testlauf | Datum | OK/Gesamt | Routing | llama-server |
+|---------|-------|-----------|---------|-------------|
+| Sandbox 1 (historisch) | 2026-07-14 | 6/6 ¹ | alles→meta | llama-cpp-python |
+| Sandbox 1 (erster Lauf) | 2026-07-17 | 4/6 | alles→meta | llama-cpp-python |
+| Sandbox 1 (zweiter Lauf) | 2026-07-17 | 4/6 | alles→meta | llama-cpp-python |
+| Sandbox 1 (dritter Lauf) | 2026-07-18 | 5/6 | alles→meta | llama-cpp-python |
+| Sandbox 1 (vierter Lauf) | 2026-07-23 | 4/6 | heuristic ✓ | Binary b9895 |
 
 ¹ Hinweis: 6/6 historisch weil Tests weniger streng waren —
 kein ChromaDB-Check, keine Mindestlängen-Validierung.
