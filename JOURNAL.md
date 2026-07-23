@@ -8,13 +8,28 @@ Neuester Eintrag oben. Fuer Agenten: lies den ersten Eintrag um den aktuellen St
 
 | Sandbox | Rolle | Beschreibung |
 |---------|-------|--------------|
-| **Sandbox 1** | Produktiv | Aktueller Repo-Stand, getesteter Stack, 5/6 Agenten OK |
+| **Sandbox 1** | Produktiv | Neu aufgesetzt 2026-07-21, llama-server b9895, Heuristik-Routing, 4/6 OK |
 | **Sandbox 2** | Labor | Experimente, kein stabiler Stand garantiert |
 
 Sandbox 1 hat immer den aktuellsten `git pull` Stand und ist die Referenz fuer Testergebnisse.
 Sandbox 2 ist Spielwiese -- dort wird ausprobiert ohne Ruecksicht auf Stabilitaet.
 
 ---
+
+
+## 2026-07-21 Nachtrag — Sandbox 1 neu aufgesetzt
+
+**Sandbox 1 komplett neu aufgesetzt** mit aktuellem Repo-Stand:
+- llama-server Binary b9895 (nicht mehr llama-cpp-python)
+- Heuristisches Routing aktiv (router_heuristic.py)
+- 4/6 Agenten OK — Heuristik routet korrekt
+- Comms, Code, Researcher, Handoff funktionieren
+- Supervisor: kurze Antwort (350m Limit, bekannt)
+- Notes: korrekt geroutet, ChromaDB-Schreiben noch nicht (Tool-Call Limit)
+
+**Verbesserung gegenueber altem Stand:**
+Vorher routete alles zu `meta` — jetzt greift die Heuristik
+und routet 4/5 Agenten korrekt ohne LLM-Call.
 
 
 ## 2026-07-21 — Heuristisches Routing + Notes-Fixes
