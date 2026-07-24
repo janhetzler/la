@@ -566,3 +566,56 @@ Vollstaendige Sichtbarkeit des kompletten Tool-Calling-Zyklus:
 
 Konzept. Implementierung noch nicht ausgearbeitet.
 Prioritaet: niedrig — erst nach Host-Deployment.
+
+---
+
+## Neue Zielarchitektur: opencomputer + LA Stack (2026-07-24)
+
+### Vision
+
+`janhetzler/opencomputer` (Fork von open-webui/computer) ersetzt LiteLLM
+als Gateway und stellt die vollstaendige GUI bereit.
+
+### Neue Architektur
+
+```
+Browser
+  ↓
+opencomputer (cptr, Port 7860) -- GUI + API Gateway
+  ├── llama-server :8080 (Granite-Tiny, --jinja, --embeddings)
+  ├── Agent Server :8002 (Supervisor + 6 Agenten)
+  │     └── Phoenix Tracing (direkt eingebaut, nicht via LiteLLM)
+  └── ChromaDB
+```
+
+### Was wegfaellt
+
+- LiteLLM komplett (ersetzt durch opencomputer Gateway)
+- litellm_config.yaml
+- LiteLLM Readiness-Checks
+
+### Was bleibt / sich aendert
+
+- Agent Server spricht direkt mit llama-server
+- Phoenix via OpenTelemetry direkt im Agent Server
+- MCP-Server direkt in opencomputer konfigurierbar (mcp_stdio)
+- Agent Server als OpenAPI Tool-Server in opencomputer
+
+### Warum opencomputer
+
+- FastAPI + Python — gleiche Technologie wie unser Agent Server
+- Open Source — erweiterbar
+- Vollstaendig automatisierbar via REST API
+- Eingebauter API-Gateway (/v1) — ersetzt LiteLLM
+- MCP (Stdio + HTTP) nativ unterstuetzt
+- Sub-Agenten Konzept — unsere 6 Agenten als Sub-Agenten
+- Terminal, Git, Dateiverwaltung im Browser
+
+### Repositories
+
+- `janhetzler/la` — Agent Stack (Supervisor, Agenten, ChromaDB)
+- `janhetzler/opencomputer` — GUI + Gateway (Fork von open-webui/computer)
+
+### Status
+
+Konzept bestaetigt 2026-07-24. Implementierung ausstehend.
