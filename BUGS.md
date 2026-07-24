@@ -366,7 +366,7 @@ echo '{"mcpServers": {}}' > /app/mcp/docker/mcp.json
 
 ## BUG-017: ChromaDB Collection nutzt euklidische statt Kosinus-Distanz
 
-**Status:** Bestaetigt via Docker-Run (2026-07-20)
+**Status:** ✅ Behoben (2026-07-21) — Commit 95126b6ae764
 **Umgebung:** Docker + Sandbox
 
 **Symptom:** Notes-Agent findet keine Dokumente obwohl ChromaDB sie enthaelt.
@@ -382,9 +382,10 @@ Kosinus-Aehnlichkeit der gleichen Vektoren: 0.84 — eigentlich sehr gut.
 client.create_collection(name, metadata={"hnsw:space": "cosine"})
 ```
 
-In `entrypoint.sh` und `notes.py` anpassen.
+In `entrypoint.sh` und `notes.py` angepasst.
 
-**Status:** Manuell gefixt im laufenden Container, Code-Fix ausstehend.
+**Fix:** `start_full.py` initialisiert ChromaDB Collection mit cosine beim Stack-Start.
+`notes.py` erstellt Collection ebenfalls mit cosine bei jedem Zugriff.
 
 ---
 
