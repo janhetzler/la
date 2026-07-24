@@ -140,7 +140,15 @@ def parse_tool_call_from_response(
         )
         if match:
             try:
-                return json.loads(match.group(1))
+                parsed = json.loads(match.group(1))
+                # Granite gibt arguments manchmal als JSON-String zurueck
+                # z.B. "arguments": "{"text": "..."}" statt "arguments": {"text": "..."}
+                if isinstance(parsed.get("arguments"), str):
+                    try:
+                        parsed["arguments"] = json.loads(parsed["arguments"])
+                    except json.JSONDecodeError:
+                        pass
+                return parsed
             except json.JSONDecodeError:
                 return None
     return None
