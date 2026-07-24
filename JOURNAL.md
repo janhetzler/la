@@ -17,6 +17,47 @@ Sandbox 2 ist Spielwiese -- dort wird ausprobiert ohne Ruecksicht auf Stabilitae
 ---
 
 
+## 2026-07-21 Nachtrag 4 — Tool-Calling Infrastruktur vollstaendig
+
+### Was heute final bewiesen wurde
+
+**Infrastruktur 100% korrekt:**
+- format_tools_for_model() sendet <tools>...</tools> korrekt
+- parse_tool_call_from_response() parst arguments-String korrekt
+- ReAct-Loop behandelt unvollstaendige Tags korrekt
+- LiteLLM gibt 200 OK fuer alle Notes-Requests
+- ChromaDB Collection mit cosine bereit
+- save_note Tool registriert und funktionsfaehig
+
+**350m Modell-Limit (BUG-024) — finale Diagnose:**
+Das Modell antwortet direkt mit Text statt <tool_call>.
+Kein Code-Fix moeglich — das ist eine Kapazitaetsgrenze.
+Im isolierten Phoenix-Trace produzierte es einmal einen
+vollstaendigen <tool_call> — also KANN es, aber nicht zuverlaessig.
+
+**Commits heute (Sandbox 2):**
+- aa4294b0 — researcher_v2.py format_tools_for_model
+- be6cdee4 — notes.py format_tools_for_model
+- a2b58cf7/f4d2e680 — outer try/except
+- 92183e17/5b7a04e6 — args_schema Fix
+- 486c3d5d/60640a28 — max_tokens=512
+- tool_formatter.py — arguments String-Fix
+- notes.py — ReAct-Loop unvollstaendiger Tag Fix
+
+### Naechster Schritt
+
+**Host-Deployment** — Granite-4.0-H-Tiny (4B) auf dem Host.
+Alle Infrastruktur-Komponenten sind bereit. Das Modell ist
+der einzige fehlende Baustein fuer vollstaendiges Tool-Calling.
+
+### Sandbox-Status
+
+| Sandbox | Rolle | Status |
+|---------|-------|--------|
+| Sandbox 1 | Produktiv | 4/6 OK, Heuristik aktiv, aktueller Stand |
+| Sandbox 2 | Labor | Erschoepft — naechste Session neu aufsetzen |
+
+
 ## 2026-07-21 Nachtrag 3 — format_tools_for_model Umbau
 
 ### Was erreicht wurde
