@@ -31,7 +31,7 @@ ROUTING_KEYWORDS = {
     ],
     "researcher": [
         "search", "find", "web", "news", "latest",
-        "research", "look up", "what is", "tell me about",
+        "research", "look up", "tell me about",
     ],
     "handoff": [
         "claude.ai", "chatgpt", "complex", "analyse",
