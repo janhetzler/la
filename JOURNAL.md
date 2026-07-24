@@ -17,6 +17,29 @@ Sandbox 2 ist Spielwiese -- dort wird ausprobiert ohne Ruecksicht auf Stabilitae
 ---
 
 
+## 2026-07-21 Nachtrag 2 — ChromaDB cosine Fix + Researcher Fix
+
+**ChromaDB BUG-017 behoben:**
+- `start_full.py` initialisiert ChromaDB Collection mit `hnsw:space: cosine` beim Stack-Start
+- 4/6 Agenten OK, Heuristik routet alle 5 Agenten korrekt
+- Notes-Agent schreibt noch nicht (350m Tool-Calling Limit — auf Host loesbar)
+
+**Researcher BUG-022 behoben:**
+- `researcher_v2.py` — try/except um `agent.ainvoke()`
+- "What is the Local Agent?" → `meta` → vollstaendige korrekte Antwort
+
+**Heuristik BUG-023 behoben:**
+- `"what is"` aus researcher Keywords entfernt
+- Generische Fragen gehen jetzt zu `meta`
+
+**Commits heute:**
+- `95126b6a` — start_full.py ChromaDB cosine
+- `31bd7161` — researcher_v2.py try/except
+- `dcb828f3` — router_heuristic.py "what is" entfernt
+- `3a8ebbc2` — router_heuristic.py neu
+- `8ecd7696` — supervisor.py Pre-Filter
+
+
 ## 2026-07-21 Nachtrag — Sandbox 1 neu aufgesetzt
 
 **Sandbox 1 komplett neu aufgesetzt** mit aktuellem Repo-Stand:
