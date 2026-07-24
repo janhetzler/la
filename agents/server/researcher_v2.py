@@ -145,6 +145,14 @@ def _get_system_prompt(user_language: str = "en") -> str:
 
 async def invoke_researcher_v2(user_message: str, user_language: str = "French") -> str:
     """Researcher-Agent mit nativem Granite Tool-Format statt bind_tools()."""
+    try:
+      return await _invoke_researcher_core(user_message, user_language)
+    except Exception as e:
+        print(f"[researcher] Fehler: {e}", flush=True)
+        return f"Researcher error: {type(e).__name__}: {str(e)[:200]}"
+
+
+async def _invoke_researcher_core(user_message: str, user_language: str) -> str:
     # Tools laden
     mcp_tools = await get_tools_by_names(RESEARCHER_TOOLS)
     all_tools = mcp_tools + [search_local_documents, search_by_category]
