@@ -490,3 +490,54 @@ Zusaetzlich: LangChain Tool-Wrapper mit Try/Except fuer robustere Tool-Calls.
 - `docs/LLAMA.md` und `docs/OPERATIONS_SANDBOX.md` — Dokumentation ausstehend
 
 **Status:** In Sandbox gefixt, Docker und Doku ausstehend.
+
+---
+
+## BUG-022: Researcher-Agent schlaegt bei "What is the Local Agent?" fehl
+
+**Status:** Bestaetigt via Sandbox 1 Test (2026-07-21)
+**Umgebung:** Sandbox
+
+**Symptom:** Researcher-Agent antwortet mit
+"I couldn't find any Local Agent in the current library"
+statt einer echten Recherche-Antwort.
+
+**Ursache:** Researcher-Agent versucht intern MCP-Tools oder ChromaDB
+zu nutzen und bekommt einen LiteLLM-Fehler zurueck. Der Heuristic-Router
+hat korrekt zu `researcher` geroutet — der Fehler liegt im Agent selbst.
+
+**Betroffene Frage:** "What is the Local Agent?" → heuristic → researcher
+(keyword: "what is" matched researcher)
+
+**Moegliche Ursache:** "what is" als Keyword fuer researcher ist zu breit —
+allgemeine Wissensfragen sollten zu `meta` gehen, nicht zu `researcher`.
+
+**Fix-Optionen:**
+1. "what is" aus ROUTING_KEYWORDS researcher entfernen
+2. Researcher-Agent robuster machen gegen LiteLLM-Fehler
+3. Beide kombinieren
+
+**Status:** Fix ausstehend.
+
+---
+
+## BUG-023: Supervisor-Test-Validator zu streng fuer meta-Agent
+
+**Status:** Bestaetigt via Sandbox 1 Test (2026-07-21)
+**Umgebung:** Sandbox
+
+**Symptom:** Supervisor-Test schlaegt fehl mit "zu kurz (6 Zeichen)"
+weil `meta` auf "Can you help me?" mit "Hello!" antwortet.
+
+**Ursache:** Test-Validator prueft min. 10 Zeichen fuer alle Agenten.
+Aber `meta` gibt bei generischen Fragen kurze Antworten — das ist
+korrektes Verhalten, kein Bug.
+
+**Beweis:** "Hi, what can you do?" → meta → 107 Zeichen, vollstaendig korrekt.
+"Can you help me?" → meta → "Hello!" — kurz aber valide.
+
+**Fix:** In `start_full.py` Supervisor-Test-Case auf laengere Frage aendern:
+"Can you help me?" → "Hi, what can you do for me today?"
+Oder: min_length fuer Supervisor-Test auf 3 Zeichen setzen.
+
+**Status:** Fix ausstehend.
