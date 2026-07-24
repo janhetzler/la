@@ -136,6 +136,14 @@ def _get_system_prompt(user_language: str = "en") -> str:
 # ===== Agent =====
 async def invoke_notes(user_message: str, user_language: str = "English") -> str:
     """Notes-Agent mit nativem Granite Tool-Format statt bind_tools()."""
+    try:
+        return await _invoke_notes_core(user_message, user_language)
+    except Exception as e:
+        print(f"[notes] Fehler: {e}", flush=True)
+        return f"Notes error: {type(e).__name__}: {str(e)[:200]}"
+
+
+async def _invoke_notes_core(user_message: str, user_language: str) -> str:
     all_tools = [save_note, search_meetings]
 
     # Tool-Definitionen bauen — args_schema Fix: dict() statt .schema()
