@@ -166,10 +166,14 @@ async def _get_agent(user_language: str):
 async def invoke_researcher_v2(user_message: str, user_language: str = "French") -> str:
     """Asynchroner Einstiegspunkt fuer den Researcher-Agenten."""
     agent = await _get_agent(user_language)
-    result = await agent.ainvoke({
-        "messages": [HumanMessage(content=user_message)],
-    })
-    return result["messages"][-1].content
+    try:
+        result = await agent.ainvoke({
+            "messages": [HumanMessage(content=user_message)],
+        })
+        return result["messages"][-1].content
+    except Exception as e:
+        print(f"[researcher] agent.ainvoke Fehler: {e}", flush=True)
+        return f"Researcher error: {type(e).__name__}: {str(e)[:200]}"
 
 
 def invoke_researcher_v2_sync(user_message: str, user_language: str = "French") -> str:
