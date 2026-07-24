@@ -619,3 +619,61 @@ opencomputer (cptr, Port 7860) -- GUI + API Gateway
 ### Status
 
 Konzept bestaetigt 2026-07-24. Implementierung ausstehend.
+
+---
+
+## SSE Streaming fuer Agent Server (fuer opencomputer Integration)
+
+### Problem
+
+`cptr` (opencomputer) erwartet Server-Sent Events (SSE) vom Chat-Endpoint:
+- `Content-Type: text/event-stream`
+- Chunks im Format: `data: {"choices":[{"delta":{"content":"..."}}]}`
+- Abschluss: `data: [DONE]`
+
+Unser Agent Server gibt aktuell eine vollstaendige JSON-Antwort zurueck
+wenn der Agent fertig ist -- kein Streaming.
+
+### Zwei Optionen
+
+**Option A — Fake-Streaming (einfach, schnell):**
+Antwort kommt vollstaendig vom Agenten, wird dann als einzelner
+SSE-Chunk verpackt und mit `[DONE]` abgeschlossen.
+- Kein echtes Token-Streaming
+- cptr zeigt Antwort sofort an wenn fertig
+- ~20 Zeilen Code in server.py
+
+**Option B — Echtes Streaming (besser, aufwaendiger):**
+llama-server streamt Token fuer Token → Agent Server leitet durch → cptr.
+- Echtes Echtzeit-Streaming in der UI
+- Groesserer Umbau in supervisor.py + server.py
+- Alle Agenten muessen streaming-faehig sein
+
+### Empfehlung
+
+Option A zuerst — beweist Integration mit cptr.
+Option B als naechsten Schritt wenn Option A stabil laeuft.
+
+### Implementierung Option A
+
+In `agents/server/server.py` beim `/v1/chat/completions` Endpoint:
+
+```python
+from fastapi.responses import StreamingResponse
+
+async def stream_response(content: str):
+    chunk = {"choices": [{"delta": {"content": content}, "finish_reason": None}]}
+    yield f"data: {json.dumps(chunk)}\n\n"
+    done_chunk = {"choices": [{"delta": {}, "finish_reason": "stop"}]}
+    yield f"data: {json.dumps(done_chunk)}\n\n"
+    yield "data: [DONE]\n\n"
+
+return StreamingResponse(
+    stream_response(result),
+    media_type="text/event-stream"
+)
+```
+
+### Status
+
+Geplant. Implementierung ausstehend — nach opencomputer Integration.
