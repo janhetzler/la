@@ -17,6 +17,44 @@ Sandbox 2 ist Spielwiese -- dort wird ausprobiert ohne Ruecksicht auf Stabilitae
 ---
 
 
+## 2026-07-24 — Tool-Calling Prompt-Optimierung + finale 350m Diagnose
+
+### Was erreicht wurde
+
+**tool_formatter.py — flaches JSON (Commit d9783694):**
+- Anweisungsblock ersetzt: kein `<function-name>` Platzhalter mehr
+- Explizites Beispiel: Correct vs. Incorrect Format
+- arguments direkt als Dict statt stringified JSON
+- String-Fallback bleibt als Sicherheitsnetz
+
+**save_note direkt getestet:**
+- `save_note.invoke({'text': '...', 'title': '...'})` → ChromaDB 1 Dokument ✅
+- Embedding-Server muss laufen (--embeddings --pooling mean)
+- Infrastruktur 100% korrekt
+
+**System-Prompt Analyse (Phoenix Trace):**
+- 1403 Prompt-Token
+- user_profile.md komplett leer (Platzhalter) — ~200 Token verschwendet
+- search_meetings hat doppelte Beschreibung — unnoetige Token
+- Modell generiert <tool_call> aber JSON-Body unvollstaendig
+
+**Finale 350m Diagnose:**
+Mit flachem JSON Prompt: Modell laeuft 5 ReAct-Runden durch,
+produziert nie vollstaendigen <tool_call>. Das ist die finale
+Bestaetigung: 350m kann Tool-Calling nicht zuverlaessig.
+
+### Was noch optimiert werden kann (fuer Host)
+
+1. user_profile.md mit echten Werten fuellen
+2. search_meetings Doppel-Beschreibung entfernen
+3. Prompt auf ~600 Token reduzieren
+
+### Naechster Schritt
+
+Host-Deployment mit Granite-Tiny (4B) — dort wird
+save_note() zuverlaessig aufgerufen werden.
+
+
 ## 2026-07-21 Nachtrag 4 — Tool-Calling Infrastruktur vollstaendig
 
 ### Was heute final bewiesen wurde
