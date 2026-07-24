@@ -160,7 +160,18 @@ async def _invoke_researcher_core(user_message: str, user_language: str) -> str:
     # Tool-Definitionen bauen — args_schema Fix: dict() statt .schema()
     tool_defs = []
     for t in all_tools:
-        schema = dict(t.args_schema) if hasattr(t, "args_schema") else {}
+        if hasattr(t, "args_schema"):
+            s = t.args_schema
+            if isinstance(s, dict):
+                schema = s
+            elif hasattr(s, "model_json_schema"):
+                schema = s.model_json_schema()
+            elif hasattr(s, "schema"):
+                schema = s.schema()
+            else:
+                schema = {}
+        else:
+            schema = {}
         tool_defs.append({
             "name": t.name,
             "description": t.description,
