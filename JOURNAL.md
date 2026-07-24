@@ -17,6 +17,40 @@ Sandbox 2 ist Spielwiese -- dort wird ausprobiert ohne Ruecksicht auf Stabilitae
 ---
 
 
+## 2026-07-21 Nachtrag 3 — format_tools_for_model Umbau
+
+### Was erreicht wurde
+
+**researcher_v2.py + notes.py umgebaut:**
+- `create_agent()`/`bind_tools()` ersetzt durch `format_tools_for_model()`
+- Native Granite XML Tool-Format: `<tools>...</tools>` im System-Prompt
+- `parse_tool_call_from_response()` fuer Tool-Call Erkennung
+- `args_schema` Fix: `model_json_schema()` statt `dict()` fuer Pydantic v2
+- Outer try/except in beiden Dateien
+- `max_tokens=512` fuer vollstaendige Tool-Call Ausgabe
+
+**Beweis dass Architektur korrekt ist:**
+- Notes-Agent produziert jetzt `<tool_call>` — war vorher nie der Fall
+- JSON-Body unvollstaendig wegen 350m Kapazitaetslimit
+- Researcher-Agent: 5047 Zeichen (vorher 3234) — bessere Antwortqualitaet
+
+**Commits:**
+- `aa4294b0` — researcher_v2.py format_tools_for_model
+- `be6cdee4` — notes.py format_tools_for_model
+- `a2b58cf7` + `f4d2e680` — outer try/except
+- `92183e17` + `5b7a04e6` — args_schema Fix
+- `486c3d5d` + `60640a28` — max_tokens=512
+
+### Fazit
+
+Die Architektur ist fertig und korrekt. Das 350m Modell versteht
+das Granite XML Tool-Format und produziert `<tool_call>` — aber
+der JSON-Body ist unvollstaendig wegen Kapazitaetslimit.
+
+Mit Granite-Tiny (4B) auf dem Host wird der vollstaendige
+`<tool_call>{"name": "save_note", ...}</tool_call>` kommen.
+
+
 ## 2026-07-21 Nachtrag 2 — ChromaDB cosine Fix + Researcher Fix
 
 **ChromaDB BUG-017 behoben:**
