@@ -495,7 +495,7 @@ Zusaetzlich: LangChain Tool-Wrapper mit Try/Except fuer robustere Tool-Calls.
 
 ## BUG-022: Researcher-Agent schlaegt bei "What is the Local Agent?" fehl
 
-**Status:** Bestaetigt via Sandbox 1 Test (2026-07-21)
+**Status:** ✅ Behoben (2026-07-21) — Commit 31bd71618517
 **Umgebung:** Sandbox
 
 **Symptom:** Researcher-Agent antwortet mit
@@ -523,7 +523,7 @@ allgemeine Wissensfragen sollten zu `meta` gehen, nicht zu `researcher`.
 
 ## BUG-023: Supervisor-Test-Validator zu streng fuer meta-Agent
 
-**Status:** Bestaetigt via Sandbox 1 Test (2026-07-21)
+**Status:** ✅ Behoben (2026-07-21) — 'what is' aus Heuristik entfernt, meta antwortet jetzt vollstaendig
 **Umgebung:** Sandbox
 
 **Symptom:** Supervisor-Test schlaegt fehl mit "zu kurz (6 Zeichen)"
