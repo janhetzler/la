@@ -46,6 +46,7 @@ llm = ChatOpenAI(
     api_key=config.LITELLM_KEY,
     model=config.DEFAULT_LLM,
     temperature=0,
+    max_tokens=512,
 )
 
 
