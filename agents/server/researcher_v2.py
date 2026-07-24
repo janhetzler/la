@@ -1,10 +1,14 @@
 """
-Researcher Agent (v2): ReAct agent with curated tools + Qdrant RAG.
+Researcher Agent (v2): Natives Granite Tool-Format statt bind_tools().
 
 Tools:
 - search_local_documents / search_by_category: semantic search over the user's library
-- tavily_search / tavily_extract: web search and URL content extraction
-- list_directory / read_text_file: filesystem exploration of the project
+- MCP-Tools: tavily_search, tavily_extract, list_directory, read_text_file
+
+Umbau 2026-07-24: create_agent()/bind_tools() ersetzt durch
+format_tools_for_model() + parse_tool_call_from_response() aus tool_formatter.py.
+Grund: 350m Modell kann OpenAI Function-Calling-Format nicht zuverlaessig bedienen,
+aber natives Granite XML-Format funktioniert.
 """
 import asyncio
 import sys
@@ -12,14 +16,14 @@ from pathlib import Path
 
 import httpx
 from dotenv import load_dotenv
-from langchain.agents import create_agent
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 import chromadb
 
 import config
 from agent_loader import load_agent
+from tool_formatter import format_tools_for_model, parse_tool_call_from_response
 from tools import get_tools_by_names
 
 
@@ -36,11 +40,11 @@ load_dotenv(Path(__file__).resolve().parent.parent.parent / ".env")
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
-# ===== LLM (Granite tiny-h via Ollama) =====
+# ===== LLM =====
 llm = ChatOpenAI(
     base_url=f"{config.LITELLM_URL}/v1",
     api_key=config.LITELLM_KEY,
-    model="granite-tiny",
+    model=config.DEFAULT_LLM,
     temperature=0,
 )
 
@@ -133,47 +137,76 @@ RESEARCHER_TOOLS = [
 ]
 
 
-# ===== System prompt template =====
-# Prompt wird aus prompts/agents/researcher.md geladen
-_shared_cache = {}
-
-
+# ===== System prompt =====
 def _get_system_prompt(user_language: str = "en") -> str:
     _, prompt = load_agent("researcher")
     return prompt.replace("{user_language}", user_language)
 
 
-
-# ===== Cached agents per language =====
-_agents: dict[str, object] = {}
-
-
-async def _get_agent(user_language: str):
-    """Erstellt den Agenten mit ausgewaehlten Tools, gecacht pro Sprache."""
-    if user_language not in _agents:
-        mcp_tools = await get_tools_by_names(RESEARCHER_TOOLS)
-        all_tools = mcp_tools + [search_local_documents, search_by_category]
-        system_prompt = _get_system_prompt(user_language)
-        system_prompt = system_prompt.replace("{project_root}", str(PROJECT_ROOT))
-        _agents[user_language] = create_agent(
-            model=llm,
-            tools=all_tools,
-            system_prompt=system_prompt,
-        )
-    return _agents[user_language]
-
-
 async def invoke_researcher_v2(user_message: str, user_language: str = "French") -> str:
-    """Asynchroner Einstiegspunkt fuer den Researcher-Agenten."""
-    agent = await _get_agent(user_language)
-    try:
-        result = await agent.ainvoke({
-            "messages": [HumanMessage(content=user_message)],
+    """Researcher-Agent mit nativem Granite Tool-Format statt bind_tools()."""
+    # Tools laden
+    mcp_tools = await get_tools_by_names(RESEARCHER_TOOLS)
+    all_tools = mcp_tools + [search_local_documents, search_by_category]
+
+    # Tool-Definitionen bauen — args_schema Fix: dict() statt .schema()
+    tool_defs = []
+    for t in all_tools:
+        schema = dict(t.args_schema) if hasattr(t, "args_schema") else {}
+        tool_defs.append({
+            "name": t.name,
+            "description": t.description,
+            "parameters": schema,
         })
-        return result["messages"][-1].content
-    except Exception as e:
-        print(f"[researcher] agent.ainvoke Fehler: {e}", flush=True)
-        return f"Researcher error: {type(e).__name__}: {str(e)[:200]}"
+
+    # System-Prompt: Agent-Prompt + natives Granite Tool-Format
+    tool_system = format_tools_for_model(tool_defs, model_family="granite")
+    agent_prompt = _get_system_prompt(user_language)
+    agent_prompt = agent_prompt.replace("{project_root}", str(PROJECT_ROOT))
+    system_content = f"{agent_prompt}\n\n{tool_system}" if tool_system else agent_prompt
+
+    messages = [
+        SystemMessage(content=system_content),
+        HumanMessage(content=user_message),
+    ]
+
+    tool_map = {t.name: t for t in all_tools}
+
+    # ReAct Loop — max 5 Runden
+    for step in range(5):
+        try:
+            response = await llm.ainvoke(messages)
+        except Exception as e:
+            print(f"[researcher] LLM Fehler: {e}", flush=True)
+            return f"Researcher error: {type(e).__name__}: {str(e)[:200]}"
+
+        raw = response.content
+        tool_call = parse_tool_call_from_response(raw, model_family="granite")
+
+        if tool_call is None:
+            # Keine Tool-Call erkannt → finale Antwort
+            return raw
+
+        # Tool ausführen
+        tool_name = tool_call.get("name", "")
+        tool_args = tool_call.get("arguments", {})
+        print(f"[researcher] tool_call: {tool_name}({tool_args})", flush=True)
+
+        if tool_name not in tool_map:
+            tool_result = f"Unknown tool: {tool_name}"
+        else:
+            try:
+                tool_result = tool_map[tool_name].invoke(tool_args)
+            except Exception as e:
+                tool_result = f"Tool error: {e}"
+
+        # Tool-Ergebnis in Konversation einhängen
+        messages.append(AIMessage(content=raw))
+        messages.append(HumanMessage(
+            content=f"<tool_response>\n{tool_result}\n</tool_response>"
+        ))
+
+    return "Researcher: Maximale Tool-Runden erreicht."
 
 
 def invoke_researcher_v2_sync(user_message: str, user_language: str = "French") -> str:
