@@ -162,6 +162,15 @@ def run_agent_server():
 threading.Thread(target=run_agent_server, daemon=True).start()
 wait_for('http://127.0.0.1:8002/health', 'Agent Server')
 
+# 5b. ChromaDB Collection initialisieren (cosine, einmalig)
+import chromadb as _chromadb
+_chroma_client = _chromadb.PersistentClient(path=CHROMA_PATH)
+_chroma_client.get_or_create_collection(
+    name='notes',
+    metadata={"hnsw:space": "cosine"}
+)
+print('ChromaDB notes-Collection initialisiert (cosine)', flush=True)
+
 # 6. Test Suite
 print('\n=== STACK BEREIT - STARTE TEST SUITE ===\n', flush=True)
 print(f'Start: {datetime.now().isoformat()}', flush=True)
