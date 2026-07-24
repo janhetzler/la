@@ -43,17 +43,25 @@ def _granite_system_prompt(tools: List[Dict]) -> str:
     """
     tools_json = "\n".join(json.dumps(t) for t in tools)
     return (
-        "You are a helpful assistant with access to the following tools. "
-        "You may call one or more tools to assist with the user query.\n\n"
-        "You are provided with function signatures within <tools></tools> XML tags:\n"
-        f"<tools>\n{tools_json}\n</tools>\n\n"
-        "For each tool call, return a json object with function name and arguments "
-        "within <tool_call></tool_call> XML tags:\n"
+        "You are a helpful assistant with access to the following tools.\n\n"
+        "<tools>\n"
+        f"{tools_json}\n"
+        "</tools>\n\n"
+        "═══════════════════════════════════════════════\n"
+        "TOOL CALLING RULES\n"
+        "═══════════════════════════════════════════════\n\n"
+        "To call a tool, output a single JSON object inside "
+        "<tool_call></tool_call> tags.\n"
+        "Do NOT stringify the arguments field. Use flat JSON.\n\n"
+        "Format:\n"
         "<tool_call>\n"
-        '{"name": <function-name>, "arguments": <args-json-object>}\n'
-        "</tool_call>. "
-        "If a tool does not exist in the provided list of tools, notify the user "
-        "that you do not have the ability to fulfill the request."
+        '{"name": "tool_name", "arguments": {"param1": "value1"}}\n'
+        "</tool_call>\n\n"
+        "Correct:\n"
+        '<tool_call>{"name": "save_note", "arguments": {"text": "My note"}}</tool_call>\n\n'
+        "Incorrect:\n"
+        '<tool_call>{"name": "save_note", "arguments": "{\\\"text\\\": \\\"My note\\\"}"}</tool_call>\n\n'
+        "If no tool is needed, respond in plain text."
     )
 
 
