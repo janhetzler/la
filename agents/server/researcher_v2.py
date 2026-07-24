@@ -204,7 +204,16 @@ async def _invoke_researcher_core(user_message: str, user_language: str) -> str:
         tool_call = parse_tool_call_from_response(raw, model_family="granite")
 
         if tool_call is None:
-            # Keine Tool-Call erkannt → finale Antwort
+            # Pruefen ob unvollstaendiger tool_call-Tag vorliegt
+            if "<tool_call>" in raw:
+                # Modell hat angefangen einen Tool-Call zu generieren aber
+                # nicht abgeschlossen — nochmal versuchen mit Hinweis
+                messages.append(AIMessage(content=raw))
+                messages.append(HumanMessage(
+                    content="<tool_response>\nError: incomplete tool call. Please complete the JSON.\n</tool_response>"
+                ))
+                continue
+            # Kein Tool-Call → finale Antwort
             return raw
 
         # Tool ausführen
