@@ -532,3 +532,37 @@ Kombiniert mit dem geplanten Keyword/Emoji-Pre-Filter:
 
 ### Status
 Getestet. Implementierung in Dockerfile und entrypoint.sh ausstehend.
+
+---
+
+## Vollstaendiges Tool-Calling Monitoring via Phoenix (geplant)
+
+### Problem
+
+Phoenix monitort aktuell nur LangChain-LLM-Calls. Direkte Tool-Aufrufe
+(`save_note.invoke()`), ChromaDB-Schreiboperationen (`collection.add()`)
+und Embedding-Calls (`_embed_query()` via httpx) sind nicht sichtbar.
+
+Das bedeutet: wir sehen ob das Modell einen Tool-Call generiert,
+aber nicht ob das Tool erfolgreich ausgefuehrt wurde.
+
+### Ziel
+
+Vollstaendige Sichtbarkeit des kompletten Tool-Calling-Zyklus:
+1. LLM generiert <tool_call> → sichtbar in Phoenix ✅
+2. Tool wird aufgerufen → nicht sichtbar ❌
+3. Embedding berechnet → nicht sichtbar ❌
+4. ChromaDB schreibt → nicht sichtbar ❌
+5. Tool-Response an LLM → nicht sichtbar ❌
+
+### Moegliche Loesungsansaetze
+
+- OpenTelemetry Spans manuell in save_note(), search_meetings(),
+  _embed_query() einbauen
+- ChromaDB Client mit Tracing-Wrapper umhuellen
+- Eigene Span-Hierarchie: Agent-Call → Tool-Call → DB-Call
+
+### Status
+
+Konzept. Implementierung noch nicht ausgearbeitet.
+Prioritaet: niedrig — erst nach Host-Deployment.
