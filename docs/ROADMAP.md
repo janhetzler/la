@@ -677,3 +677,45 @@ return StreamingResponse(
 ### Status
 
 Geplant. Implementierung ausstehend — nach opencomputer Integration.
+
+---
+
+## Sicherheit: opencomputer auf dem Host (janhet)
+
+### Setup-Token (Ersteinrichtung)
+
+Beim ersten Start generiert cptr automatisch einen einmaligen Setup-Token:
+`http://localhost:7860/?token=STARTUP_TOKEN`
+
+Dieser erscheint in der Konsole und muss sofort genutzt werden um
+den ersten Admin-User anzulegen. Danach laeuft alles via JWT-Sessions.
+
+**Wichtig:** Der Setup-Token darf nie nach aussen exponiert sein.
+Auf dem Host ist das kein Problem da cptr nur intern erreichbar ist.
+
+### Cloudflare Tunnel (Loesung fuer externen Zugriff)
+
+Auf dem Host (janhet) laeuft bereits ein Cloudflare Tunnel.
+Das ist die sichere Loesung fuer externen Zugriff:
+
+```
+Internet → Cloudflare Tunnel (TLS, Auth) → Host intern → cptr :7860
+```
+
+**Vorteile:**
+- Kein offener Port auf dem Host
+- TLS automatisch via Cloudflare
+- Cloudflare Access kann zusaetzliche Auth-Schicht hinzufuegen
+- Setup-Token nur intern erreichbar -- kein Sicherheitsrisiko
+
+### Deployment-Reihenfolge auf dem Host
+
+1. cptr starten (intern, kein externer Zugriff)
+2. Setup-Token aus Log lesen
+3. Admin-User anlegen via localhost
+4. API-Key erstellen fuer externe Clients
+5. Cloudflare Tunnel aktivieren -- erst dann externer Zugriff
+
+### Status
+
+Konzept definiert. Implementierung beim Host-Deployment.
