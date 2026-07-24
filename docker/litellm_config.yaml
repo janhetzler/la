@@ -1,5 +1,5 @@
-# LiteLLM Config — Local Agent
-# Genutzt in: Sandbox und Docker (identischer Stack)
+# LiteLLM Config -- Local Agent Docker
+# Identisch mit Sandbox-Konfiguration
 
 model_list:
   - model_name: granite-tiny
@@ -11,7 +11,7 @@ model_list:
   - model_name: granite-embed
     litellm_params:
       model: openai/granite-embed
-      api_base: http://127.0.0.1:8081/v1
+      api_base: http://127.0.0.1:8080/v1
       api_key: not-needed
 
   - model_name: agent-local
@@ -20,7 +20,7 @@ model_list:
       api_base: http://127.0.0.1:8002/v1
       api_key: not-needed
     model_info:
-      description: "Local Agent — orchestrator, routes to the right specialist"
+      description: "Local Agent -- orchestrator, routes to the right specialist"
 
 general_settings:
   master_key: sk-cos-local-dev
