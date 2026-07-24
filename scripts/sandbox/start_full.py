@@ -130,6 +130,21 @@ for i in range(30):
         print('LiteLLM -> llama-server OK', flush=True); break
     except: time.sleep(2); print(f'{i+1}...', end=' ', flush=True)
 
+# Embedding Readiness-Check
+print('Warte auf LiteLLM -> granite-embed...', flush=True)
+import httpx as _httpx
+for i in range(15):
+    try:
+        with _httpx.Client(timeout=10) as _c:
+            _r = _c.post(
+                'http://127.0.0.1:4000/v1/embeddings',
+                headers={'Authorization': f'Bearer {LITELLM_KEY}'},
+                json={'model': 'granite-embed', 'input': 'ready'}
+            )
+            _r.raise_for_status()
+        print('LiteLLM -> granite-embed OK', flush=True); break
+    except: time.sleep(2); print(f'{i+1}...', end=' ', flush=True)
+
 # 4. Agent Config + Phoenix Init
 import config
 config.LITELLM_URL = 'http://127.0.0.1:4000'
