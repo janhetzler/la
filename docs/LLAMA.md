@@ -1,3 +1,11 @@
+---
+type: Decision
+status: current
+updated_at: 2026-07-30
+stale_after: 2026-10-30
+environment: all
+components: [llama-server]
+---
 # LLAMA.md — Reasoning Server: llama-cpp-python vs. llama-server Binary
 
 **Komponente:** Reasoning Model Server (Granite 350m)
