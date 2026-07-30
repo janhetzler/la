@@ -14,7 +14,7 @@ Testergebnisse werden ausschliesslich von der Sandbox gepusht, nie vom Muttercha
 
 ## 2026-07-30 — Testlauf 21:38 UTC (Commit c8af4a8)
 
-**Datum:** 2026-07-30 2026-07-30 21:42:34
+**Datum:** 2026-07-30 21:42 UTC
 **Repo-Stand:** c8af4a8
 **Modell:** Granite 4.0-H-350m-Q4_K_M
 **Stack:** llama-server b9895, LiteLLM, Phoenix, ChromaDB
