@@ -143,6 +143,36 @@ Alle Werte via os.getenv(), keine hardcodierten URLs oder Keys:
 
 ---
 
+## Nach jedem Push — Pflichtcheck
+
+Nach jedem Push der Markdown-Dateien veraendert, **immer** den
+Doc Graph Check im Action-Log pruefen:
+
+**GitHub → Repository → Actions → Doc Graph Check → letzter Run**
+
+Dort steht ob verlinkende Dokumente mitgepflegt werden muessen.
+Der Check ist informativ — er blockiert keinen Commit — aber die
+Warnungen sind verbindlich zu pruefen.
+
+### Lokal vor dem Push (empfohlen)
+
+```bash
+cd /pfad/zum/repo
+CHANGED_FILES="pfad/zur/geaenderten/datei.md" python3 scripts/ci/check_doc_graph.py
+```
+
+So siehst du Warnungen bevor der Commit im Repo landet.
+
+### Drei Actions — alle im Blick behalten
+
+| Action | Wann pruefen | Bedeutung bei Warnung |
+|--------|-------------|----------------------|
+| Frontmatter Lint | Bei jedem Push — blockiert bei Fehler | Pflichtfelder fehlen oder falsch |
+| Doc Graph Check | Bei jedem Push — informativ | Verlinkende Dokumente pruefen |
+| Stale Docs Check | Montags — Issue wird geoeffnet | Dokument inhaltlich pruefen und aktualisieren |
+
+---
+
 ## Neue Dateien anlegen
 
 Checkliste:
