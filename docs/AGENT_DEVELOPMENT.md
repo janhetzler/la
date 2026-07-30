@@ -1,3 +1,11 @@
+---
+type: Reference
+status: current
+updated_at: 2026-07-30
+stale_after: 2027-01-30
+environment: all
+components: [fastapi]
+---
 # AGENT_DEVELOPMENT.md — Anleitung: Neuen Agenten entwickeln
 
 Dieses Dokument beschreibt wie ein neuer Agent zum Local Agent Stack
