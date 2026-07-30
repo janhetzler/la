@@ -152,10 +152,18 @@ def parse_tool_call_from_response(
                 # Granite gibt arguments manchmal als JSON-String zurueck
                 # z.B. "arguments": "{"text": "..."}" statt "arguments": {"text": "..."}
                 if isinstance(parsed.get("arguments"), str):
+                    raw_args = parsed["arguments"]
+                    # Versuch 1: direkt parsen
                     try:
-                        parsed["arguments"] = json.loads(parsed["arguments"])
+                        parsed["arguments"] = json.loads(raw_args)
                     except json.JSONDecodeError:
-                        pass
+                        # Versuch 2: Backslash-Escapes entfernen
+                        try:
+                            cleaned = raw_args.replace('\\\"'  , '"').strip('"')
+                            parsed["arguments"] = json.loads(cleaned)
+                        except json.JSONDecodeError:
+                            # Versuch 3: 350m Fallback — String als text-Argument
+                            parsed["arguments"] = {"text": raw_args}
                 return parsed
             except json.JSONDecodeError:
                 return None
