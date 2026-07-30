@@ -142,7 +142,7 @@ def parse_tool_call_from_response(
     if model_family == "granite":
         import re
         match = re.search(
-            r"<tool_call>\s*(\{.*?\})\s*</tool_call>",
+            r"<tool_call>\s*(\{.*\})(?:\s*</tool_call>)?",
             response_text,
             re.DOTALL,
         )
