@@ -25,12 +25,35 @@ Testergebnisse landen in docs/SANDBOX_TESTRESULTS.md (keine Nummerierung).
 | Feld | Wert |
 |------|------|
 | Aufgesetzt | 2026-07-30 ~15:00 UTC |
-| Repo-Stand | b98f6aa3 |
-| Status | Beendet nach Test |
-| Letzter Test | 4/6 OK — :8081 laeuft, :8080 TIMEOUT, Notes Agent schreibt nicht (BUG-024) |
+| Repo-Stand | 3137d3cd |
+| Status | Laeuftig — git pull + Neustart fuer naechsten Test |
+| Letzter Test | 4/6 OK (vor Port-8081-Aenderung) |
 
 ---
 
+
+## 2026-07-30 — llama-server :8080 Timing-Fix
+
+### Problem
+
+Beide llama-server-Prozesse starteten zu schnell hintereinander.
+wait_for prueft nur ob /v1/models antwortet -- das tut der Server frueh,
+bevor das Modell vollstaendig geladen ist. Beim Start von :8081 direkt
+danach konkurrierten beide Prozesse um Ressourcen -- :8080 produzierte
+spaeter TIMEOUT bei echten Inference-Requests.
+
+### Fix (Commit 123ff074)
+
+1. retries=40 bei wait_for fuer :8080 (statt 25)
+2. Inference-Readiness-Check direkt gegen :8080/v1/chat/completions
+   (max_tokens=1, 20 Versuche a 2s) -- :8081 startet erst wenn echter
+   Inference-Request durchgeht
+
+### Naechster Schritt
+
+Sandbox-Test mit neuem Stand -- Ziel: :8080 und :8081 beide stabil.
+
+---
 
 ## 2026-07-30 — Sandbox-Konzept vereinfacht
 
