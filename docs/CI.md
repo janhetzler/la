@@ -8,7 +8,7 @@ components: []
 ---
 # CI.md — Automatisierung: GitHub Actions
 
-Dieses Dokument beschreibt die zwei GitHub Actions die im Projekt
+Dieses Dokument beschreibt die drei GitHub Actions die im Projekt
 janhetzler/la die OKF-Dokumentationsqualität automatisch sicherstellen.
 
 ---
@@ -19,6 +19,7 @@ janhetzler/la die OKF-Dokumentationsqualität automatisch sicherstellen.
 |--------|-------|---------|-------|
 | Frontmatter Lint | `.github/workflows/doc-lint.yml` | Jeder Push + PR auf `main` | Pflichtfelder prüfen |
 | Stale Docs Check | `.github/workflows/doc-stale.yml` | Montags 07:00 UTC + manuell | Veraltete Docs melden |
+| Doc Graph Check | `.github/workflows/doc-graph.yml` | Jeder Push + PR auf `main` | Link-Graph prüfen |
 
 ---
 
@@ -100,6 +101,88 @@ Nach dem Prüfen der veralteten Datei:
 
 ```bash
 GITHUB_TOKEN=<token> GITHUB_REPOSITORY=janhetzler/la   python3 scripts/ci/check_stale.py
+```
+
+
+---
+
+## Action 3 — Doc Graph Check
+
+**Script:** `scripts/ci/check_doc_graph.py`
+
+Prüft bei jedem Push ob Dokumente die auf eine geänderte Datei verweisen
+ebenfalls aktualisiert wurden. Basiert auf dem OKF-Prinzip: Beziehungen
+zwischen Dokumenten entstehen aus Markdown-Links im Body — der Graph
+wird automatisch aus diesen Links abgeleitet.
+
+### Was passiert
+
+1. Alle geänderten `.md`-Dateien des Commits werden aus `CHANGED_FILES` gelesen
+2. Der vollständige Link-Graph des Repos wird aus den Markdown-Bodies aufgebaut
+3. Für jede geänderte Datei wird geprüft: Welche anderen Dateien verlinken darauf?
+4. Wenn eine verlinkende Datei nicht im selben Commit geändert wurde → Warnung
+
+### Beispiel
+
+`docs/OKF.md` wird geändert. Folgende Dateien verlinken darauf:
+- `README.md`
+- `docs/CI.md`
+- `docs/DOC_CONVENTIONS.md`
+- `docs/index.md`
+
+Wurden diese nicht mitgeändert → vier Warnungen im Log.
+
+### Verhalten
+
+- **Keine Warnungen** → grüner Haken, Link-Graph konsistent
+- **Warnungen** → grüner Haken + Warnungstext im Log — **kein harter Fehler**
+
+Der Check ist **informativ, nicht blockierend**. Er gibt Hinweise,
+verhindert aber keinen Commit — der Autor entscheidet ob eine Aktualisierung
+der verlinkenden Dateien inhaltlich notwendig ist.
+
+### Ausschlüsse
+
+Dieselben Verzeichnisse wie beim Frontmatter Lint:
+`docs/templates/`, `docs/traces/`, `docs/test_results/`
+
+### Manuelle Ausführung
+
+```bash
+cd /pfad/zum/repo
+CHANGED_FILES="docs/OKF.md" python3 scripts/ci/check_doc_graph.py
+```
+
+### Workflow-Datei
+
+```yaml
+name: Doc Graph Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  graph:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Geaenderte Dateien ermitteln
+        id: changed
+        run: |
+          echo "CHANGED_FILES<<EOF" >> $GITHUB_ENV
+          git diff --name-only HEAD~1 HEAD -- '*.md' >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Link-Graph pruefen
+        env:
+          CHANGED_FILES: ${{ env.CHANGED_FILES }}
+        run: python3 scripts/ci/check_doc_graph.py
 ```
 
 ---
