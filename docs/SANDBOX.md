@@ -221,7 +221,7 @@ model_list:
   - model_name: granite-embed
     litellm_params:
       model: openai/granite-embed
-      api_base: http://127.0.0.1:8080/v1
+      api_base: http://127.0.0.1:8081/v1
       api_key: not-needed
   - model_name: agent-local
     litellm_params:
@@ -237,19 +237,20 @@ litellm_settings:
   failure_callback: ["arize_phoenix"]
 ```
 
-> `granite-embed` zeigt auf Port 8080 — kein separater Embedding-Server.
-> Das 350m Reasoning-Modell bedient beide Endpoints wenn `--embeddings` aktiv ist.
+> `granite-embed` zeigt auf Port 8081 — eigenstaendiger Embedding-Server
+> mit `granite-embedding-30m-Q4_0.gguf`. Gestartet ohne `--jinja`.
 
 **Start-Reihenfolge** (intern in `start_full.py`):
 1. llama-server :8080 (`--jinja --embeddings --pooling mean`)
-2. Phoenix :6006
-3. LiteLLM :4000
-4. LiteLLM → llama-server Readiness-Check (echter POST-Request, nicht nur Port-Ping)
-5. LiteLLM → granite-embed Readiness-Check (echter Embeddings-Request)
-6. Agent Config + Phoenix Tracing init
-7. Agent Server :8002
-8. ChromaDB `notes` Collection initialisieren (cosine)
-9. Test Suite
+2. llama-server-embed :8081 (`--embeddings --pooling mean`, kein `--jinja`)
+3. Phoenix :6006
+4. LiteLLM :4000
+5. LiteLLM → llama-server Readiness-Check (echter POST-Request, nicht nur Port-Ping)
+6. LiteLLM → granite-embed Readiness-Check (echter Embeddings-Request)
+7. Agent Config + Phoenix Tracing init
+8. Agent Server :8002
+9. ChromaDB `notes` Collection initialisieren (cosine)
+10. Test Suite
 
 ---
 
@@ -333,14 +334,15 @@ python3 scripts/chat.py
 | Modell | Größe | Port | Zweck |
 |--------|-------|------|-------|
 | granite-4.0-h-350m-Q4_K_M.gguf | 213 MB | 8080 | Reasoning + Embeddings |
-| granite-embedding-30m-english-Q4_0.gguf | 28 MB | (derzeit ungenutzt) | Spezialisiertes Embedding-Modell |
+| granite-embedding-30m-english-Q4_0.gguf | 28 MB | 8081 | Spezialisiertes Embedding-Modell |
 
 Beide als GitHub Release Assets unter dem Tag `granite-models`.
 
-**Embedding-Strategie:** Das 350m Reasoning-Modell auf Port 8080 liefert
-mit `--embeddings --pooling mean` auch Embeddings (768-dim). Das spezialisierte
-30m Embedding-Modell wird heruntergeladen aber nicht als separater Server
-gestartet — es steht für spätere Optimierungen bereit.
+**Embedding-Strategie:** Das spezialisierte 30m Embedding-Modell laeuft als
+eigenstaendiger llama-server auf Port 8081 (`--embeddings --pooling mean`,
+kein `--jinja`). Das 350m Reasoning-Modell auf Port 8080 behaelt ebenfalls
+`--embeddings --pooling mean` — LiteLLM routet `granite-embed` aber
+ausschliesslich auf Port 8081.
 
 ---
 
@@ -349,7 +351,7 @@ gestartet — es steht für spätere Optimierungen bereit.
 | Port | Dienst |
 |------|--------|
 | 8080 | llama-server Binary b9895 (`--jinja --embeddings --pooling mean`) |
-| 8081 | Embedding-Server — wird in der Sandbox **nicht** gestartet |
+| 8081 | llama-server-embed (granite-embedding-30m, `--embeddings --pooling mean`) |
 | 8787 | Headroom Proxy — DISABLED |
 | 6006 | Phoenix |
 | 4000 | LiteLLM |
@@ -503,8 +505,8 @@ kein Bug. Auf dem Host mit Granite-Tiny (4B) entfällt diese Einschränkung.
 - **BUG-020 — Researcher EISDIR:** `read_text_file` wird auf ein Verzeichnis
   aufgerufen. Workaround in researcher_v2.py vorhanden.
 
-- **Embedding-Server (Port 8081)** wird nicht gestartet — das 350m Modell
-  auf Port 8080 liefert Embeddings via `--embeddings --pooling mean`.
+- **Embedding-Server (Port 8081)** laeuft als eigenstaendiger llama-server
+  mit `granite-embedding-30m-Q4_0.gguf`. LiteLLM `granite-embed` zeigt auf :8081.
 
 - **Agent Server Logs** bleiben leer — uvicorn Thread-Logging funktioniert
   in der Sandbox nicht. Kein funktionaler Fehler.
