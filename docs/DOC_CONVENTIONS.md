@@ -105,6 +105,37 @@ aktualisieren.
 
 ---
 
+## Nach jeder Aenderung — Workflow
+
+Jede Aenderung an einer Markdown-Datei folgt diesem Ablauf:
+
+### Vor dem Push
+
+```bash
+CHANGED_FILES="pfad/zur/datei.md" python3 scripts/ci/check_doc_graph.py
+```
+
+Zeigt welche Dokumente auf die geaenderte Datei verweisen und
+mitgepflegt werden muessen.
+
+### Nach dem Push
+
+**GitHub → Actions → Doc Graph Check** oeffnen und Warnungen pruefen.
+Auch bei gruenem Haken koennen Warnungen im Log stehen — diese sind
+verbindlich zu pruefen.
+
+Die drei Actions im Ueberblick:
+
+| Action | Trigger | Bedeutung |
+|--------|---------|-----------|
+| Frontmatter Lint | Push + PR | Pflichtfelder pruefen — blockiert bei Fehler |
+| Doc Graph Check | Push + PR | Link-Graph pruefen — informativ, nicht blockierend |
+| Stale Docs Check | Montags | Veraltete Docs melden — Issue wird geoeffnet |
+
+Details zu allen Actions: [CI.md](CI.md)
+
+---
+
 ## Vorlagen
 
 Für jeden Dokumenttyp gibt es eine Vorlage unter `docs/templates/`.
