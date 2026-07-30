@@ -1,3 +1,11 @@
+---
+type: Decision
+status: current
+updated_at: 2026-07-30
+stale_after: 2026-10-30
+environment: docker
+components: [llama-server, litellm, chromadb, phoenix, fastapi]
+---
 # DOCKER.md — Local Agent, Docker-Umgebung
 
 **Zuletzt aktualisiert:** 2026-07-16
