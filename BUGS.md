@@ -493,11 +493,11 @@ Zusaetzlich: LangChain Tool-Wrapper mit Try/Except fuer robustere Tool-Calls.
 ```
 
 **Betrifft:**
-- `scripts/sandbox/start_full.py` — behoben (Commit a8b486c3f083)
+- `scripts/sandbox/start_full.py` — behoben (Commit a8b486c3f083); Embedding-Server auf Port 8081 (Commit f4cfa01f)
 - `docker/entrypoint.sh` — Fix ausstehend
 - `docs/LLAMA.md` und `docs/OPERATIONS_SANDBOX.md` — Dokumentation ausstehend
 
-**Status:** In Sandbox gefixt, Docker und Doku ausstehend.
+**Status:** In Sandbox gefixt (eigenstaendiger Embedding-Server Port 8081), Docker und Doku ausstehend.
 
 ---
 
