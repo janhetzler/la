@@ -9,6 +9,7 @@ import re
 import os
 import json
 import urllib.request
+import urllib.error
 from pathlib import Path
 from datetime import date
 
@@ -50,7 +51,10 @@ def find_stale():
         rel = f.relative_to(root)
         if should_skip(rel):
             continue
-        text = f.read_text(encoding="utf-8")
+        try:
+            text = f.read_text(encoding="utf-8")
+        except Exception:
+            continue
         fm = parse_frontmatter(text)
         if not fm:
             continue
@@ -71,7 +75,7 @@ def open_issue(stale_files):
     token = os.environ.get("GITHUB_TOKEN")
     repo = os.environ.get("GITHUB_REPOSITORY")
     if not token or not repo:
-        print("GITHUB_TOKEN oder GITHUB_REPOSITORY nicht gesetzt.")
+        print("FEHLER: GITHUB_TOKEN oder GITHUB_REPOSITORY nicht gesetzt.")
         sys.exit(1)
 
     lines = ["| Datei | Typ | Stale after | Tage ueberfaellig |",
@@ -81,18 +85,15 @@ def open_issue(stale_files):
             f"| `{f['file']}` | {f['type']} | {f['stale_after']} | {f['days_overdue']} |"
         )
 
-    body = f"""## Veraltete Dokumentation
-
-Diese Dokumente haben ihr `stale_after`-Datum ueberschritten und sollten geprueft werden.
-
-{chr(10).join(lines)}
-
-Nach der Pruefung bitte `updated_at` und `stale_after` in der jeweiligen Datei aktualisieren
-und dieses Issue schliessen.
-
----
-*Automatisch erstellt von `scripts/ci/check_stale.py`*
-"""
+    body = (
+        "## Veraltete Dokumentation\n\n"
+        "Diese Dokumente haben ihr `stale_after`-Datum ueberschritten "
+        "und sollten geprueft werden.\n\n"
+        + "\n".join(lines)
+        + "\n\nNach der Pruefung bitte `updated_at` und `stale_after` "
+        "in der jeweiligen Datei aktualisieren und dieses Issue schliessen.\n\n"
+        "---\n*Automatisch erstellt von `scripts/ci/check_stale.py`*"
+    )
 
     url = f"https://api.github.com/repos/{repo}/issues"
     payload = json.dumps({
@@ -100,14 +101,20 @@ und dieses Issue schliessen.
         "body": body,
         "labels": [ISSUE_LABEL],
     }).encode("utf-8")
+
     req = urllib.request.Request(url, data=payload, method="POST", headers={
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
         "Content-Type": "application/json",
     })
-    with urllib.request.urlopen(req) as r:
-        result = json.load(r)
-        print(f"Issue geoeffnet: {result['html_url']}")
+    try:
+        with urllib.request.urlopen(req) as r:
+            result = json.load(r)
+            print(f"Issue geoeffnet: {result['html_url']}")
+    except urllib.error.HTTPError as e:
+        body_err = e.read().decode("utf-8")
+        print(f"FEHLER beim Issue-Erstellen: HTTP {e.code}: {body_err}")
+        sys.exit(1)
 
 def main():
     stale = find_stale()
@@ -117,7 +124,7 @@ def main():
 
     print(f"{len(stale)} veraltete Datei(en) gefunden:")
     for f in stale:
-        print(f"  ✗ {f['file']} (stale_after: {f['stale_after']}, {f['days_overdue']} Tage)")
+        print(f"  x {f['file']} (stale_after: {f['stale_after']}, {f['days_overdue']} Tage)")
 
     open_issue(stale)
 
