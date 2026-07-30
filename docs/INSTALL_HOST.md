@@ -1,3 +1,11 @@
+---
+type: Runbook
+status: current
+updated_at: 2026-07-30
+stale_after: 2026-09-25
+environment: host
+components: [llama-server, litellm, chromadb, phoenix, fastapi]
+---
 # Installation Guide — Host
 
 Schritt-für-Schritt Anleitung für die Installation von Local Agent (LA)
