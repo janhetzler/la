@@ -60,6 +60,48 @@ Minor SQLAlchemy SAWarnings (Index-Reflection): harmlos, keine funktionalen Fehl
 
 ---
 
+## 2026-07-30 23:43 UTC — Testlauf (Commit $COMMIT_SHA) — BUG-019 BEHOBEN
+
+**Datum:** 2026-07-30 23:47:46
+**Repo-Stand:** $COMMIT_SHA
+**Modell:** Granite 4.0-H-350m-Q4_K_M
+**Stack:** llama-server b9895, LiteLLM, Phoenix, ChromaDB
+
+### Stack-Status
+
+| Service | Status |
+|---------|--------|
+| llama-server :8080 | ✓ OK |
+| llama-server :8081 | ✓ OK |
+| Phoenix | ✓ OK |
+| LiteLLM | ✓ OK |
+| Agent Server | ✓ OK |
+
+### Agenten-Test 5/6 bestanden ✓
+
+| Agent | Status | Zeichen | Anmerkung |
+|-------|--------|---------|-----------|
+| Supervisor Routing | ✗ FAIL | 6 | Zu kurz — BUG-024 (350m Limit) |
+| Comms Agent | ✓ OK | 675 | Email-Draft |
+| Code Agent | ✓ OK | 312 | Python-Funktion |
+| Researcher Agent | ✓ OK | 102 | Fallback-Response |
+| Notes Agent | ✓ OK | 37 | ✓ ChromaDB 1 Doc — **BUG-019 BEHOBEN** |
+| Handoff Agent | ✓ OK | 731 | Claude.ai Prompt |
+
+### ChromaDB Status
+
+**Collections nach Tests:**
+- documents: 2 Dokumente
+- **notes: 1 Dokument** ✓ (Notes Agent speichert jetzt korrekt)
+
+### Status Update
+
+- **BUG-019** — BEHOBEN ✓ — Notes Agent ruft save_note auf und speichert in ChromaDB
+- **BUG-024** — PENDING — Supervisor Routing generiert zu kurze LLM-Responses (350m Limit)
+- Phoenix SAWarnings: harmlos
+
+---
+
 ## 2026-07-30 21:38 UTC — Testlauf (Commit $COMMIT_SHA)
 
 **Datum:** 2026-07-30 21:45:27
