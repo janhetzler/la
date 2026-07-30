@@ -1,7 +1,7 @@
 # Notes-Agent Trace — 2026-07-30
 
 **Prompt:** Save this note: test direct call
-**Gesamtdauer:** 15.7s
+**Gesamtdauer:** 24.5s
 **Stack:** llama-server b9895 + --jinja | LiteLLM | Agent Server :8002 | Embedding :8081
 
 ---
@@ -66,7 +66,7 @@ ChromaDB notes vor Request: 0 Dokumente
 
 === REQUEST ===
 Prompt: Save this note: test direct call
-Antwort (10.0s):
+Antwort (18.5s):
 Notiz gespeichert: test direct call
 
 ChromaDB notes nach Request: 0 Dokumente
