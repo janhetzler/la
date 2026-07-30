@@ -60,6 +60,54 @@ Minor SQLAlchemy SAWarnings (Index-Reflection): harmlos, keine funktionalen Fehl
 
 ---
 
+## 2026-07-30 21:38 UTC — Testlauf (Commit $COMMIT_SHA)
+
+**Datum:** 2026-07-30 21:45:27
+**Repo-Stand:** $COMMIT_SHA
+**Modell:** Granite 4.0-H-350m-Q4_K_M
+**Stack:** llama-server b9895, LiteLLM, Phoenix, ChromaDB
+
+### Stack-Status
+
+| Service | Status | Warmup | Details |
+|---------|--------|--------|---------|
+| llama-server :8080 | ✓ OK | 25-27s | Inference OK |
+| llama-server :8081 | ✓ OK | 3s | Embedding OK |
+| Phoenix | ✓ OK | 25s | Tracing aktiv |
+| LiteLLM | ✓ OK | 25s | Proxy OK |
+| Agent Server | ✓ OK | 1s | FastAPI port 8002 |
+
+### Agenten-Test 4/6 bestanden
+
+| Agent | Status | Zeichen | Anmerkung |
+|-------|--------|---------|-----------|
+| Supervisor Routing | ✗ FAIL | 6 | Zu kurz — BUG-024 (350m Limit) |
+| Comms Agent | ✓ OK | 483 | Email-Draft |
+| Code Agent | ✓ OK | 325 | Python-Funktion |
+| Researcher Agent | ✓ OK | 102 | Fallback-Response |
+| Notes Agent | ✗ FAIL | 37 | ChromaDB 0 Docs — BUG-019 |
+| Handoff Agent | ✓ OK | 702 | Claude.ai Prompt |
+
+### ChromaDB Status
+
+**Collection 'notes':** 0 Dokumente
+
+**Fehler (Deprecated Legacy-Config):**
+```
+ValueError: You are using a deprecated configuration of Chroma.
+If you do not have data you wish to migrate, you only need to change how you construct
+your Chroma client. Please see the "New Clients" section of 
+https://docs.trychroma.com/deployment/migration.
+```
+
+### Bekannte Probleme
+
+- **BUG-024** — Supervisor Routing: 350m generiert zu kurze LLM-Responses
+- **BUG-019** — Notes Agent: 350m ruft `save_note` nicht auf
+- **ChromaDB** — Legacy-Config API; Migration erforderlich
+
+---
+
 ## 2026-07-30 — Haiku-Sandbox, erster Lauf
 
 **Datum:** 2026-07-30
