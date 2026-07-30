@@ -1,3 +1,10 @@
+---
+type: Overview
+status: current
+updated_at: 2026-07-30
+environment: all
+components: []
+---
 # Local Agent (la)
 
 > Ein vollstaendig lokaler, quelloffener Multi-Agenten-Assistent --
