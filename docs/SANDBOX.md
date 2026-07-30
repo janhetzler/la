@@ -1,3 +1,11 @@
+---
+type: Runbook
+status: current
+updated_at: 2026-07-30
+stale_after: 2026-09-25
+environment: sandbox
+components: [llama-server, litellm, chromadb, phoenix, fastapi]
+---
 # SANDBOX.md — Local Agent, Claude Sandbox
 
 **Zuletzt aktualisiert:** 2026-07-30
