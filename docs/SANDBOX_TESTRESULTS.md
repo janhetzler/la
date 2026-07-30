@@ -11,6 +11,41 @@ Aktuellster Testlauf oben. Aeltere Eintraege darunter.
 Testergebnisse werden ausschliesslich von der Sandbox gepusht, nie vom Mutterchat.
 
 ---
+## 2026-07-30 — Testlauf final (Commit b22a8d7) — BUG-019 behoben
+
+**Datum:** 2026-07-30
+**Repo-Stand:** b22a8d7
+**Modell:** Granite 4.0-H-350m-Q4_K_M
+**Stack:** llama-server b9895 + :8081 Embedding, LiteLLM, Phoenix, ChromaDB
+
+### Stack-Status
+
+| Service | Status |
+|---------|--------|
+| llama-server :8080 | ✓ OK (Inference OK) |
+| llama-server :8081 | ✓ OK (Embedding OK) |
+| Phoenix | ✓ OK (SAWarning harmlos) |
+| LiteLLM | ✓ OK |
+| Agent Server | ✓ OK |
+
+### Agenten-Test 5/6 OK
+
+| Agent | Status | Zeichen | Anmerkung |
+|-------|--------|---------|-----------|
+| Supervisor Routing | ✗ FAIL | 6 | BUG-024 — 350m Limit |
+| Comms Agent | ✓ OK | 675 | |
+| Code Agent | ✓ OK | 312 | |
+| Researcher Agent | ✓ OK | 102 | |
+| Notes Agent | ✓ OK | 37 | ChromaDB notes: 1 Dokument ✓ BUG-019 behoben |
+| Handoff Agent | ✓ OK | 731 | |
+
+### ChromaDB
+
+Collection notes: 1 Dokument ✓
+Collection documents: 2 Dokumente
+
+---
+
 
 ## 2026-07-30 — Testlauf 21:38 UTC (Commit c8af4a8)
 
