@@ -104,6 +104,10 @@ und korrekt sind. Fehlerhafte Commits werden blockiert.
 **Stale Docs Check** — läuft wöchentlich und öffnet ein GitHub Issue
 wenn `stale_after`-Daten überschritten sind.
 
+**Doc Graph Check** — prüft bei jedem Push ob Dokumente die auf eine
+geänderte Datei verweisen ebenfalls aktualisiert wurden. Informativ,
+nicht blockierend.
+
 Details: [CI.md](CI.md)
 
 ---
