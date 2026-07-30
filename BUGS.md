@@ -578,3 +578,18 @@ Das zeigt: das Modell KANN Tool-Calls — aber nicht zuverlaessig.
 Mit 4B Parametern wird save_note() zuverlaessig aufgerufen.
 
 **Status:** Keine weiteren Fixes in der Sandbox — Host-Deployment ist der naechste Schritt.
+
+
+## BUG-025: Hardcoded Collection-Name in notes.py
+
+**Status:** Offen (2026-07-30)
+**Umgebung:** Alle
+
+**Symptom:** save_note und search_meetings verwenden hardcoded String "notes"
+statt einer Config-Variable.
+
+**Ursache:** Quick-Fix beim BUG-019 Beheben — Collection-Name direkt
+eingetragen statt config.py zu erweitern.
+
+**Fix:** Neue Variable CHROMA_NOTES_COLLECTION in config.py einfuehren,
+notes.py darauf umstellen.
