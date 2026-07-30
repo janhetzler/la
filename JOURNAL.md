@@ -1,3 +1,10 @@
+---
+type: Log
+status: current
+updated_at: 2026-07-30
+environment: all
+components: []
+---
 # JOURNAL.md -- Entwicklungstagebuch Local Agent (LA)
 
 Neuester Eintrag oben. Fuer Agenten: lies den ersten Eintrag um den aktuellen Stand zu kennen.
