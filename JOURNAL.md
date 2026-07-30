@@ -32,6 +32,25 @@ Testergebnisse landen in docs/SANDBOX_TESTRESULTS.md (keine Nummerierung).
 ---
 
 
+## 2026-07-30 — BUG-019 behoben: save_note schreibt jetzt in ChromaDB
+
+### Was behoben wurde
+
+**3 Fixes in Kombination:**
+
+1. **Regex fix** (tool_formatter.py) — schließendes </tool_call> optional gemacht,
+   greedy statt non-greedy — Modell generiert Tag ohne Abschluss
+2. **print fix** (notes.py) — Tool-Fehler werden jetzt geloggt statt still geschluckt
+3. **Collection fix** (notes.py) — save_note schreibt jetzt in "notes" statt
+   config.CHROMA_COLLECTION ("documents")
+
+**Beweis:** ChromaDB notes Collection: 0 vor Request → 1 nach Request.
+Trace: docs/traces/sandbox/2026-07-30_inspect-notes.md (Commit 27442af7)
+
+**BUG-019 geschlossen.**
+
+---
+
 ## 2026-07-30 — llama-server :8080 Timing-Fix
 
 ### Problem
