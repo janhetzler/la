@@ -2,7 +2,7 @@
 type: Reference
 status: current
 updated_at: 2026-07-30
-stale_after: 2026-01-01
+stale_after: 2027-01-30
 environment: all
 components: []
 ---
