@@ -1,3 +1,11 @@
+---
+type: Runbook
+status: current
+updated_at: 2026-07-30
+stale_after: 2026-09-25
+environment: docker
+components: [llama-server, litellm, chromadb, phoenix, fastapi]
+---
 # OPERATIONS_DOCKER.md — Betrieb & Logging (Docker)
 
 **Umgebung:** Docker Container `ghcr.io/janhetzler/la:latest`
