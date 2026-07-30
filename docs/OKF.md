@@ -152,3 +152,5 @@ Wöchentlich (montags)
 - [CI.md](CI.md) — GitHub Actions im Detail
 - [index.md](index.md) — Navigationseinstieg
 - [OKF SPEC v0.2](https://github.com/janhetzler/knowledge-catalog/blob/main/okf/SPEC.md)
+
+<!-- test: graph-check -->
