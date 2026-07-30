@@ -216,6 +216,7 @@ async def _invoke_notes_core(user_message: str, user_language: str) -> str:
                 tool_result = tool_map[tool_name].invoke(tool_args)
             except Exception as e:
                 tool_result = f"Tool error: {e}"
+                print(f"[notes] Tool error: {e}", flush=True)
 
         messages.append(AIMessage(content=raw))
         messages.append(HumanMessage(
