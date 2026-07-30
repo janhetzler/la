@@ -1,0 +1,27 @@
+name: Doc Graph Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  graph:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Geaenderte Dateien ermitteln
+        id: changed
+        run: |
+          echo "CHANGED_FILES<<EOF" >> $GITHUB_ENV
+          git diff --name-only HEAD~1 HEAD -- '*.md' >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Link-Graph pruefen
+        env:
+          CHANGED_FILES: ${{ env.CHANGED_FILES }}
+        run: python3 scripts/ci/check_doc_graph.py
