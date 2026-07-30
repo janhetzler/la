@@ -1,11 +1,24 @@
 # SANDBOX.md — Local Agent, Claude Sandbox
 
-**Zuletzt aktualisiert:** 2026-07-20
+**Zuletzt aktualisiert:** 2026-07-30
 **Zweck:** Vollständige Anleitung um die Sandbox-Umgebung in einer neuen
 Claude.ai Session von Grund auf neu aufzubauen.
 
 Diese Datei beschreibt ausschließlich die **Sandbox-Umgebung**. Für die
 anderen beiden Umgebungen siehe [HOST.md](HOST.md) und [DOCKER.md](DOCKER.md).
+
+---
+
+## Rollen im Projekt
+
+| Rolle | Modell | Aufgabe |
+|-------|--------|---------|
+| **Mutterchat** | Sonnet | Architektur, Entscheidungen, GitHub-Operationen |
+| **Develop-Chat** | Sonnet | Code entwickeln, Commits pushen |
+| **Sandbox** | Haiku | Stack starten, testen, Ergebnisse melden — kein Code, keine Pushes |
+
+Die Sandbox wird nur bei Bedarf aufgesetzt — nicht dauerhaft parallel betrieben.
+Testergebnisse werden ausschließlich von der Sandbox gepusht, nie vom Mutterchat.
 
 ---
 
@@ -29,16 +42,26 @@ das sind historische Momentaufnahmen, keine aktuelle Anleitung — zur
 Information, nicht zum Befolgen. Deine Referenz ist ausschließlich
 docs/SANDBOX.md.
 
+## Deine Rolle
+
+Du bist die Sandbox — deine einzige Aufgabe ist:
+1. Stack aufbauen (Schritte 1-6)
+2. Tests ausführen
+3. Ergebnis klar berichten
+
+Du entwickelst keinen Code, pushst nichts zu GitHub (außer Testergebnisse
+wenn explizit angewiesen), und triffst keine Architektur-Entscheidungen.
+Diese Entscheidungen kommen vom Mutterchat.
+
 ## Vorgehen
 
-Arbeite die Abschnitte 1-7 aus docs/SANDBOX.md der Reihe nach ab:
+Arbeite die Abschnitte 1-6 aus docs/SANDBOX.md der Reihe nach ab:
 1. Disk-Platz prüfen
 2. Repository klonen
 3. Pakete installieren
 4. Modelle herunterladen (Token wird benötigt — siehe Dokument)
-5. Pre-Flight Fix (mcp.json Pfad — PFLICHT vor Stack-Start)
-6. Stack starten
-7. Tests ausführen
+5. Stack starten
+6. Tests ausführen
 
 Nutze außerdem die drei vorbereiteten Hilfsskripte unter scripts/sandbox/
 (README.md dort erklärt wann welches sinnvoll ist):
@@ -65,7 +88,7 @@ Nutze außerdem die drei vorbereiteten Hilfsskripte unter scripts/sandbox/
 ## Was ich von dir am Ende brauche
 
 Ein klarer Bericht:
-- Ist jeder der 7 Schritte aus docs/SANDBOX.md ohne Anpassung so gelaufen
+- Ist jeder der 6 Schritte aus docs/SANDBOX.md ohne Anpassung so gelaufen
   wie dokumentiert, oder gab es Abweichungen? Wenn ja, welche genau?
 - Funktioniert der Stack vollständig?
 - Ist etwas in docs/SANDBOX.md ungenau, veraltet oder fehlend — aus der
@@ -145,34 +168,7 @@ curl -L -o /tmp/granite-embedding-30m-Q4_0.gguf \
 
 ---
 
-## 5. Pre-Flight Fix — mcp.json Pfad (PFLICHT vor Stack-Start)
-
-> ⚠️ **Dieser Fix ist zwingend erforderlich für jede neue Sandbox-Session.**
-> Ohne ihn schlägt der Agent Server beim Start mit `FileNotFoundError` fehl.
-> Details: `BUGS.md` → Abschnitt "mcp.json Pfad nach Ordner-Umstrukturierung".
-
-**Problem:** `agents/server/tools.py` Z.39 liest `PROJECT_ROOT / "mcp" / "mcp.json"`,
-aber die Datei liegt nach der Ordner-Umstrukturierung unter `mcp/sandbox/mcp.json`.
-
-**Fix:**
-
-```bash
-sed -i 's|PROJECT_ROOT / "mcp" / "mcp.json"|PROJECT_ROOT / "mcp" / "sandbox" / "mcp.json"|' \
-  /home/claude/la/agents/server/tools.py
-
-# Prüfen:
-grep "config_path" /home/claude/la/agents/server/tools.py
-# Soll zeigen: config_path = PROJECT_ROOT / "mcp" / "sandbox" / "mcp.json"
-```
-
-> **Offen:** Dieser Fix ist eine lokale Sandbox-Anpassung, kein Commit.
-> Die eigentliche Lösung (Umgebungsvariable `LOCAL_AGENT_ENV`) ist noch nicht
-> implementiert — siehe `BUGS.md`. Sobald sie fertig ist, entfällt dieser
-> manuelle Schritt.
-
----
-
-## 6. Stack starten (alles in einem Block)
+## 5. Stack starten (alles in einem Block)
 
 **Wichtig:** Alle Hintergrundprozesse sterben wenn der bash-Aufruf endet.
 Der komplette Stack muss deshalb in einem einzigen Python-Block gestartet werden.
@@ -190,20 +186,33 @@ cd /home/claude/la && python3 scripts/sandbox/start_quick.py
 cd /home/claude/la && python3 scripts/sandbox/start_full.py
 ```
 
-Oder manuell (entspricht `tests/run_tests.py`):
+**llama-server Flags** (Pflicht — `--embeddings --pooling mean` für ChromaDB):
 
 ```bash
-cd /home/claude/la && python3 tests/run_tests.py
+/tmp/llama-b9895/llama-server \
+  -m /tmp/granite-350m-Q4_K_M.gguf \
+  --host 127.0.0.1 --port 8080 \
+  --jinja --ctx-size 32768 \
+  --parallel 1 --log-disable \
+  --embeddings --pooling mean
 ```
 
-**LiteLLM-Konfiguration** (wird von `run_tests.py` / `start_full.py` dynamisch erzeugt,
-Pfad `/tmp/litellm_test.yaml`):
+> `--embeddings --pooling mean` ist Pflicht. Ohne diese Flags schlägt
+> ChromaDB beim Schreiben fehl (kein `/v1/embeddings` Endpoint verfügbar).
+
+**LiteLLM-Konfiguration** (wird von `start_full.py` dynamisch erzeugt,
+Pfad `/tmp/litellm_sandbox.yaml`):
 
 ```yaml
 model_list:
   - model_name: granite-tiny
     litellm_params:
       model: openai/granite
+      api_base: http://127.0.0.1:8080/v1
+      api_key: not-needed
+  - model_name: granite-embed
+    litellm_params:
+      model: openai/granite-embed
       api_base: http://127.0.0.1:8080/v1
       api_key: not-needed
   - model_name: agent-local
@@ -220,38 +229,30 @@ litellm_settings:
   failure_callback: ["arize_phoenix"]
 ```
 
-**Start-Reihenfolge** (intern in `run_tests.py`):
-1. llama-server :8080 (Reasoning)
+> `granite-embed` zeigt auf Port 8080 — kein separater Embedding-Server.
+> Das 350m Reasoning-Modell bedient beide Endpoints wenn `--embeddings` aktiv ist.
+
+**Start-Reihenfolge** (intern in `start_full.py`):
+1. llama-server :8080 (`--jinja --embeddings --pooling mean`)
 2. Phoenix :6006
 3. LiteLLM :4000
 4. LiteLLM → llama-server Readiness-Check (echter POST-Request, nicht nur Port-Ping)
-5. Agent Config + Phoenix Tracing init
-6. Agent Server :8002
-7. Test Suite (`tests/test_stack.py`)
-
-**Embedding-Server (Port 8081)** wird von `run_tests.py` **nicht** gestartet.
-ChromaDB nutzt in der Sandbox `LiteLLMEmbedding` via Port 8080 (nicht 8081).
-Das Embedding-Modell unter `/tmp/granite-embedding-30m-Q4_0.gguf` ist für die
-Sandbox-Tests aktuell nicht aktiv in Verwendung.
+5. LiteLLM → granite-embed Readiness-Check (echter Embeddings-Request)
+6. Agent Config + Phoenix Tracing init
+7. Agent Server :8002
+8. ChromaDB `notes` Collection initialisieren (cosine)
+9. Test Suite
 
 ---
 
-## 7. Tests ausführen
-
-```bash
-cd /home/claude/la && python3 tests/run_tests.py
-```
-
-Oder über den Wrapper:
+## 6. Tests ausführen
 
 ```bash
 cd /home/claude/la && python3 scripts/sandbox/start_full.py
 ```
 
-`start_full.py` ist ein reiner Wrapper, der `tests/run_tests.py` aufruft.
-`tests/run_tests.py` ist die kanonische Quelle — nicht duplizieren.
-
-Test-Report landet in `/tmp/test_results.json`.
+Test-Ergebnisse werden auf der Konsole ausgegeben.
+Logs liegen unter `/tmp/logs/`.
 
 ---
 
@@ -260,29 +261,15 @@ Test-Report landet in `/tmp/test_results.json`.
 Die Sandbox hat keinen Web-Zugang für eine VS Code Verbindung. `scripts/chat.py`
 ist der direkte Ersatz — ein Terminal-Client der gegen LiteLLM (Port 4000) spricht,
 LiteLLM leitet zum Agent Server (Port 8002) weiter, der Supervisor routet zum
-richtigen Spezialisten. Das entspricht dem Original-Konzept aus
-`docker/litellm_config.yaml` (dort: `agent-local` → Port 8002).
+richtigen Spezialisten.
 
 ```bash
 python3 scripts/chat.py
 ```
 
-`model="agent-local"` — funktioniert, seit `litellm_config.yaml` um den
-`agent-local` Endpoint ergänzt wurde (Port 8002). Bestätigt getestet 2026-07-16:
-Supervisor antwortet korrekt über diesen Pfad.
-
-⚠️ **Bekannte Kleinigkeit:** `chat.py` Z.10 zeigt noch den alten Begrüßungstext
-`"=== Local Agent Terminal Chat ==="` — kosmetisch, keine Funktionsauswirkung,
-noch nicht nachgezogen bei der Umbenennung.
-
-⚠️ **Timing beim Start:** `litellm.log` zeigt beim Hochfahren kurzzeitig
-`ConnectionRefusedError` auf Port 8002, weil LiteLLM einen Readiness-Check
-ausführt bevor der Agent Server bereit ist. Der eigentliche Request danach
-funktioniert. Kein funktionaler Fehler, aber beim Log-Lesen nicht verwirren lassen.
-
 ---
 
-## A. Installierte Pakete (Stand 2026-07-16)
+## A. Installierte Pakete (Stand 2026-07-20)
 
 ### Aktiv
 
@@ -337,14 +324,15 @@ funktioniert. Kein funktionaler Fehler, aber beim Log-Lesen nicht verwirren lass
 
 | Modell | Größe | Port | Zweck |
 |--------|-------|------|-------|
-| granite-4.0-h-350m-Q4_K_M.gguf | 213 MB | 8080 | Reasoning |
-| granite-embedding-30m-english-Q4_0.gguf | 28 MB | (8081, derzeit ungenutzt) | Embeddings |
+| granite-4.0-h-350m-Q4_K_M.gguf | 213 MB | 8080 | Reasoning + Embeddings |
+| granite-embedding-30m-english-Q4_0.gguf | 28 MB | (derzeit ungenutzt) | Spezialisiertes Embedding-Modell |
 
 Beide als GitHub Release Assets unter dem Tag `granite-models`.
 
-**Embedding-Server-Status:** Das Embedding-Modell wird heruntergeladen,
-aber Port 8081 wird in der Sandbox nicht gestartet. ChromaDB nutzt
-`LiteLLMEmbedding` über Port 8080 (Reasoning-Server).
+**Embedding-Strategie:** Das 350m Reasoning-Modell auf Port 8080 liefert
+mit `--embeddings --pooling mean` auch Embeddings (768-dim). Das spezialisierte
+30m Embedding-Modell wird heruntergeladen aber nicht als separater Server
+gestartet — es steht für spätere Optimierungen bereit.
 
 ---
 
@@ -352,8 +340,8 @@ aber Port 8081 wird in der Sandbox nicht gestartet. ChromaDB nutzt
 
 | Port | Dienst |
 |------|--------|
-| 8080 | Reasoning llama-server Binary b9895 (--jinja aktiv) |
-| 8081 | Embedding llama-server — NICHT gestartet in Sandbox-Tests |
+| 8080 | llama-server Binary b9895 (`--jinja --embeddings --pooling mean`) |
+| 8081 | Embedding-Server — wird in der Sandbox **nicht** gestartet |
 | 8787 | Headroom Proxy — DISABLED |
 | 6006 | Phoenix |
 | 4000 | LiteLLM |
@@ -370,8 +358,17 @@ aber Port 8081 wird in der Sandbox nicht gestartet. ChromaDB nutzt
 | `notes` | Persönliche Notizen (Notes Agent) | `agents/server/notes.py` |
 | `documents` | Ingested Dokumente (RAG) | `agents/ingestion/ingest.py` |
 
-ChromaDB läuft als `PersistentClient` — Daten bleiben in der Sandbox-Session
-erhalten, aber **nicht** zwischen Sessions (tmpfs).
+ChromaDB läuft als `PersistentClient` mit cosine-Distanz:
+
+```python
+client.get_or_create_collection(
+    name='notes',
+    metadata={"hnsw:space": "cosine"}
+)
+```
+
+Daten bleiben in der Sandbox-Session erhalten, aber **nicht** zwischen
+Sessions (tmpfs).
 
 ### Agent Registry (`agents/server/server.py`)
 
@@ -388,14 +385,23 @@ AGENTS = {
 
 ### Supervisor Routing (`agents/server/supervisor.py`)
 
+Zweistufiges Routing:
+1. **Heuristik** (`router_heuristic.py`) — Emoji + Keywords, 0ms, 8/8 OK
+2. **LLM-Fallback** — nur wenn Heuristik kein Ergebnis liefert
+
 ```python
 VALID_AGENTS = {"meta", "researcher", "comms", "notes", "code", "handoff"}
 ```
 
-Der Supervisor erkennt Sprache, routet, dann delegiert an den entsprechenden
-Spezialisten. `agent-local` → `invoke_supervisor` ist der einzige öffentliche
-Endpoint; die einzelnen Agenten-Endpoints existieren, werden aber im normalen
-Betrieb nicht direkt angesprochen.
+### Tool-Calling Format (Granite)
+
+`tool_formatter.py` übersetzt OpenAI Tool-Definitionen ins native Granite XML-Format:
+
+```xml
+<tool_call>
+{"name": "save_note", "arguments": {"text": "Meine Notiz", "title": "Titel"}}
+</tool_call>
+```
 
 ### MCP-Server (`mcp/sandbox/mcp.json`)
 
@@ -407,8 +413,6 @@ Betrieb nicht direkt angesprochen.
   }
 }
 ```
-
-Pfad nach Pre-Flight Fix (Schritt 5): `PROJECT_ROOT / "mcp" / "sandbox" / "mcp.json"`.
 
 ---
 
@@ -434,28 +438,14 @@ req = urllib.request.Request(
 urllib.request.urlopen(req, timeout=30)
 ```
 
-**Fix 3 — mcp.json Pfad (Pre-Flight, Schritt 5)**
-```bash
-sed -i 's|PROJECT_ROOT / "mcp" / "mcp.json"|PROJECT_ROOT / "mcp" / "sandbox" / "mcp.json"|' \
-  /home/claude/la/agents/server/tools.py
-```
-Sandbox-spezifisch, nicht committen. Langfristige Lösung via `LOCAL_AGENT_ENV`
-noch offen — siehe `BUGS.md`.
-
-**Fix 4 — args_schema für MCP Tools**
+**Fix 3 — args_schema für MCP Tools**
 ```python
 schema = dict(tool.args_schema)  # statt tool.args_schema.schema()
 ```
 
-**Fix 5 — headroom-ai[all] statt [proxy]**
-```bash
-pip install "headroom-ai[all]==0.31.0"  # [proxy] allein reicht nicht
-```
-Aktuell nicht relevant — Headroom ist deaktiviert, siehe ROADMAP.md.
-
 ---
 
-## F. Logging (Stand 2026-07-16)
+## F. Logging
 
 Alle Logs liegen einheitlich unter `/tmp/logs/`:
 
@@ -463,70 +453,53 @@ Alle Logs liegen einheitlich unter `/tmp/logs/`:
 |---|---|---|
 | `/tmp/logs/litellm.log` | LiteLLM | ✓ funktioniert |
 | `/tmp/logs/phoenix.log` | Phoenix | ✓ funktioniert |
-| `/tmp/llama-server-test.log` | Reasoning Server | ✓ stdout/stderr Redirect via subprocess.Popen |
-| `/tmp/logs/agent-server.log` | Agent Server | ⚠️ bleibt leer — gleicher Grund |
+| `/tmp/logs/llama-server.log` | Reasoning Server | ✓ via subprocess.Popen |
+| `/tmp/logs/agent-server.log` | Agent Server | ⚠️ bleibt leer (uvicorn Thread-Logging) |
 
-`tests/test_stack.py` prüft nach jedem Service-Start die jeweilige Log-Datei
-auf `ERROR`, `Exception`, `Traceback`, `CRITICAL` — nicht erst am Ende des
-gesamten Testlaufs.
-
-**Antwort-Validierung:** Tests bewerten nicht mehr nur `status==200`, sondern
-prüfen zusätzlich Mindestlänge der Antwort. Beim Notes-Agent wird gezielt in
-ChromaDB nachgeschaut ob die neue Notiz tatsächlich gespeichert wurde.
+`start_full.py` prüft nach jedem Service-Start die Log-Datei auf
+`ERROR:`, `Exception:`, `Traceback`, `CRITICAL`.
 
 ---
 
-## G. Testergebnisse (Stand 2026-07-16)
+## G. Testergebnisse (Stand 2026-07-21)
 
 | Test | Ergebnis |
 |------|----------|
 | llama-server :8080 (Binary b9895, --jinja) | ✓ ~27 t/s, Startup ~2s |
-| llama-server :8081 Embedding | ✓ ~15ms/embedding (Modell vorhanden, Server nicht aktiv) |
+| llama-server Embeddings (--embeddings --pooling mean) | ✓ 768-dim |
 | LiteLLM | ✓ |
 | Phoenix Traces | ✓ |
 | Agent Server | ✓ 6/6 Agenten registriert |
-| ChromaDB mit echten Embeddings | ✓ 384-dim |
-| MCP git_log | ✓ |
-| Tool-Calling | ✓ finish_reason: tool_calls (bewiesen mit --jinja, 2026-07-20) |
+| ChromaDB cosine Collection | ✓ |
+| Heuristik-Routing | ✓ 8/8 Test-Cases |
 | tool_formatter.py | ✓ 18/18 Tests |
-| Supervisor Routing | ⚠️ 350m-Modell zu klein für zuverlässiges Routing |
+| Comms Agent | ✓ |
+| Code Agent | ✓ |
+| Researcher Agent | ✓ |
+| Handoff Agent | ✓ |
+| Notes Agent | ⚠️ HTTP 200, aber save_note nicht aufgerufen (350m Limit, BUG-024) |
+| Supervisor Routing | ⚠️ 350m zu klein für zuverlässiges LLM-Routing — Heuristik übernimmt |
 
-**Routing-Hinweis:** Das 350m-Modell routet nicht zuverlässig — englische
-Prompts in Tests verwenden. Das ist eine Modellgrößen-Limitation, kein Bug.
-
-**Stand 2026-07-20:** Stack läuft mit llama-server Binary b9895 (nicht mehr
-llama-cpp-python). Tool-Calling via `--jinja` bewiesen. Startup ~2s (vorher ~20s).
+**Routing-Hinweis:** Das 350m-Modell routet nicht zuverlässig — Heuristik
+löst 80% der Fälle ohne LLM-Call. Das ist eine Modellgrößen-Limitation,
+kein Bug. Auf dem Host mit Granite-Tiny (4B) entfällt diese Einschränkung.
 
 ---
 
-## H. Bekannte offene Punkte (Stand 2026-07-16)
+## H. Bekannte offene Punkte
 
-- **mcp.json Pfad in tools.py** — muss per Pre-Flight Fix (Schritt 5) manuell
-  korrigiert werden. Langfristige Lösung via `LOCAL_AGENT_ENV` Umgebungsvariable
-  noch nicht implementiert. Muss im Code behoben sein bevor die nächste neue
-  Session frisch klont — sonst wird Pre-Flight Fix dauerhaft nötig bleiben.
+- **BUG-024 — 350m Tool-Calling:** Das Modell ruft `save_note` nicht
+  zuverlässig auf. Infrastruktur ist korrekt — das ist eine Kapazitätsgrenze.
+  Lösung: Granite-Tiny (4B) auf dem Host.
 
-- **Embedding-Server (Port 8081)** wird in `run_tests.py` nicht gestartet —
-  nur der Reasoning-Server läuft. Ob ChromaDB mit echten Embeddings über
-  diesen Pfad aktuell funktioniert, ist ungeklärt.
+- **BUG-020 — Researcher EISDIR:** `read_text_file` wird auf ein Verzeichnis
+  aufgerufen. Workaround in researcher_v2.py vorhanden.
 
-- **Notes/Handoff-Agent Routing** bleibt unzuverlässig — bekanntes
-  Kapazitätslimit des 350m-Modells beim Supervisor-Routing (nicht beim
-  MCP-Tool-Calling, das funktioniert). Auf einem größeren Modell (Host)
-  sollte dies nicht auftreten.
+- **Embedding-Server (Port 8081)** wird nicht gestartet — das 350m Modell
+  auf Port 8080 liefert Embeddings via `--embeddings --pooling mean`.
 
-- **`chat.py` Begrüßungstext** noch nicht auf "Local Agent" umbenannt (kosmetisch).
-
-- **llama-server Logs** funktionieren jetzt via `/tmp/llama-server-test.log`
-  (subprocess.Popen Redirect). Agent Server Logs bleiben leer — uvicorn-Thread-
-  Logging funktioniert weiterhin nicht.
-
-- **Phoenix Log-Check False Positive** — `test_stack.py` sucht nach dem
-  String `"ERROR"` in Logs. Phoenix schreibt beim Start SQL-`CREATE TABLE`-
-  Statements mit Constraint-Namen wie `"ck_spans_\`valid_status\`"` die den
-  String `"ERROR"` enthalten — kein echter Fehler. Details: `BUGS.md`.
-  Fix: Log-Check auf Zeilenmuster `"ERROR:"` oder `"Exception:"` (mit Doppelpunkt)
-  statt bloßem Vorkommen von `"ERROR"` einschränken.
+- **Agent Server Logs** bleiben leer — uvicorn Thread-Logging funktioniert
+  in der Sandbox nicht. Kein funktionaler Fehler.
 
 ---
 
