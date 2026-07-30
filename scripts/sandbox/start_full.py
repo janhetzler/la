@@ -74,7 +74,32 @@ llama_proc = subprocess.Popen(
      '--parallel', '1', '--log-disable', '--embeddings', '--pooling', 'mean'],
     stdout=open(LLAMA_LOG, 'w'), stderr=subprocess.STDOUT
 )
-wait_for('http://127.0.0.1:8080/v1/models', 'llama-server')
+wait_for('http://127.0.0.1:8080/v1/models', 'llama-server', retries=40)
+
+# Echter Inference-Readiness-Check direkt gegen llama-server :8080
+# (nicht ueber LiteLLM) — stellt sicher dass Modell vollstaendig geladen ist
+# bevor der zweite Prozess startet und Ressourcen beansprucht.
+print('Warte auf llama-server :8080 Inference-Bereitschaft...', flush=True)
+for _i in range(20):
+    try:
+        _req = urllib.request.Request(
+            'http://127.0.0.1:8080/v1/chat/completions',
+            data=json.dumps({
+                'model': 'granite',
+                'messages': [{'role': 'user', 'content': 'hi'}],
+                'max_tokens': 1
+            }).encode(),
+            headers={'Content-Type': 'application/json'},
+            method='POST'
+        )
+        urllib.request.urlopen(_req, timeout=15)
+        print('llama-server :8080 Inference OK', flush=True)
+        break
+    except Exception as _e:
+        time.sleep(2)
+        print(f'{_i+1}...', end=' ', flush=True)
+else:
+    print('llama-server :8080 Inference TIMEOUT — Stack moeglicherweise instabil', flush=True)
 
 # 1b. llama-server Embedding (Port 8081, nur --embeddings --pooling mean, kein --jinja)
 LLAMA_EMBED_LOG = os.path.join(LOG_DIR, 'llama-server-embed.log')
