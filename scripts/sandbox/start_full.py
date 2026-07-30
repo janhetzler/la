@@ -23,7 +23,8 @@ import uvicorn
 from datetime import datetime
 
 # Konfiguration
-MODEL_PATH  = os.getenv("MODEL_PATH",  "/tmp/granite-350m-Q4_K_M.gguf")
+MODEL_PATH       = os.getenv("MODEL_PATH",       "/tmp/granite-350m-Q4_K_M.gguf")
+EMBED_MODEL_PATH = os.getenv("EMBED_MODEL_PATH", "/tmp/granite-embedding-30m-Q4_0.gguf")
 CHROMA_PATH = os.getenv("CHROMA_PATH", "/tmp/chroma_la")
 LITELLM_KEY = os.getenv("LITELLM_KEY", "sk-cos-local-dev")
 AGENT_URL   = "http://127.0.0.1:8002/v1/chat/completions"
@@ -75,6 +76,18 @@ llama_proc = subprocess.Popen(
 )
 wait_for('http://127.0.0.1:8080/v1/models', 'llama-server')
 
+# 1b. llama-server Embedding (Port 8081, nur --embeddings --pooling mean, kein --jinja)
+LLAMA_EMBED_LOG = os.path.join(LOG_DIR, 'llama-server-embed.log')
+
+llama_embed_proc = subprocess.Popen(
+    [LLAMA_BIN, '-m', EMBED_MODEL_PATH,
+     '--host', '127.0.0.1', '--port', '8081',
+     '--embeddings', '--pooling', 'mean',
+     '--parallel', '1', '--log-disable'],
+    stdout=open(LLAMA_EMBED_LOG, 'w'), stderr=subprocess.STDOUT
+)
+wait_for('http://127.0.0.1:8081/v1/models', 'llama-server-embed')
+
 # 2. Phoenix
 os.environ['PHOENIX_COLLECTOR_ENDPOINT'] = 'http://127.0.0.1:6006/v1/traces'
 os.environ['PHOENIX_CLIENT_HEADERS']     = 'api_key=not-needed'
@@ -94,7 +107,7 @@ model_list:
   - model_name: granite-embed
     litellm_params:
       model: openai/granite-embed
-      api_base: http://127.0.0.1:8080/v1
+      api_base: http://127.0.0.1:8081/v1
       api_key: not-needed
   - model_name: agent-local
     litellm_params:
@@ -309,7 +322,7 @@ with open('/tmp/test_results.json', 'w') as f:
 print('\nReport: /tmp/test_results.json', flush=True)
 
 # Cleanup
-for proc in [litellm_proc, phoenix_proc]:
+for proc in [litellm_proc, phoenix_proc, llama_embed_proc]:
     if proc: proc.terminate()
 print('\nStack gestoppt.', flush=True)
 
