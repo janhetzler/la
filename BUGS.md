@@ -424,7 +424,7 @@ Code-Fix ausstehend.
 
 ## BUG-019: save_note Tool fehlt — kein Agent kann in ChromaDB schreiben
 
-**Status:** Bestaetigt (2026-07-20)
+**Status:** BEHOBEN (2026-07-30)
 **Umgebung:** Alle Umgebungen
 
 **Symptom:** Kein Agent kann Notizen in ChromaDB speichern. Notes-Agent
