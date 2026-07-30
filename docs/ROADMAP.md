@@ -1,3 +1,11 @@
+---
+type: Decision
+status: current
+updated_at: 2026-07-30
+stale_after: 2026-10-30
+environment: all
+components: []
+---
 # ROADMAP — janhetzler/la (Chief of Staff)
 
 **Letzte Aktualisierung:** 2026-07-16  
