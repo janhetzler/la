@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
 lint_frontmatter.py - Prueft OKF-Frontmatter in Markdown-Dateien.
-Gibt Fehler aus und beendet mit Exit-Code 1 wenn Pflichtfelder fehlen
-oder ungueltiger Werte enthalten.
+Nur Dateien in docs/ und im Root-Verzeichnis werden geprueft.
+Alle anderen Verzeichnisse (prompts/, config/, deploy/, scripts/) sind
+bewusst ausgeschlossen - deren Markdown-Dateien sind keine OKF-Dokumente.
 """
 import sys
 import re
@@ -15,15 +16,32 @@ ALLOWED_TYPES = {
 ALLOWED_STATUS = {"current", "draft", "stale", "deprecated"}
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
-EXCLUDE_DIRS = {
+# Nur diese Verzeichnisse und der Root werden geprueft
+INCLUDE_DIRS = {"docs"}
+INCLUDE_ROOT_FILES = {
+    "README.md", "BUGS.md", "JOURNAL.md",
+    "STYLEGUIDE.md", "CONTRIBUTING.md"
+}
+
+# Innerhalb von docs/ ausgeschlossen
+EXCLUDE_SUBDIRS = {
     "docs/templates",
     "docs/traces",
     "docs/test_results",
 }
 
-EXCLUDE_FILES = {
-    "CHANGELOG.md",
-}
+def should_check(path):
+    parts = path.parts
+    # Root-Dateien
+    if len(parts) == 1:
+        return path.name in INCLUDE_ROOT_FILES
+    # docs/ und Unterverzeichnisse
+    if parts[0] == "docs":
+        for ex in EXCLUDE_SUBDIRS:
+            if str(path).startswith(ex):
+                return False
+        return True
+    return False
 
 def parse_frontmatter(text):
     if not text.startswith("---"):
@@ -39,15 +57,6 @@ def parse_frontmatter(text):
             fields[key.strip()] = val.strip()
     return fields
 
-def should_skip(path):
-    p = str(path)
-    for d in EXCLUDE_DIRS:
-        if p.startswith(d):
-            return True
-    if path.name in EXCLUDE_FILES:
-        return True
-    return False
-
 def lint_file(path):
     errors = []
     text = path.read_text(encoding="utf-8")
@@ -56,21 +65,18 @@ def lint_file(path):
     if fm is None:
         return [f"{path}: Kein Frontmatter gefunden"]
 
-    # type
     t = fm.get("type", "")
     if not t:
         errors.append(f"{path}: Pflichtfeld 'type' fehlt")
     elif t not in ALLOWED_TYPES:
         errors.append(f"{path}: 'type: {t}' unbekannt (erlaubt: {sorted(ALLOWED_TYPES)})")
 
-    # status
     s = fm.get("status", "")
     if not s:
         errors.append(f"{path}: Pflichtfeld 'status' fehlt")
     elif s not in ALLOWED_STATUS:
         errors.append(f"{path}: 'status: {s}' unbekannt (erlaubt: {sorted(ALLOWED_STATUS)})")
 
-    # updated_at
     u = fm.get("updated_at", "")
     if not u:
         errors.append(f"{path}: Pflichtfeld 'updated_at' fehlt")
@@ -83,20 +89,22 @@ def main():
     root = Path(".")
     md_files = sorted(root.rglob("*.md"))
     errors = []
+    checked = 0
 
     for f in md_files:
         rel = f.relative_to(root)
-        if should_skip(rel):
+        if not should_check(rel):
             continue
+        checked += 1
         errors.extend(lint_file(rel))
 
     if errors:
-        print(f"FEHLER: {len(errors)} Frontmatter-Problem(e) gefunden:\n")
+        print(f"FEHLER: {len(errors)} Frontmatter-Problem(e) in {checked} geprueften Dateien:\n")
         for e in errors:
-            print(f"  ✗ {e}")
+            print(f"  x {e}")
         sys.exit(1)
     else:
-        print(f"OK: Alle Markdown-Dateien haben gueltiges OKF-Frontmatter.")
+        print(f"OK: {checked} Dateien geprueft, alle haben gueltiges OKF-Frontmatter.")
         sys.exit(0)
 
 if __name__ == "__main__":
