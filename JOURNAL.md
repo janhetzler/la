@@ -25,9 +25,9 @@ Testergebnisse landen in docs/SANDBOX_TESTRESULTS.md (keine Nummerierung).
 | Feld | Wert |
 |------|------|
 | Aufgesetzt | 2026-07-30 ~15:00 UTC |
-| Repo-Stand | 3137d3cd |
-| Status | Laeuftig — git pull + Neustart fuer naechsten Test |
-| Letzter Test | 4/6 OK (vor Port-8081-Aenderung) |
+| Repo-Stand | b98f6aa3 |
+| Status | Beendet nach Test |
+| Letzter Test | 4/6 OK — :8081 laeuft, :8080 TIMEOUT, Notes Agent schreibt nicht (BUG-024) |
 
 ---
 
