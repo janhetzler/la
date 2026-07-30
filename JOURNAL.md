@@ -6,13 +6,47 @@ Neuester Eintrag oben. Fuer Agenten: lies den ersten Eintrag um den aktuellen St
 
 ## Sandbox-Status (aktuell)
 
-| Sandbox | Rolle | Beschreibung |
-|---------|-------|--------------|
-| **Sandbox 1** | Produktiv | Neu aufgesetzt 2026-07-21, llama-server b9895, Heuristik-Routing, 4/6 OK |
-| **Sandbox 2** | Labor | Experimente, kein stabiler Stand garantiert |
+| Sandbox | Modell | Rolle |
+|---------|--------|-------|
+| **Sandbox** | Haiku | On-demand — nur Stack starten, testen, Ergebnisse melden |
 
-Sandbox 1 hat immer den aktuellsten `git pull` Stand und ist die Referenz fuer Testergebnisse.
-Sandbox 2 ist Spielwiese -- dort wird ausprobiert ohne Ruecksicht auf Stabilitaet.
+Eine Sandbox, kein Dauerbetrieb. Wird bei Bedarf neu aufgesetzt nach docs/SANDBOX.md.
+Testergebnisse landen in docs/SANDBOX_TESTRESULTS.md (keine Nummerierung).
+
+---
+
+
+## 2026-07-30 — Sandbox-Konzept vereinfacht
+
+### Was geaendert wurde
+
+**Sandbox-Struktur:**
+- Sandbox 1 und Sandbox 2 aufgeloest
+- Ab jetzt: eine Sandbox, on-demand, Haiku-Modell
+- Haiku bewaehrt sich fuer reine Test-Aufgaben (Stack starten, melden, warten)
+- Kein Dauerbetrieb mehr -- Sandbox wird nur aufgesetzt wenn benoetigt
+
+**Dokumente bereinigt:**
+- `docs/SANDBOX_1.md` geloescht (historisch, in SANDBOX.md aufgegangen)
+- `docs/SANDBOX_1_TESTRESULTS.md` geloescht (ersetzt durch SANDBOX_TESTRESULTS.md)
+- `docs/SANDBOX_2_TESTRESULTS.md` geloescht (ersetzt durch SANDBOX_TESTRESULTS.md)
+- `docs/SANDBOX_TESTRESULTS.md` neu -- aktuellster Testlauf, keine Nummerierung
+- `docs/SANDBOX.md` aktualisiert -- Rollen, Step 5 entfernt, Embedding-Flags
+
+**Rollen im Projekt:**
+
+| Rolle | Modell | Aufgabe |
+|-------|--------|---------|
+| Mutterchat | Sonnet | Architektur, Entscheidungen, GitHub-Operationen |
+| Develop-Chat | Sonnet | Code entwickeln, Commits pushen |
+| Sandbox | Haiku | Stack starten, testen, Ergebnisse melden |
+
+### Letzter Testlauf (2026-07-30, Haiku)
+
+4/6 Agenten OK -- entspricht erwartetem Stand:
+- Notes Agent: save_note nicht aufgerufen (350m Limit, BUG-024)
+- Supervisor Routing: zu kurz (350m Limit, bekannt)
+Phoenix SAWarnings: harmlos.
 
 ---
 
