@@ -121,8 +121,28 @@ docs/templates/
 
 ---
 
+## Beziehungen zwischen Dokumenten
+
+OKF ist graphenbasiert — Beziehungen zwischen Dokumenten werden als
+gewoehnliche Markdown-Links im Textkörper ausgedrueckt, nicht als
+Frontmatter-Felder. Das erlaubt Werkzeugen den Link-Graphen automatisch
+auszuwerten.
+
+**Regel:** Wenn ein neues Dokument erstellt wird, muessen alle Dokumente
+die darauf verweisen sollen einen Markdown-Link im Body erhalten.
+Besonders wichtig: [README.md](../README.md) und [index.md](index.md)
+sind Einstiegspunkte — sie muessen bei jeder neuen Datei geprueft und
+ggf. aktualisiert werden.
+
+Ein eigenes `related`-Feld im YAML-Frontmatter ist ausdruecklich nicht
+vorgesehen — das waere ein Bruch mit der OKF-Architektur.
+
+---
+
 ## Verwandt
 
+- [OKF.md](OKF.md) — OKF-Konzept und Gesamtbild
+- [CI.md](CI.md) — GitHub Actions und Link-Graph-Pruefung
 - [STYLEGUIDE.md](../STYLEGUIDE.md) — Coding-Konventionen
-- [docs/index.md](index.md) — Navigationseinstieg
+- [index.md](index.md) — Navigationseinstieg
 - [OKF SPEC.md](https://github.com/janhetzler/knowledge-catalog/blob/main/okf/SPEC.md)
