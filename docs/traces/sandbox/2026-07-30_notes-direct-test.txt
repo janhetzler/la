@@ -1,0 +1,2 @@
+[notes] LLM Fehler: Connection error.
+Result: Notes error: APIConnectionError: Connection error.
