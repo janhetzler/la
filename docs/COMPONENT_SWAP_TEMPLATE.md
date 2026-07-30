@@ -1,3 +1,11 @@
+---
+type: Decision
+status: current
+updated_at: 2026-07-30
+stale_after: 2027-01-30
+environment: all
+components: []
+---
 # COMPONENT_SWAP_TEMPLATE.md — Leitfaden für Komponenten-Dokumentation
 
 **Zweck:** Dieses Template definiert die Standardstruktur für alle Komponenten-Dokumentationen im Projekt. 
