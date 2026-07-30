@@ -17,8 +17,8 @@ Alle Konventionen zur Dokumentationserstellung: [DOC_CONVENTIONS.md](DOC_CONVENT
 | Datei | Typ | Status | Umgebung |
 |-------|-----|--------|----------|
 | [README.md](../README.md) | Overview | current | all |
-| [JOURNAL.md](../JOURNAL.md) | Log | active | all |
-| [BUGS.md](../BUGS.md) | Tracker | active | all |
+| [JOURNAL.md](../JOURNAL.md) | Log | current | all |
+| [BUGS.md](../BUGS.md) | Tracker | current | all |
 | [STYLEGUIDE.md](../STYLEGUIDE.md) | Reference | current | all |
 | [CONTRIBUTING.md](../CONTRIBUTING.md) | Reference | current | all |
 
