@@ -20,6 +20,15 @@ Neuester Eintrag oben. Fuer Agenten: lies den ersten Eintrag um den aktuellen St
 Eine Sandbox, kein Dauerbetrieb. Wird bei Bedarf neu aufgesetzt nach docs/SANDBOX.md.
 Testergebnisse landen in docs/SANDBOX_TESTRESULTS.md (keine Nummerierung).
 
+**Aktueller Sandbox-Stand:**
+
+| Feld | Wert |
+|------|------|
+| Aufgesetzt | 2026-07-30 ~15:00 UTC |
+| Repo-Stand | 3137d3cd |
+| Status | Laeuftig — git pull + Neustart fuer naechsten Test |
+| Letzter Test | 4/6 OK (vor Port-8081-Aenderung) |
+
 ---
 
 
