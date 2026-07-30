@@ -101,11 +101,10 @@ docs/
 Nach jedem vollständigen Testlauf (`scripts/sandbox/start_full.py`) werden
 die Ergebnisse als Markdown-Datei in `docs/` abgelegt.
 
-**Namenskonvention:** `<UMGEBUNG>_<SESSION>_TESTRESULTS.md`
+**Namenskonvention:** `<UMGEBUNG>_TESTRESULTS.md`
 
 Beispiele:
-- `docs/SANDBOX_1_TESTRESULTS.md` — Ergebnisse aus Sandbox Session 1
-- `docs/SANDBOX_2_TESTRESULTS.md` — Ergebnisse aus Sandbox Session 2
+- `docs/SANDBOX_TESTRESULTS.md` — Ergebnisse aus der Sandbox
 - `docs/HOST_TESTRESULTS.md` — Ergebnisse vom Host (sobald deployed)
 
 Die Datei enthält: Datum, Umgebung, Modell, Testergebnisse pro Agent,
