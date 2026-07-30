@@ -1,3 +1,10 @@
+---
+type: Observation
+status: current
+updated_at: 2026-07-30
+environment: docker
+components: [llama-server, litellm, chromadb, phoenix, fastapi]
+---
 # DOCKER_TESTRESULTS.md -- Testergebnisse Docker-Umgebung
 
 ---
