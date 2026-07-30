@@ -221,6 +221,21 @@ df = client.spans.get_spans_dataframe(
 
 ## Dokumentation
 
+Die Dokumentation folgt dem [Open Knowledge Format (OKF)](docs/OKF.md) —
+maschinenlesbare YAML-Frontmatter-Felder, Markdown-Body fuer Menschen und Agenten.
+Navigationseinstieg: [docs/index.md](docs/index.md)
+
+### Konzept und Konventionen
+
+| Datei | Inhalt |
+|---|---|
+| [docs/index.md](docs/index.md) | Vollstaendige Dokumentations-Navigation |
+| [docs/OKF.md](docs/OKF.md) | OKF-Konzept und Anwendung in LA |
+| [docs/DOC_CONVENTIONS.md](docs/DOC_CONVENTIONS.md) | Frontmatter-Schema, Typen, Pflegeregeln |
+| [docs/CI.md](docs/CI.md) | GitHub Actions fuer Dokumentationsqualitaet |
+
+### Betrieb und Entwicklung
+
 | Datei | Inhalt |
 |---|---|
 | [docs/SANDBOX.md](docs/SANDBOX.md) | Claude Sandbox aufbauen |
@@ -228,6 +243,7 @@ df = client.spans.get_spans_dataframe(
 | [docs/DOCKER.md](docs/DOCKER.md) | Docker Image bauen + nutzen |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Architektur-Entscheidungen, Phasen |
 | [docs/MCP_SERVERS.md](docs/MCP_SERVERS.md) | MCP-Konfiguration |
+| [docs/AGENT_DEVELOPMENT.md](docs/AGENT_DEVELOPMENT.md) | Neuen Agenten entwickeln |
 | [BUGS.md](BUGS.md) | Bekannte Probleme und Erkenntnisse |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Repo-Struktur und Konventionen |
 
