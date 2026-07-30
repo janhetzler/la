@@ -1,3 +1,10 @@
+---
+type: Observation
+status: current
+updated_at: 2026-07-30
+environment: sandbox
+components: [llama-server, litellm, chromadb, phoenix, fastapi]
+---
 # Local Agent Test Suite — Ergebnisse (Sandbox)
 
 Aktuellster Testlauf oben. Aeltere Eintraege darunter.
