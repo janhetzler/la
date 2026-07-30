@@ -1,3 +1,11 @@
+---
+type: Reference
+status: current
+updated_at: 2026-07-30
+stale_after: 2027-01-30
+environment: all
+components: []
+---
 # CONTRIBUTING.md — Local Agent (janhetzler/la)
 
 Dieses Dokument beschreibt die Struktur des Repositories und wie wir damit arbeiten.
