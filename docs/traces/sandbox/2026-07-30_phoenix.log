@@ -1,0 +1,121 @@
+🏃‍♀️‍➡️ Running migrations on the database.
+---------------------------
+2026-07-30 21:37:53,863 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-30 21:37:53,869 INFO sqlalchemy.engine.Engine PRAGMA main.table_info("alembic_version")
+2026-07-30 21:37:53,869 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-07-30 21:37:53,890 INFO sqlalchemy.engine.Engine SELECT alembic_version.version_num 
+FROM alembic_version
+2026-07-30 21:37:53,890 INFO sqlalchemy.engine.Engine [generated in 0.00017s] ()
+2026-07-30 21:37:53,953 INFO sqlalchemy.engine.Engine COMMIT
+---------------------------
+✅ Migrations completed in 0.112 seconds.
+INFO:     Started server process [558]
+INFO:     Waiting for application startup.
+Failed to initialize docs MCP server; continuing without docs capability.
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/dist-packages/phoenix/server/app.py", line 648, in lifespan
+    await stack.enter_async_context(docs_mcp_server)
+  File "/usr/lib/python3.12/contextlib.py", line 659, in enter_async_context
+    result = await _enter(cm)
+             ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/pydantic_ai/mcp.py", line 1083, in __aenter__
+    await exit_stack.enter_async_context(self.client)
+  File "/usr/lib/python3.12/contextlib.py", line 659, in enter_async_context
+    result = await _enter(cm)
+             ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fastmcp/client/client.py", line 535, in __aenter__
+    return await self._connect()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fastmcp/client/client.py", line 621, in _connect
+    raise exception
+  File "/usr/local/lib/python3.12/dist-packages/fastmcp/client/client.py", line 702, in _session_runner
+    await stack.enter_async_context(self._context_manager())
+  File "/usr/lib/python3.12/contextlib.py", line 659, in enter_async_context
+    result = await _enter(cm)
+             ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 210, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fastmcp/client/client.py", line 468, in _context_manager
+    with catch(get_catch_handlers()):
+  File "/usr/local/lib/python3.12/dist-packages/exceptiongroup/_catch.py", line 39, in __exit__
+    raise unhandled from exc.__cause__
+  File "/usr/local/lib/python3.12/dist-packages/exceptiongroup/_catch.py", line 65, in handle_exception
+    result = handler(matched)
+             ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/fastmcp/utilities/exceptions.py", line 29, in _exception_handler
+    raise leaf
+  File "/usr/local/lib/python3.12/dist-packages/anyio/_core/_tasks.py", line 275, in _run_coro
+    retval = await self._coro
+             ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/mcp/client/streamable_http.py", line 565, in handle_request_async
+    await self._handle_post_request(ctx)
+  File "/usr/local/lib/python3.12/dist-packages/mcp/client/streamable_http.py", line 358, in _handle_post_request
+    response.raise_for_status()
+  File "/usr/local/lib/python3.12/dist-packages/httpx/_models.py", line 829, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Client error '403 Forbidden' for url 'https://arizeai-433a7140.mintlify.app/mcp'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
+boto3 is installed but aioboto3 is not. To use AWS Bedrock models in Playground, install aioboto3: pip install aioboto3
+
+
+██████╗ ██╗  ██╗ ██████╗ ███████╗███╗   ██╗██╗██╗  ██╗
+██╔══██╗██║  ██║██╔═══██╗██╔════╝████╗  ██║██║╚██╗██╔╝
+██████╔╝███████║██║   ██║█████╗  ██╔██╗ ██║██║ ╚███╔╝
+██╔═══╝ ██╔══██║██║   ██║██╔══╝  ██║╚██╗██║██║ ██╔██╗
+██║     ██║  ██║╚██████╔╝███████╗██║ ╚████║██║██╔╝ ██╗
+╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═╝ v18.0.0
+
+|  ⭐️⭐️⭐️ Support Open Source ⭐️⭐️⭐️
+|  ⭐️⭐️⭐️ Star on GitHub! ⭐️⭐️⭐️
+|  https://github.com/Arize-ai/phoenix
+|
+|  🌎 Join our Community 🌎
+|  https://join.slack.com/t/arize-ai/shared_invite/zt-3r07iavnk-ammtATWSlF0pSrd1DsMW7g
+|
+|  📚 Documentation 📚
+|  https://arize.com/docs/phoenix
+|
+|  🚀 Phoenix Server 🚀
+|  Phoenix UI: http://127.0.0.1:6006
+|
+|  Authentication: False
+|  Log traces:
+|    - gRPC: http://127.0.0.1:4317
+|    - HTTP: http://127.0.0.1:6006/v1/traces
+|  Storage: sqlite:////root/.phoenix/phoenix.db
+|
+|  📦 Code Sandbox Providers 📦
+|  - DAYTONA: ✅ Allowed
+|  - DENO: ✅ Allowed
+|  - E2B: ✅ Allowed
+|  - MODAL: ✅ Allowed
+|  - VERCEL: ✅ Allowed
+|  - WASM: ✅ Allowed
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:6006 (Press CTRL+C to quit)
+INFO:     127.0.0.1:51542 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39434 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39436 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39434 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42138 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40190 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40194 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40190 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40190 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38868 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56500 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56516 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42070 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42070 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42080 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42070 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42096 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42070 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42070 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34284 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44792 - "POST /v1/traces HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [558]
