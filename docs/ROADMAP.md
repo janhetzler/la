@@ -222,6 +222,18 @@ für funktionierendes MCP.
 
 ---
 
+## Offene Aufgabe: Keine hardcodierten Config-Werte (BUG-025)
+
+**Stand:** Offen (2026-07-30)
+
+Collection-Namen, Pfade und andere Config-Werte gehoeren in config.py —
+nicht als hardcoded Strings in Agent-Code. Konkret: CHROMA_NOTES_COLLECTION
+als neue Variable in config.py, notes.py darauf umstellen.
+
+Siehe BUG-025 in BUGS.md.
+
+---
+
 ## Offene Architektur-Aufgabe: Keine hardcodierten Pfade
 
 **Stand:** 2026-07-17
