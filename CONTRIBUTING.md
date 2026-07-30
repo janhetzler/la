@@ -122,3 +122,46 @@ ChromaDB-Status, Log-Check-Ergebnisse.
 | `BUGS.md` | Bekannte offene Probleme |
 | `requirements.txt` | Python-Abhängigkeiten |
 | `Dockerfile` | Docker Image Definition |
+
+---
+
+## Arbeitsablauf: Markdown-Dateien aendern
+
+Wenn du eine `.md`-Datei aenderst oder neu erstellst, gilt dieser Ablauf:
+
+### 1. Vor dem Push — lokal pruefen
+
+```bash
+CHANGED_FILES="pfad/zur/datei.md" python3 scripts/ci/check_doc_graph.py
+```
+
+Zeigt welche anderen Dokumente auf deine Datei verweisen und
+moeglicherweise mitgepflegt werden muessen.
+
+### 2. Neue Datei anlegen
+
+- Vorlage aus `docs/templates/` kopieren
+- Frontmatter ausfuellen (`type`, `status`, `updated_at`, ggf. `stale_after`)
+- `docs/index.md` aktualisieren — neue Datei in der richtigen Tabelle eintragen
+- `README.md` pruefen — gehoert die neue Datei in den Dokumentationsabschnitt?
+
+### 3. Nach dem Push — Actions pruefen
+
+**GitHub → Repository → Actions** — drei Actions laufen bei jedem Push:
+
+| Action | Ergebnis rot | Ergebnis gruen mit Warnungen |
+|--------|-------------|------------------------------|
+| Frontmatter Lint | Pflichtfelder fehlen — sofort korrigieren | — |
+| Doc Graph Check | — | Verlinkende Dokumente pruefen |
+| Stale Docs Check | — | Laeuft nur montags |
+
+Der **Doc Graph Check** ist besonders wichtig: Er listet alle Dokumente
+die auf deine geaenderte Datei verweisen. Pruefen ob dort eine
+inhaltliche Aktualisierung noetig ist — z.B. ob `README.md` oder
+`docs/index.md` angepasst werden muessen.
+
+### 4. Dokumentation zu OKF und Konventionen
+
+- [docs/DOC_CONVENTIONS.md](docs/DOC_CONVENTIONS.md) — Frontmatter-Schema, Typen, Pflegeregeln
+- [docs/OKF.md](docs/OKF.md) — Konzept und Gesamtbild
+- [docs/CI.md](docs/CI.md) — Alle drei Actions im Detail
