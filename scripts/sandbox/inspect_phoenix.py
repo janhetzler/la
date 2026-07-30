@@ -140,7 +140,7 @@ wait_for('http://127.0.0.1:8002/health', 'Agent Server')
 
 # 6. Einzelner Request
 print('\n=== REQUEST ===', flush=True)
-PROMPT = "Write a short professional email to the team about the project status."
+PROMPT = "Save this note: Local Agent stack runs on llama-server b9895 with Granite 350m."
 print(f'Prompt: {PROMPT}', flush=True)
 
 t0 = time.time()
