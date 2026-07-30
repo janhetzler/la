@@ -1,3 +1,10 @@
+---
+type: Tracker
+status: current
+updated_at: 2026-07-30
+environment: all
+components: []
+---
 # Known issues
 
 ## Researcher tool calls
