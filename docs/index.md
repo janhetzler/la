@@ -51,6 +51,8 @@ Alle Konventionen zur Dokumentationserstellung: [DOC_CONVENTIONS.md](DOC_CONVENT
 | Datei | Status | Umgebung | Stale after |
 |-------|--------|----------|-------------|
 | [DOC_CONVENTIONS.md](DOC_CONVENTIONS.md) | current | all | 2027-01-30 |
+| [OKF.md](OKF.md) | current | all | 2027-01-30 |
+| [CI.md](CI.md) | current | all | 2027-01-30 |
 | [AGENT_DEVELOPMENT.md](AGENT_DEVELOPMENT.md) | current | all | 2027-01-30 |
 | [AGENT_SANDBOX.md](AGENT_SANDBOX.md) | current | sandbox | 2027-01-30 |
 | [MCP_SERVERS.md](MCP_SERVERS.md) | current | all | 2027-01-30 |
