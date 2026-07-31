@@ -302,6 +302,58 @@ kein echter Fehler. Fix: Log-Check auf `"ERROR:"` mit Doppelpunkt eingrenzen.
 
 ---
 
+## 9. Inspect-Skripte (Diagnose-Tools)
+
+Standalone-Skripte fuer gezielte Diagnose ohne vollstaendigen Stack.
+Jedes Skript startet nur die benoetigten Komponenten (meist nur llama-server).
+
+| Skript | Testet | Stack |
+|--------|--------|-------|
+| `inspect_notes.py` | Notes Agent Tool-Call + ChromaDB Schreiben | llama-server :8080 + :8081 + LiteLLM |
+| `inspect_supervisor.py` | Supervisor Routing (Heuristik + LLM) | llama-server :8080 + LiteLLM |
+| `inspect_meta.py` | Meta-Agent Prompt (3 Tests A/B/C) | llama-server :8080 direkt |
+| `inspect_phoenix.py` | Phoenix Tracing + Trace-Abfrage | llama-server + Phoenix + LiteLLM |
+
+### Verwendung
+
+```bash
+cd /home/claude/la
+GH_TOKEN=<token> python3 scripts/sandbox/inspect_notes.py
+GH_TOKEN=<token> python3 scripts/sandbox/inspect_supervisor.py
+GH_TOKEN=<token> python3 scripts/sandbox/inspect_meta.py
+```
+
+### Prompts konfigurieren (inspect_config.json)
+
+Alle Skripte laden beim Start `scripts/sandbox/inspect_config.json`.
+Eigene Testprompts eintragen ohne Code anzufassen:
+
+```json
+{
+  "notes": {
+    "prompt": "Save this note: mein eigener Testprompt"
+  },
+  "supervisor": {
+    "prompt": "Meine eigene Testfrage fuer den Router"
+  },
+  "meta": {
+    "tests": [
+      {"label": "A", "prompt": "full",  "max_tokens": null},
+      {"label": "B", "prompt": "short", "max_tokens": 256}
+    ]
+  }
+}
+```
+
+`"full"` und `"short"` in meta.tests sind Schluessel fuer die
+vordefinierten Prompts in inspect_meta.py (FULL_PROMPT / SHORT_PROMPT).
+Fehlt inspect_config.json oder ein Schluessel: Fallback auf Defaults.
+
+### Traces
+
+Jedes Skript pusht einen Trace nach `docs/traces/sandbox/` — Commit-SHA
+wird nach dem Lauf gemeldet.
+
 ## 8. Standard-Debugging-Workflow
 
 ```bash
