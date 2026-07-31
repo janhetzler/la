@@ -32,7 +32,8 @@ AGENT_PORT  = int(os.getenv("AGENT_PORT", "8002"))
 
 # ChromaDB
 CHROMA_PATH       = os.getenv("CHROMA_PATH", "/tmp/chroma_la")
-CHROMA_COLLECTION = os.getenv("CHROMA_COLLECTION", "documents")
+CHROMA_COLLECTION       = os.getenv("CHROMA_COLLECTION",       "documents")
+CHROMA_NOTES_COLLECTION = os.getenv("CHROMA_NOTES_COLLECTION", "notes")
 
 # Modelle
 DEFAULT_LLM  = os.getenv("DEFAULT_LLM",  "granite-tiny")
