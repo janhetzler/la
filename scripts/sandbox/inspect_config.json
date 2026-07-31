@@ -1,0 +1,27 @@
+{
+  "notes": {
+    "prompt": "Save this note: test direct call"
+  },
+  "supervisor": {
+    "prompt": "What is the capital of France?"
+  },
+  "meta": {
+    "tests": [
+      {
+        "label": "A",
+        "prompt": "full",
+        "max_tokens": null
+      },
+      {
+        "label": "B",
+        "prompt": "full",
+        "max_tokens": 512
+      },
+      {
+        "label": "C",
+        "prompt": "short",
+        "max_tokens": 512
+      }
+    ]
+  }
+}
