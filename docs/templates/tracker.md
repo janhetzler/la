@@ -1,6 +1,6 @@
 ---
 type: Tracker
-status: active
+status: current
 updated_at: YYYY-MM-DD
 environment: all
 components: []
