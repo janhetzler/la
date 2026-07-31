@@ -72,7 +72,7 @@ def search_meetings(query: str, top_k: int = 5) -> str:
         query_vec = _embed_query(query)
         client = chromadb.PersistentClient(path=config.CHROMA_PATH)
         collection = client.get_or_create_collection(
-            name="notes",
+            name=config.CHROMA_NOTES_COLLECTION,
             metadata={"hnsw:space": "cosine"}
         )
         results = collection.query(
@@ -115,7 +115,7 @@ def save_note(text: str, title: str = "") -> str:
     note_id = f"note-{datetime.now().isoformat()}"
     client = chromadb.PersistentClient(path=config.CHROMA_PATH)
     collection = client.get_or_create_collection(
-        name="notes",
+        name=config.CHROMA_NOTES_COLLECTION,
         metadata={"hnsw:space": "cosine"}
     )
     collection.add(
