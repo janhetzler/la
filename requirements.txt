@@ -54,6 +54,7 @@ opentelemetry-exporter-otlp==1.43.0
 # Alle Umgebungen (Sandbox, Docker, Host): llama-server Binary b9895
 # Kein Python-Package nötig — Binary wird separat heruntergeladen
 starlette-context==0.5.1      # uvicorn/FastAPI ASGI Middleware
+prisma                        # LiteLLM Abhaengigkeit (fehlt sonst im Docker Build)
 
 # ── MCP Servers ───────────────────────────────────────────────────
 mcp-server-git==2026.7.10
