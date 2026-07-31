@@ -1,7 +1,7 @@
 ---
 type: Overview
 status: current
-updated_at: 2026-07-30
+updated_at: 2026-07-31
 environment: all
 components: []
 ---
@@ -24,7 +24,7 @@ Dokumentation, eigenen Requirements und eigenen Start-Skripten:
 
 | Umgebung | Zweck | Dokumentation |
 |---|---|---|
-| Sandbox | Claude.ai Entwicklungsumgebung, kurzlebig | [docs/SANDBOX.md](docs/SANDBOX.md) |
+| Sandbox | Claude.ai Entwicklungsumgebung, kurzlebig — 6/6 Agenten OK (2026-07-31) | [docs/SANDBOX.md](docs/SANDBOX.md) |
 | Host | Produktivbetrieb auf eigenem Server (systemd) | [docs/INSTALL_HOST.md](docs/INSTALL_HOST.md) |
 | Docker | Portable Version, fuer jeden x86_64 Server | [docs/DOCKER.md](docs/DOCKER.md) |
 
@@ -34,7 +34,7 @@ Dokumentation, eigenen Requirements und eigenen Start-Skripten:
 |---|---|---|---|
 | CPU | Intel Xeon, 1 Core | x86_64, 4 Cores (AMD EPYC) | x86_64, 1 Core |
 | RAM | 4 GB | 10 GB | 4 GB |
-| Inferenz | llama-cpp-python (Python) | llama-server (Binary) | llama-cpp-python (Python) |
+| Inferenz | llama-server (Binary) | llama-server (Binary) | llama-server (Binary) |
 | Reasoning-Modell | Granite-4.0-H-350m (213 MB) | Granite-4.0-H-Tiny (4.2 GB) | Granite-4.0-H-350m (213 MB) |
 | Persistenz | Keine -- stirbt nach Session | Dauerhaft (systemd) | Dauerhaft (Container) |
 
