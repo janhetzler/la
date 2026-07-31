@@ -29,6 +29,16 @@ import time, urllib.request, json, subprocess, sys, os, base64
 from datetime import datetime
 from pathlib import Path
 
+def load_inspect_config() -> dict:
+    """Laedt inspect_config.json aus dem Skript-Verzeichnis.
+    Gibt leeres Dict zurueck wenn Datei fehlt oder nicht parsebar.
+    """
+    cfg_path = Path(__file__).parent / "inspect_config.json"
+    try:
+        return json.loads(cfg_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
 # Konfiguration
 MODEL_PATH = os.getenv("MODEL_PATH", "/tmp/granite-350m-Q4_K_M.gguf")
 GH_TOKEN   = os.getenv("GH_TOKEN",   "")
@@ -112,6 +122,15 @@ User's question: What can you do?
 
 Respond in English with a short markdown overview. End with "What can I do for you?"."""
 
+
+# Tests aus inspect_config.json laden (Fallback: hardcodierte Defaults)
+_cfg_meta = load_inspect_config().get("meta", {})
+PROMPT_MAP = {"full": FULL_PROMPT, "short": SHORT_PROMPT}
+TESTS = _cfg_meta.get("tests", [
+    {"label": "A", "prompt": "full",  "max_tokens": None},
+    {"label": "B", "prompt": "full",  "max_tokens": 512},
+    {"label": "C", "prompt": "short", "max_tokens": 512},
+])
 
 # ===== llama-server starten =====
 LLAMA_BIN = "/tmp/llama-b9895/llama-server"
@@ -218,15 +237,26 @@ def run_test(label: str, system_prompt: str, max_tokens=None) -> dict:
 # ===== Tests A / B / C =====
 t_start = time.time()
 
-result_a = run_test("A -- Voller Prompt, default max_tokens",  FULL_PROMPT,  max_tokens=None)
-result_b = run_test("B -- Voller Prompt, max_tokens=512",      FULL_PROMPT,  max_tokens=512)
-result_c = run_test("C -- Gekuerzter Prompt, max_tokens=512",  SHORT_PROMPT, max_tokens=512)
+# Tests aus TESTS-Liste ausfuehren (konfigurierbar via inspect_config.json)
+test_results = []
+for _t in TESTS:
+    _prompt_text = PROMPT_MAP.get(_t.get("prompt", "full"), FULL_PROMPT)
+    _label = f"{_t['label']} -- {'Voller' if _t.get('prompt') == 'full' else 'Gekuerzter'} Prompt"
+    if _t.get("max_tokens") is not None:
+        _label += f", max_tokens={_t['max_tokens']}"
+    else:
+        _label += ", default max_tokens"
+    test_results.append(run_test(_label, _prompt_text, max_tokens=_t.get("max_tokens")))
+
+result_a = test_results[0] if len(test_results) > 0 else {}
+result_b = test_results[1] if len(test_results) > 1 else {}
+result_c = test_results[2] if len(test_results) > 2 else {}
 
 # ===== Zusammenfassung =====
 log("\n=== ZUSAMMENFASSUNG ===")
 log(f"{'Test':<40} {'max_tok':>8} {'p_tok':>6} {'c_tok':>6} {'finish':<12} {'len':>6}")
 log("-" * 82)
-for r in [result_a, result_b, result_c]:
+for r in test_results:
     if "error" in r:
         log(f"{r['label']:<40} FEHLER: {r['error']}")
     else:
