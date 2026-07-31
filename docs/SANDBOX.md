@@ -471,7 +471,7 @@ Alle Logs liegen einheitlich unter `/tmp/logs/`:
 
 ---
 
-## G. Testergebnisse (Stand 2026-07-31)
+## G. Testergebnisse (Stand 2026-07-31, aktualisiert 2026-07-31)
 
 | Test | Ergebnis |
 |------|----------|
@@ -488,19 +488,20 @@ Alle Logs liegen einheitlich unter `/tmp/logs/`:
 | Researcher Agent | ✓ |
 | Handoff Agent | ✓ |
 | Notes Agent | ✓ save_note schreibt in ChromaDB notes Collection (BUG-019 behoben) |
-| Supervisor Routing | ⚠️ LLM-Router korrekt (Grammar Constraint wirksam), aber Meta-Agent gibt zu kurze Antworten (BUG-024 neu bewertet) |
+| Supervisor Routing | ✓ Meta-Antwort korrekt (74 Zeichen) — BUG-024 geschlossen |
 
-**Routing-Hinweis:** Das 350m-Modell routet nicht zuverlässig — Heuristik
-löst 80% der Fälle ohne LLM-Call. Das ist eine Modellgrößen-Limitation,
-kein Bug. Auf dem Host mit Granite-Tiny (4B) entfällt diese Einschränkung.
+**Routing-Hinweis:** Heuristik löst 80% der Fälle ohne LLM-Call.
+LLM-Router (Grammar Constraint) funktioniert korrekt fuer den Rest.
+Auf dem Host mit Granite-Tiny (4B) entfaellt die Heuristik-Abhängigkeit.
 
 ---
 
 ## H. Bekannte offene Punkte
 
-- **BUG-024 — Meta-Agent Kurzantworten (neu bewertet 2026-07-31):** LLM-Router
-  funktioniert korrekt. Der Meta-Agent generiert jedoch zu kurze Antworten.
-  Nächster Schritt: `inspect_meta.py` bauen (Developer-Chat), dann Sandbox testen.
+- **BUG-024 — GESCHLOSSEN (2026-07-31):** Ursache war `max_tokens` im
+  Supervisor-Routing-Test von `start_full.py` — das 350m-Modell liefert
+  Minimalantworten wenn `max_tokens` explizit gesetzt wird. Fix: Meta-Test
+  ohne `max_tokens`. Verifiziert: 6/6 Agenten OK (Commit e0221a69).
 
 - **BUG-020 — Researcher EISDIR:** `read_text_file` wird auf ein Verzeichnis
   aufgerufen. Workaround in researcher_v2.py vorhanden. (Geschlossen — Workaround aktiv)
