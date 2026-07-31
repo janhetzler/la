@@ -554,7 +554,7 @@ Oder: min_length fuer Supervisor-Test auf 3 Zeichen setzen.
 
 ## BUG-024: Supervisor Routing gibt zu kurze Antwort (neu bewertet 2026-07-31)
 
-**Status:** Neu bewertet — LLM-Router funktioniert korrekt
+**Status:** Geschlossen (2026-07-31)
 
 **Urspruengliche Diagnose (2026-07-21):**
 "350m Modell zu klein fuer zuverlaessiges Tool-Calling" — als nicht behebbar abgehakt.
@@ -565,14 +565,17 @@ Der LLM-Router funktioniert korrekt. Trace zeigt:
 - Grammar Constraint aktiv und wirksam
 - Routing-Entscheidung ist sauber
 
-Die "6 Zeichen" im start_full.py Test kamen vom Meta-Agent der eine zu kurze
-Antwort generiert hat — nicht vom Router selbst.
+**Ursache:**
+`max_tokens` im Payload des Supervisor-Routing-Tests in `start_full.py`
+hat das 350m-Modell zu Minimalantworten verleitet. Das Modell ignoriert
+bei explizitem `max_tokens` den Prompt und antwortet minimal ("Hello!", 3 Tokens).
+Ohne `max_tokens` liefert es vollstaendige Antworten (26-74 Tokens).
 
-**Offene Frage:**
-Warum gibt der Meta-Agent eine zu kurze Antwort? Das ist der naechste
-Diagnoseschritt — inspect_meta.py bauen und Meta-Agent Prompt pruefen.
+**Fix:** Meta-Test-Aufruf in `start_full.py` ohne `max_tokens` (Commit 20f6592d).
+`chat()` sendet `max_tokens` nur noch wenn nicht `None`.
 
-**Status:** Offen — verschoben von "Modell-Limit" zu "Meta-Agent Prompt-Problem"
+**Verifiziert:** Sandbox-Lauf nach Commit 20f6592d — 6/6 Agenten OK,
+Supervisor-Routing-Test liefert 74 Zeichen, vollstaendige Antwort.
 
 
 ## BUG-025: Hardcoded Collection-Name in notes.py
