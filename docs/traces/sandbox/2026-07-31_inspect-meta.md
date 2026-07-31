@@ -2,7 +2,7 @@
 
 **Modell:** granite-350m-Q4_K_M
 **Stack:** llama-server :8080 direkt (kein LiteLLM)
-**Gesamtdauer:** 14.4s
+**Gesamtdauer:** 18.4s
 
 ---
 
@@ -11,14 +11,14 @@
 | max_tokens | default |
 | Prompt-Laenge | 1399 Zeichen |
 | prompt_tokens | 341 |
-| completion_tokens | 26 |
+| completion_tokens | 6 |
 | finish_reason | stop |
-| Antwortlaenge | 113 Zeichen |
-| Dauer | 8.8s |
+| Antwortlaenge | 14 Zeichen |
+| Dauer | 4.1s |
 
 **Rohe Antwort:**
 ```
-Hello! 👋 I am the Local Agent, your personal assistant designed for local operations. How may I assist you today?
+What can I do?
 ```
 
 ---
@@ -28,14 +28,41 @@ Hello! 👋 I am the Local Agent, your personal assistant designed for local ope
 | max_tokens | 512 |
 | Prompt-Laenge | 1399 Zeichen |
 | prompt_tokens | 341 |
-| completion_tokens | 3 |
+| completion_tokens | 203 |
 | finish_reason | stop |
-| Antwortlaenge | 6 Zeichen |
-| Dauer | 1.5s |
+| Antwortlaenge | 953 Zeichen |
+| Dauer | 10.0s |
 
 **Rohe Antwort:**
 ```
-Hello!
+Certainly! Here's a response to your query, formatted as requested:
+
+---
+
+## What Can I Do?
+
+### Researcher
+- **Search Indexing**: Delivers information and data from indexed documents and the web.
+- **Web Exploration**: Quickly accesses relevant information on the web.
+
+### Comms
+- **Email/Direct Message**: Sends and receives emails or messages.
+- **Brief Reports**: Generates short reports summarizing key points.
+
+### Notes
+- **Personal Notes**: Stores and organizes personal notes and projects.
+- **ChromaDB**: Stores personal projects, meetings, and other notes.
+
+### Code
+- **Programming, Algorithms, Debugging**: Engages in programming, algorithms, debugging, and GitHub issue management.
+- **GitHub**: Access to GitHub for reviewing issues and contributing.
+
+### Handoff
+- **Rich Prompts**: Prepared rich prompts for Claude.ai or ChatGPT to complete tasks beyond my local model's capabilities.
+
+---
+
+Thank you for asking. What can I do for you?
 ```
 
 ---
@@ -45,14 +72,14 @@ Hello!
 | max_tokens | 512 |
 | Prompt-Laenge | 228 Zeichen |
 | prompt_tokens | 78 |
-| completion_tokens | 8 |
+| completion_tokens | 69 |
 | finish_reason | stop |
-| Antwortlaenge | 31 Zeichen |
-| Dauer | 4.0s |
+| Antwortlaenge | 337 Zeichen |
+| Dauer | 4.2s |
 
 **Rohe Antwort:**
 ```
-I can provide a brief overview.
+I am a AI assistant designed to provide information, answer questions to the best of my ability. I can provide information on a wide range of topics including the human interface, coding, language, general knowledge, and more. I can assist with creating guides, answering queries, and even help with data analysis. What can I do for you?
 ```
 
 ---
@@ -61,9 +88,9 @@ I can provide a brief overview.
 
 | Test | max_tokens | prompt_tokens | completion_tokens | finish_reason | Antwortlaenge |
 |------|-----------|--------------|------------------|---------------|--------------|
-| A | None | 341 | 26 | stop | 113 |
-| B | 512 | 341 | 3 | stop | 6 |
-| C | 512 | 78 | 8 | stop | 31 |
+| A | None | 341 | 6 | stop | 14 |
+| B | 512 | 341 | 203 | stop | 953 |
+| C | 512 | 78 | 69 | stop | 337 |
 
 ---
 
@@ -80,43 +107,70 @@ llama-server Inference OK
 === TEST A -- Voller Prompt, default max_tokens ===
 max_tokens:    (default)
 Prompt-Laenge: 1399 Zeichen
-Dauer:              8.8s
+Dauer:              4.1s
 finish_reason:      stop
 prompt_tokens:      341
-completion_tokens:  26
-Antwortlaenge:      113 Zeichen
+completion_tokens:  6
+Antwortlaenge:      14 Zeichen
 
 Rohe Antwort:
-Hello! 👋 I am the Local Agent, your personal assistant designed for local operations. How may I assist you today?
+What can I do?
 
 === TEST B -- Voller Prompt, max_tokens=512 ===
 max_tokens:    512
 Prompt-Laenge: 1399 Zeichen
-Dauer:              1.5s
+Dauer:              10.0s
 finish_reason:      stop
 prompt_tokens:      341
-completion_tokens:  3
-Antwortlaenge:      6 Zeichen
+completion_tokens:  203
+Antwortlaenge:      953 Zeichen
 
 Rohe Antwort:
-Hello!
+Certainly! Here's a response to your query, formatted as requested:
+
+---
+
+## What Can I Do?
+
+### Researcher
+- **Search Indexing**: Delivers information and data from indexed documents and the web.
+- **Web Exploration**: Quickly accesses relevant information on the web.
+
+### Comms
+- **Email/Direct Message**: Sends and receives emails or messages.
+- **Brief Reports**: Generates short reports summarizing key points.
+
+### Notes
+- **Personal Notes**: Stores and organizes personal notes and projects.
+- **ChromaDB**: Stores personal projects, meetings, and other notes.
+
+### Code
+- **Programming, Algorithms, Debugging**: Engages in programming, algorithms, debugging, and GitHub issue management.
+- **GitHub**: Access to GitHub for reviewing issues and contributing.
+
+### Handoff
+- **Rich Prompts**: Prepared rich prompts for Claude.ai or ChatGPT to complete tasks beyond my local model's capabilities.
+
+---
+
+Thank you for asking. What can I do for you?
 
 === TEST C -- Gekuerzter Prompt, max_tokens=512 ===
 max_tokens:    512
 Prompt-Laenge: 228 Zeichen
-Dauer:              4.0s
+Dauer:              4.2s
 finish_reason:      stop
 prompt_tokens:      78
-completion_tokens:  8
-Antwortlaenge:      31 Zeichen
+completion_tokens:  69
+Antwortlaenge:      337 Zeichen
 
 Rohe Antwort:
-I can provide a brief overview.
+I am a AI assistant designed to provide information, answer questions to the best of my ability. I can provide information on a wide range of topics including the human interface, coding, language, general knowledge, and more. I can assist with creating guides, answering queries, and even help with data analysis. What can I do for you?
 
 === ZUSAMMENFASSUNG ===
 Test                                      max_tok  p_tok  c_tok finish          len
 ----------------------------------------------------------------------------------
-A -- Voller Prompt, default max_tokens       None    341     26 stop            113
-B -- Voller Prompt, max_tokens=512            512    341      3 stop              6
-C -- Gekuerzter Prompt, max_tokens=512        512     78      8 stop             31
+A -- Voller Prompt, default max_tokens       None    341      6 stop             14
+B -- Voller Prompt, max_tokens=512            512    341    203 stop            953
+C -- Gekuerzter Prompt, max_tokens=512        512     78     69 stop            337
 ```
