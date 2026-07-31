@@ -471,7 +471,7 @@ Alle Logs liegen einheitlich unter `/tmp/logs/`:
 
 ---
 
-## G. Testergebnisse (Stand 2026-07-21)
+## G. Testergebnisse (Stand 2026-07-31)
 
 | Test | Ergebnis |
 |------|----------|
@@ -487,8 +487,8 @@ Alle Logs liegen einheitlich unter `/tmp/logs/`:
 | Code Agent | ✓ |
 | Researcher Agent | ✓ |
 | Handoff Agent | ✓ |
-| Notes Agent | ⚠️ HTTP 200, aber save_note nicht aufgerufen (350m Limit, BUG-024) |
-| Supervisor Routing | ⚠️ 350m zu klein für zuverlässiges LLM-Routing — Heuristik übernimmt |
+| Notes Agent | ✓ save_note schreibt in ChromaDB notes Collection (BUG-019 behoben) |
+| Supervisor Routing | ⚠️ LLM-Router korrekt (Grammar Constraint wirksam), aber Meta-Agent gibt zu kurze Antworten (BUG-024 neu bewertet) |
 
 **Routing-Hinweis:** Das 350m-Modell routet nicht zuverlässig — Heuristik
 löst 80% der Fälle ohne LLM-Call. Das ist eine Modellgrößen-Limitation,
@@ -498,12 +498,16 @@ kein Bug. Auf dem Host mit Granite-Tiny (4B) entfällt diese Einschränkung.
 
 ## H. Bekannte offene Punkte
 
-- **BUG-024 — 350m Tool-Calling:** Das Modell ruft `save_note` nicht
-  zuverlässig auf. Infrastruktur ist korrekt — das ist eine Kapazitätsgrenze.
-  Lösung: Granite-Tiny (4B) auf dem Host.
+- **BUG-024 — Meta-Agent Kurzantworten (neu bewertet 2026-07-31):** LLM-Router
+  funktioniert korrekt. Der Meta-Agent generiert jedoch zu kurze Antworten.
+  Nächster Schritt: `inspect_meta.py` bauen (Developer-Chat), dann Sandbox testen.
 
 - **BUG-020 — Researcher EISDIR:** `read_text_file` wird auf ein Verzeichnis
-  aufgerufen. Workaround in researcher_v2.py vorhanden.
+  aufgerufen. Workaround in researcher_v2.py vorhanden. (Geschlossen — Workaround aktiv)
+
+- **BUG-025 — Hardcoded Collection-Name in notes.py:** `save_note` und
+  `search_meetings` verwenden hardcoded String `"notes"` statt einer Config-Variable.
+  Fix: `CHROMA_NOTES_COLLECTION` in `config.py` einführen, `notes.py` anpassen.
 
 - **Embedding-Server (Port 8081)** laeuft als eigenstaendiger llama-server
   mit `granite-embedding-30m-Q4_0.gguf`. LiteLLM `granite-embed` zeigt auf :8081.
