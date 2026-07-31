@@ -29,6 +29,16 @@ import httpx
 from datetime import datetime, timedelta
 from pathlib import Path
 
+def load_inspect_config() -> dict:
+    """Laedt inspect_config.json aus dem Skript-Verzeichnis.
+    Gibt leeres Dict zurueck wenn Datei fehlt oder nicht parsebar.
+    """
+    cfg_path = Path(__file__).parent / "inspect_config.json"
+    try:
+        return json.loads(cfg_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
 # Konfiguration
 MODEL_PATH       = os.getenv("MODEL_PATH",       "/tmp/granite-350m-Q4_K_M.gguf")
 EMBED_MODEL_PATH = os.getenv("EMBED_MODEL_PATH", "/tmp/granite-embedding-30m-Q4_0.gguf")
@@ -37,7 +47,9 @@ LITELLM_KEY      = os.getenv("LITELLM_KEY",      "sk-cos-local-dev")
 GH_TOKEN         = os.getenv("GH_TOKEN",         "")
 LOG_DIR          = "/tmp/logs"
 PHOENIX_URL      = "http://127.0.0.1:6006"
-PROMPT           = "What is the capital of France?"
+PROMPT           = "What is the capital of France?"  # Default
+_cfg_supervisor = load_inspect_config().get("supervisor", {})
+PROMPT = _cfg_supervisor.get("prompt", PROMPT)
 
 os.makedirs(CHROMA_PATH, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
