@@ -25,9 +25,9 @@ Testergebnisse landen in docs/SANDBOX_TESTRESULTS.md (keine Nummerierung).
 | Feld | Wert |
 |------|------|
 | Aufgesetzt | 2026-07-30 ~15:00 UTC |
-| Repo-Stand | e0221a69 |
-| Status | Beendet — Stack nach Test beendet |
-| Letzter Test | 6/6 OK — erstmals alle Agenten bestanden, BUG-024 geschlossen |
+| Repo-Stand | b394c1cf |
+| Status | Beendet — git pull + Neustart fuer naechsten Test |
+| Letzter Test | 6/6 OK — BUG-025 behoben, Sandbox-Verifikation ausstehend |
 
 ---
 
