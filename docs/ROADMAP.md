@@ -396,6 +396,26 @@ RAM-Verbrauch und CPU-Last werden nicht erfasst.
 -  startet alle Dienste + Notes-Agent Test + Ressourcenmessung
 
 **Voraussetzung:** Stack laeuft stabil.
+## Naechster Schritt: HF Docker Space Deployment
+
+**Ziel:** ghcr.io/janhetzler/la:latest auf einem vorbereiteten
+Hugging Face Docker Space lauffaehig machen und oeffentlich bereitstellen.
+
+**Voraussetzungen:**
+- HF Docker Space exponiert genau Port 7860 nach aussen
+- Agent Server (intern :8002) muss auf 7860 gemappt werden
+  (PORT=7860 Umgebungsvariable in entrypoint.sh oder nginx vorschalten)
+- GitHub Token fuer Modell-Download als HF Space Secret hinterlegen
+- GLIBC-Kompatibilitaet: llama-server b9895 (Debian 12 / glibc 2.34+)
+  sollte mit HF Docker Space (Ubuntu 22.04) kompatibel sein
+
+**Erkenntnisse aus HF Jupyter Space Experiment (2026-07-31):**
+- Jupyter Space ungeeignet (GLIBC 2.31 Konflikt, Port 7860 belegt)
+- Docker Space loest alle bekannten Probleme durch native Container-Isolation
+- PYTHONPATH=/app:/app/agents/server muss in entrypoint.sh gesetzt sein
+
+**Status:** Bereit — Deploy-Chat vorbereitet.
+
 ## Offene Untersuchung: Nicht-Determinismus bei temperature=0 (350m)
 
 inspect_meta.py zeigt stark variierende Ausgaben zwischen Laeufen trotz
