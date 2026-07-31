@@ -37,7 +37,7 @@ LITELLM_KEY      = os.getenv("LITELLM_KEY",      "sk-cos-local-dev")
 GH_TOKEN         = os.getenv("GH_TOKEN",         "")
 LOG_DIR          = "/tmp/logs"
 PHOENIX_URL      = "http://127.0.0.1:6006"
-PROMPT           = "Save this note: test routing"
+PROMPT           = "What is the capital of France?"
 
 os.makedirs(CHROMA_PATH, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
