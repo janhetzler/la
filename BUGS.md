@@ -583,7 +583,7 @@ Supervisor-Routing-Test liefert 74 Zeichen, vollstaendige Antwort.
 
 ## BUG-025: Hardcoded Collection-Name in notes.py
 
-**Status:** Offen (2026-07-30)
+**Status:** Geschlossen (2026-07-31)
 **Umgebung:** Alle
 
 **Symptom:** save_note und search_meetings verwenden hardcoded String "notes"
@@ -592,5 +592,6 @@ statt einer Config-Variable.
 **Ursache:** Quick-Fix beim BUG-019 Beheben — Collection-Name direkt
 eingetragen statt config.py zu erweitern.
 
-**Fix:** Neue Variable CHROMA_NOTES_COLLECTION in config.py einfuehren,
-notes.py darauf umstellen.
+**Fix:** `CHROMA_NOTES_COLLECTION = os.getenv("CHROMA_NOTES_COLLECTION", "notes")`
+in config.py eingefuehrt. notes.py verwendet jetzt `config.CHROMA_NOTES_COLLECTION`
+bei allen Collection-Zugriffen (save_note, search_meetings).
