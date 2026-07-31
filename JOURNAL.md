@@ -26,8 +26,8 @@ Testergebnisse landen in docs/SANDBOX_TESTRESULTS.md (keine Nummerierung).
 |------|------|
 | Aufgesetzt | 2026-07-30 ~15:00 UTC |
 | Repo-Stand | da1aa8dc |
-| Status | Beendet — HF Docker Space Deployment naechster Schritt |
-| Letzter Test | inspect_config.json verifiziert — alle 3 Skripte laden Config korrekt |
+| Status | Beendet — HF Space laeuft, naechster Schritt: Dockerfile Todo-Liste abarbeiten |
+| Letzter Test | HF Space 6/6 OK (2026-07-31 21:36 UTC) -- auch unter erschwerten Bedingungen |
 
 ---
 
