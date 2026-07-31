@@ -244,10 +244,11 @@ def api_call(url, data=None, method="GET"):
 
 def chat(frage, max_tokens=300):
     t0 = time.time()
-    resp, status = api_call(AGENT_URL,
-        data={"model": "agent-local",
-              "messages": [{"role": "user", "content": frage}],
-              "max_tokens": max_tokens}, method="POST")
+    payload = {"model": "agent-local",
+               "messages": [{"role": "user", "content": frage}]}
+    if max_tokens is not None:
+        payload["max_tokens"] = max_tokens
+    resp, status = api_call(AGENT_URL, data=payload, method="POST")
     elapsed = time.time() - t0
     if "choices" in resp:
         return resp["choices"][0]["message"]["content"], elapsed, status
@@ -297,8 +298,18 @@ check_log(os.path.join(LOG_DIR, "phoenix.log"),      "Phoenix")
 check_log(os.path.join(LOG_DIR, "agent-server.log"), "Agent Server")
 
 # Agenten-Tests
-test_agent("Supervisor Routing",
-    "Can you help me?")
+# Meta-Test ohne max_tokens -- 350m Modell reagiert korrekt ohne diesen Parameter
+text_meta, elapsed_meta, status_meta = chat("Can you help me?", max_tokens=None)
+content_ok, content_reason = validate_response(text_meta)
+results.append({"agent": "Supervisor Routing", "frage": "Can you help me?",
+                "zeit": round(elapsed_meta, 1), "status": "OK" if (status_meta == 200 and content_ok) else "FAIL",
+                "http": status_meta, "reason": content_reason})
+print(f"\n" + "="*55, flush=True)
+print("TEST: Supervisor Routing", flush=True)
+print(f"Frage: Can you help me?", flush=True)
+print(f"Antwort: {text_meta[:200]}", flush=True)
+print(f"Zeit: {elapsed_meta:.1f}s | HTTP: {status_meta}", flush=True)
+print(f"Ergebnis: {'OK' if (status_meta == 200 and content_ok) else 'FAIL'} - {content_reason}", flush=True)
 test_agent("Comms Agent",
     "Write a short professional email to the team about the project status.")
 test_agent("Code Agent",
