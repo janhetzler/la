@@ -25,12 +25,32 @@ Testergebnisse landen in docs/SANDBOX_TESTRESULTS.md (keine Nummerierung).
 | Feld | Wert |
 |------|------|
 | Aufgesetzt | 2026-07-30 ~15:00 UTC |
-| Repo-Stand | 20f6592d |
-| Status | Beendet — git pull + Neustart fuer naechsten Test |
-| Letzter Test | 5/6 OK — start_full.py Meta-Fix bereit, BUG-024 Verifikation ausstehend |
+| Repo-Stand | e0221a69 |
+| Status | Beendet — Stack nach Test beendet |
+| Letzter Test | 6/6 OK — erstmals alle Agenten bestanden, BUG-024 geschlossen |
 
 ---
 
+
+## 2026-07-31 — 6/6 Agenten erstmals OK, BUG-024 geschlossen
+
+### Was passiert ist
+
+**inspect_meta.py** (Commit ad0456c1) zeigte: das 350m-Modell liefert
+korrekte Meta-Antworten wenn max_tokens nicht explizit gesetzt wird.
+Test A (kein max_tokens): 26 Tokens, vollstaendige Antwort.
+
+**Fix** (Commit 20f6592d): start_full.py Supervisor-Routing-Test
+sendet max_tokens nicht mehr im Payload.
+
+**Sandbox-Verifikation:** 6/6 Agenten OK — erstmals alle bestanden.
+- Supervisor Routing: 74 Zeichen, vollstaendige Antwort
+- Notes Agent: ChromaDB notes 3 Dokumente
+- Comms, Code, Researcher, Handoff: alle OK
+
+**BUG-024 geschlossen** (Commit e0221a69).
+
+---
 
 ## 2026-07-30 — BUG-019 behoben: save_note schreibt jetzt in ChromaDB
 
