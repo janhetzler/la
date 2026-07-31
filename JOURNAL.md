@@ -32,6 +32,38 @@ Testergebnisse landen in docs/SANDBOX_TESTRESULTS.md (keine Nummerierung).
 ---
 
 
+## 2026-07-31 — LA Stack auf HF Space: 2x 6/6 OK
+
+### Erster vollstaendiger LA Stack Testlauf auf HF Space Free Tier
+
+Stack 2 (LA mit Granite-350m) laeuft parallel zu Stack 1
+(cptr + Granite-Tiny) im selben Container.
+
+**Stack-Konfiguration:**
+- llama-server Granite-350m: Port 8090 (/opt/llama/llama-server)
+- Embedding-Server: Port 8081
+- LiteLLM: Port 4000
+- Phoenix: Port 6006
+- Agent Server: Port 8002
+- venv: /home/varxdev/la_env (Python 3.11)
+
+**Testlauf 1 (16:48 UTC):** 6/6 OK
+**Testlauf 2 (17:48 UTC):** 6/6 OK — nach mcp-server-git Pfad-Fix
+
+**Was geloest wurde:**
+- Python 3.11 im Dockerfile (numpy 2.4.4 kompatibel)
+- virtualenv statt venv (kein ensurepip noetig)
+- LA_REPO ENV-Variable fuer portable Pfade
+- mcp.json laufzeit-generiert (kein hardcodierter /home/claude/la)
+
+**Offen:**
+- inspect_phoenix.py HF-Space-kompatibel machen
+- Automatischen Stack-Start ins Dockerfile integrieren
+
+**Ergebnisse:** janhetzler/opencomputer docs/HFSPACE_TESTRESULTS.md (75d7dd9)
+
+---
+
 ## 2026-07-31 — HF Space Deployment-Experiment + Docker-Bereinigung
 
 ### HF Jupyter Space Experiment (gescheitert, Erkenntnisse gewonnen)
