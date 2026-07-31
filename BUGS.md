@@ -595,3 +595,23 @@ eingetragen statt config.py zu erweitern.
 **Fix:** `CHROMA_NOTES_COLLECTION = os.getenv("CHROMA_NOTES_COLLECTION", "notes")`
 in config.py eingefuehrt. notes.py verwendet jetzt `config.CHROMA_NOTES_COLLECTION`
 bei allen Collection-Zugriffen (save_note, search_meetings).
+
+
+## BUG-026: Hardcodierte Pfade in start_full.py
+
+**Status:** Offen
+**Umgebung:** Sandbox, Host (nicht relevant fuer Docker — entrypoint.sh uebernimmt)
+
+**Symptom:** start_full.py sucht llama-server Binary unter festem Pfad
+`/tmp/llama-b9895/llama-server`. In abweichenden Umgebungen (HF Space, Host)
+liegt das Binary woanders — Startfehler die Folge.
+
+**Ursache:** Pfade nicht ueber Umgebungsvariablen konfigurierbar.
+
+**Fix:** Binary-Pfad ueber `LLAMA_SERVER_BIN` Umgebungsvariable konfigurierbar
+machen, Fallback auf `/tmp/llama-b9895/llama-server` fuer Sandbox-Kompatibilitaet.
+
+**Prioritaet:** Niedrig — Docker-Deployment nutzt entrypoint.sh (korrekt),
+Sandbox-Umgebung ist kontrolliert. Relevant fuer kuenftige Portabilitaet.
+
+**Entdeckt:** 2026-07-31 im HF Space Deployment-Experiment (Jupyter Space).
