@@ -50,14 +50,10 @@ openinference-instrumentation-langchain==0.1.67
 opentelemetry-sdk==1.43.0
 opentelemetry-exporter-otlp==1.43.0
 
-# ── Inferenz Server (Python) ──────────────────────────────────────
-# Sandbox/Docker: llama-cpp-python (Python-Server, kein Binary nötig)
-# Host:         llama-server Binary (separates llama.cpp Binary, geplant)
-#
-# Prebuilt Wheel (kein C++ Build nötig, empfohlen):
-# pip install https://github.com/abetlen/llama-cpp-python/releases/download/v0.3.23/llama_cpp_python-0.3.23-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-# llama-cpp-python==0.3.23  # Im Dockerfile via Prebuilt Wheel installiert
-starlette-context==0.5.1      # Abhängigkeit von llama-cpp-python (fehlte — führte zu Absturz beim Stack-Start)
+# ── Inferenz Server (Binary) ──────────────────────────────────────
+# Alle Umgebungen (Sandbox, Docker, Host): llama-server Binary b9895
+# Kein Python-Package nötig — Binary wird separat heruntergeladen
+starlette-context==0.5.1      # uvicorn/FastAPI ASGI Middleware
 
 # ── MCP Servers ───────────────────────────────────────────────────
 mcp-server-git==2026.7.10
