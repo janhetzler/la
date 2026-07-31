@@ -25,12 +25,46 @@ Testergebnisse landen in docs/SANDBOX_TESTRESULTS.md (keine Nummerierung).
 | Feld | Wert |
 |------|------|
 | Aufgesetzt | 2026-07-30 ~15:00 UTC |
-| Repo-Stand | 14a1fa69 |
-| Status | Beendet — Stack nach Test beendet |
+| Repo-Stand | da1aa8dc |
+| Status | Beendet — HF Docker Space Deployment naechster Schritt |
 | Letzter Test | inspect_config.json verifiziert — alle 3 Skripte laden Config korrekt |
 
 ---
 
+
+## 2026-07-31 — HF Space Deployment-Experiment + Docker-Bereinigung
+
+### HF Jupyter Space Experiment (gescheitert, Erkenntnisse gewonnen)
+
+Versuch das Docker Image manuell im HF Jupyter Space zu betreiben.
+
+**Was funktioniert hat:**
+- Miniconda-Environment (Python 3.12) als GLIBC-Workaround
+- FastAPI Agent Server gestartet, alle 6 Agenten geladen
+- PYTHONPATH-Fix: /app:/app/agents/server
+
+**Was nicht funktioniert hat:**
+- llama-server Binary inkompatibel (GLIBC 2.34 vs Host 2.31)
+- Port 7860 durch JupyterLab belegt
+
+**Erkenntnis:** HF Jupyter Space ungeeignet. HF Docker Space ist der
+korrekte Ansatz — native Container-Isolation loest alle Probleme.
+
+### Dockerfile bereinigt (Commit 4fad6396)
+
+- llama-cpp-python Prebuilt Wheel Installation entfernt
+- CHROMA_NOTES_COLLECTION=notes in ENV ergaenzt
+
+### BUG-026 dokumentiert
+
+Hardcodierte Pfade in start_full.py — niedriger Prioritaet, Docker
+nutzt entrypoint.sh korrekt.
+
+### Naechster Schritt
+
+HF Docker Space Deployment mit ghcr.io/janhetzler/la:latest.
+
+---
 
 ## 2026-07-31 — 6/6 Agenten erstmals OK, BUG-024 geschlossen
 
