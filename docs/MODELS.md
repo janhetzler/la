@@ -74,6 +74,29 @@ Unser Ansatz entspricht genau dieser Empfehlung:
 - 350m fuer einfache Agent-Tasks in der Sandbox
 - Granite-Tiny 4B auf dem Host fuer Tool-Calling und Routing
 
+### Chat Template (offiziell, laut IBM Prompt Engineering Guide)
+
+Granite 4.0 verwendet folgende Sonderzeichen:
+- `<|start_of_role|>`, `<|end_of_role|>`, `<|end_of_text|>` — Role-Control-Tags
+- Tools werden automatisch im System-Prompt zwischen `<tools>` und `</tools>` eingebettet
+- Tool-Calls kommen als `<tool_call>...</tool_call>` im Assistant-Turn
+- Tool-Responses kommen als `<tool_response>...</tool_response>` im User-Turn
+
+**Bestätigt:** `notes.py` verwendet HumanMessage mit `<tool_response>` Tags —
+das entspricht exakt dem offiziellen Chat-Template. Unser Stack ist korrekt.
+
+**Wichtig fuer llama-server:** `--jinja` Flag aktiviert das native Chat-Template.
+Ohne `--jinja` werden die Sonderzeichen nicht korrekt verarbeitet.
+
+**Tool-Response Format (offiziell):**
+```
+<|start_of_role|>user<|end_of_role|>
+<tool_response>
+{"result": "Notiz gespeichert"}
+</tool_response>
+<|end_of_text|>
+```
+
 ### Quellen
 
 - IBM HuggingFace Modellcard: https://huggingface.co/ibm-granite/granite-4.0-h-350M
