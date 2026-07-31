@@ -222,6 +222,19 @@ für funktionierendes MCP.
 
 ---
 
+## Naechster Schritt: inspect_meta.py — Meta-Agent Diagnose (2026-07-31)
+
+**Hintergrund:** BUG-024 neu bewertet — LLM-Router funktioniert korrekt.
+Der Supervisor gibt 6-Zeichen-Antworten weil der Meta-Agent zu kurze
+Antworten generiert, nicht weil das Routing falsch ist.
+
+**Aufgabe:** inspect_meta.py bauen (analog inspect_notes.py, inspect_supervisor.py)
+und Meta-Agent Prompt + Antwort-Verhalten tracen.
+
+**Hypothese:** Meta-Agent Prompt ist zu kurz oder max_tokens zu niedrig.
+
+---
+
 ## Offene Aufgabe: Keine hardcodierten Config-Werte (BUG-025)
 
 **Stand:** Offen (2026-07-30)
