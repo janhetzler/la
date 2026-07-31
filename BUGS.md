@@ -43,7 +43,7 @@ components: []
 - **Muss behoben sein, bevor**: die nächste neue Sandbox-Session den Code
   frisch klont.
 
-## Phoenix Log-Check False Positive (2026-07-16)
+## Phoenix Log-Check False Positive (2026-07-16) -- GESCHLOSSEN
 
 - **Symptom**: `tests/test_stack.py` meldet Fehler in `phoenix.log` beim
   Log-Check, obwohl Phoenix korrekt läuft.
@@ -60,6 +60,9 @@ components: []
   bestimmten Log-Level-Präfix (`[ERROR]`, `ERROR -`) scannen.
 - **Priorität**: Niedrig — kein Einfluss auf Stack-Funktion, nur auf
   Testübersicht (False Alarm statt echtem Fehler).
+- **Status**: Geschlossen. `start_full.py` verwendet bereits
+  `ERROR_PATTERNS = ["ERROR:", "Exception:", "Traceback", "CRITICAL"]`
+  (Zeile 51) — bloßes `"ERROR"` wird nicht mehr gematcht.
 
 ---
 
