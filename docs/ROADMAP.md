@@ -396,6 +396,14 @@ RAM-Verbrauch und CPU-Last werden nicht erfasst.
 -  startet alle Dienste + Notes-Agent Test + Ressourcenmessung
 
 **Voraussetzung:** Stack laeuft stabil.
+## Offene Untersuchung: Nicht-Determinismus bei temperature=0 (350m)
+
+inspect_meta.py zeigt stark variierende Ausgaben zwischen Laeufen trotz
+temperature=0 und frischem Stack. Erwartung waere deterministisches Verhalten.
+Moegliche Ursache: Floating-Point-Nicht-Determinismus auf CPU-Ebene
+(Thread-Scheduling, NUMA-Effekte). Zu untersuchen mit reproduzierbarem
+Test unter identischen Bedingungen — Vergleich mit Granite-Tiny (4B) auf Host.
+
 ## Referenzen
 
 - Fork: https://github.com/janhetzler/la
