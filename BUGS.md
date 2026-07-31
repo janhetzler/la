@@ -552,32 +552,27 @@ Oder: min_length fuer Supervisor-Test auf 3 Zeichen setzen.
 
 ---
 
-## BUG-024: 350m Modell ruft Tools nicht auf (finale Diagnose 2026-07-21)
+## BUG-024: Supervisor Routing gibt zu kurze Antwort (neu bewertet 2026-07-31)
 
-**Status:** Bestaetigt, nicht behebbar auf 350m — Host-Deployment noetig
+**Status:** Neu bewertet — LLM-Router funktioniert korrekt
 
-**Diagnose-Verlauf:**
-1. format_tools_for_model() eingebaut → Modell produziert manchmal <tool_call> ✓
-2. parse_tool_call_from_response() arguments-String-Fix ✓
-3. ReAct-Loop unvollstaendiger Tag Fix ✓
-4. No connected db. behoben (max_tokens=512) ✓
-5. Isolierter Test: LiteLLM 200 OK, Infrastruktur 100% korrekt ✓
+**Urspruengliche Diagnose (2026-07-21):**
+"350m Modell zu klein fuer zuverlaessiges Tool-Calling" — als nicht behebbar abgehakt.
 
-**Finale Erkenntnis:**
-Das 350m Modell bekommt den Tool-Prompt (<tools>...</tools>) korrekt,
-antwortet aber direkt mit Text statt einem <tool_call>. Die Infrastruktur
-ist vollstaendig korrekt — das Modell hat schlicht nicht genug Kapazitaet
-fuer zuverlaessiges Tool-Calling in komplexen Kontexten.
+**Neue Erkenntnis (2026-07-31) aus inspect_supervisor.py Trace:**
+Der LLM-Router funktioniert korrekt. Trace zeigt:
+- Router-Output: "meta" (2 Completion-Tokens, korrekt)
+- Grammar Constraint aktiv und wirksam
+- Routing-Entscheidung ist sauber
 
-**Beweis dass Architektur korrekt ist:**
-Im inspect_phoenix.py Trace (2026-07-21) produzierte das Modell beim
-zweiten LLM-Call einen vollstaendigen <tool_call> mit korrektem JSON.
-Das zeigt: das Modell KANN Tool-Calls — aber nicht zuverlaessig.
+Die "6 Zeichen" im start_full.py Test kamen vom Meta-Agent der eine zu kurze
+Antwort generiert hat — nicht vom Router selbst.
 
-**Loesung:** Granite-4.0-H-Tiny (4B) auf dem Host mit --jinja.
-Mit 4B Parametern wird save_note() zuverlaessig aufgerufen.
+**Offene Frage:**
+Warum gibt der Meta-Agent eine zu kurze Antwort? Das ist der naechste
+Diagnoseschritt — inspect_meta.py bauen und Meta-Agent Prompt pruefen.
 
-**Status:** Keine weiteren Fixes in der Sandbox — Host-Deployment ist der naechste Schritt.
+**Status:** Offen — verschoben von "Modell-Limit" zu "Meta-Agent Prompt-Problem"
 
 
 ## BUG-025: Hardcoded Collection-Name in notes.py
