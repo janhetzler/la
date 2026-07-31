@@ -51,6 +51,7 @@ Alle Konventionen zur Dokumentationserstellung: [DOC_CONVENTIONS.md](DOC_CONVENT
 | Datei | Status | Umgebung | Stale after |
 |-------|--------|----------|-------------|
 | [DOC_CONVENTIONS.md](DOC_CONVENTIONS.md) | current | all | 2027-01-30 |
+| [MODELS.md](MODELS.md) | current | all | 2027-01-31 |
 | [OKF.md](OKF.md) | current | all | 2027-01-30 |
 | [CI.md](CI.md) | current | all | 2027-01-30 |
 | [AGENT_DEVELOPMENT.md](AGENT_DEVELOPMENT.md) | current | all | 2027-01-30 |
