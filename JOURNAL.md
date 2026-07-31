@@ -25,9 +25,9 @@ Testergebnisse landen in docs/SANDBOX_TESTRESULTS.md (keine Nummerierung).
 | Feld | Wert |
 |------|------|
 | Aufgesetzt | 2026-07-30 ~15:00 UTC |
-| Repo-Stand | ad0456c1 |
+| Repo-Stand | 20f6592d |
 | Status | Beendet — git pull + Neustart fuer naechsten Test |
-| Letzter Test | 5/6 OK (BUG-019 behoben) — inspect_meta.py bereit |
+| Letzter Test | 5/6 OK — start_full.py Meta-Fix bereit, BUG-024 Verifikation ausstehend |
 
 ---
 
