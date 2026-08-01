@@ -7,20 +7,29 @@ components: []
 ---
 # Known issues
 
-## BUG-027: Testlauf prueft MCP Server nicht -- Researcher "OK" trotz MCP-Fehler
+## BUG-027: Researcher wirft ExceptionGroup bei Tool-Calls -- Testlauf verschleiert Fehler
 
 - **Status**: OFFEN
-- **Umgebung**: HF Space (start_hfspace.py Testlauf)
-- **Symptom**: Researcher meldet "Maximale Tool-Runden erreicht" -- Testlauf
-  wertet das als OK. Im Live-Betrieb via cptr wirft Researcher
-  `ExceptionGroup: unhandled errors in a TaskGroup` bei MCP Tool-Calls.
-- **Ursache**: Testlauf prueft nur ob der Agent antwortet, nicht ob MCP
-  Server (mcp_server_git, mcp_server_fetch) korrekt starten und Tool-Calls
-  verarbeiten koennen.
-- **Fix**: start_hfspace.py Testlauf erweitern:
-  1. MCP Server direkt testen vor dem Researcher-Test
-  2. Researcher-Test nur als OK werten wenn echte Antwort geliefert wird,
-     nicht "Maximale Tool-Runden erreicht"
+- **Umgebung**: alle (Sandbox, HF Space, Docker) -- kein HF-Space-spezifischer Bug
+- **Symptom**: Researcher wirft `ExceptionGroup: unhandled errors in a TaskGroup`
+  bei MCP Tool-Calls im Live-Betrieb. Im Testlauf wird "Maximale Tool-Runden
+  erreicht" faelschlich als OK gewertet -- der Researcher hat nie wirklich
+  funktioniert.
+- **Was ausgeschlossen wurde** (2026-08-01):
+  - MCP Server starten nicht: NEIN -- starten korrekt
+  - MCP_CONFIG_PATH falsch: NEIN -- greift korrekt via os.environ (/tmp/mcp_hfspace.json)
+  - Hardcodierter Pfad /home/claude/la in mcp.json: IRRELEVANT -- wird nicht genutzt
+  - HF-Space-spezifisch: NEIN -- tritt in allen Umgebungen auf
+- **Noch offen**:
+  - Welcher async Task in der TaskGroup crasht
+  - `httpcore.ConnectError: All connection attempts failed` -- wohin versucht
+    der Researcher zu connecten? Traceback zeigt nur Library-Frames, kein
+    eigener Code sichtbar.
+- **Fix**:
+  1. Testlauf: Researcher nur als OK werten wenn echte inhaltliche Antwort
+     geliefert wird -- "Maximale Tool-Runden erreicht" ist FAIL
+  2. Ursache der ExceptionGroup finden -- vollstaendigen Traceback mit
+     eigenem Code-Frame sichern
 
 
 ## Researcher tool calls
