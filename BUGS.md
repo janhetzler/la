@@ -7,6 +7,22 @@ components: []
 ---
 # Known issues
 
+## BUG-027: Testlauf prueft MCP Server nicht -- Researcher "OK" trotz MCP-Fehler
+
+- **Status**: OFFEN
+- **Umgebung**: HF Space (start_hfspace.py Testlauf)
+- **Symptom**: Researcher meldet "Maximale Tool-Runden erreicht" -- Testlauf
+  wertet das als OK. Im Live-Betrieb via cptr wirft Researcher
+  `ExceptionGroup: unhandled errors in a TaskGroup` bei MCP Tool-Calls.
+- **Ursache**: Testlauf prueft nur ob der Agent antwortet, nicht ob MCP
+  Server (mcp_server_git, mcp_server_fetch) korrekt starten und Tool-Calls
+  verarbeiten koennen.
+- **Fix**: start_hfspace.py Testlauf erweitern:
+  1. MCP Server direkt testen vor dem Researcher-Test
+  2. Researcher-Test nur als OK werten wenn echte Antwort geliefert wird,
+     nicht "Maximale Tool-Runden erreicht"
+
+
 ## Researcher tool calls
 
 - **Symptom**: Crash with `EISDIR: illegal operation on a directory, read`
