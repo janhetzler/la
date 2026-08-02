@@ -5,6 +5,29 @@ updated_at: 2026-07-31
 environment: all
 components: []
 ---
+## 2026-08-01 -- HF Space Live-Test, Testlauf als unzuverlaessig erkannt
+
+### Erkenntnisse
+
+- Testlauf 6/6 war niemals korrekt -- "Maximale Tool-Runden erreicht" beim
+  Researcher wurde faelschlich als OK gewertet. Researcher hat nie wirklich
+  funktioniert (weder Sandbox noch HF Space).
+- Researcher + Code Agent werfen 500er bei Live-Anfragen via cptr:
+  ExceptionGroup in TaskGroup, httpcore.ConnectError -- Ursache noch unbekannt.
+  Phoenix und Inspect wurden nicht systematisch eingesetzt -- naechster
+  Debug-Anlauf muss damit starten.
+- Tritt mit Granite-Tiny (4B) genauso auf wie mit Granite-350m -- kein
+  Modellproblem.
+- BUG-027 dokumentiert und mit Debug-Erkenntnissen aktualisiert.
+
+### Commits heute
+
+- fa7b0be7: BUG-027 eingetragen
+- e3acc88b: BUG-027 mit Debug-Erkenntnissen aktualisiert
+- 07661d22: Revert agent.env (ungetestete Aenderung rueckgaengig)
+
+---
+
 # JOURNAL.md -- Entwicklungstagebuch Local Agent (LA)
 
 Neuester Eintrag oben. Fuer Agenten: lies den ersten Eintrag um den aktuellen Stand zu kennen.
