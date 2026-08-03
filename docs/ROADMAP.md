@@ -6,11 +6,11 @@ stale_after: 2026-10-30
 environment: all
 components: []
 ---
-# ROADMAP — janhetzler/la (Chief of Staff)
+# ROADMAP — host/la (Chief of Staff)
 
 **Letzte Aktualisierung:** 2026-07-16  
 **Basis:** xaviervasques/chief-of-staff  
-**Ziel:** Lokaler Multi-Agenten-Stack auf janhet (AMD EPYC, 10 GB RAM)
+**Ziel:** Lokaler Multi-Agenten-Stack auf Host (AMD EPYC, 10 GB RAM)
 
 ---
 
@@ -741,7 +741,7 @@ Geplant. Implementierung ausstehend — nach opencomputer Integration.
 
 ---
 
-## Sicherheit: opencomputer auf dem Host (janhet)
+## Sicherheit: opencomputer auf dem Host 
 
 ### Setup-Token (Ersteinrichtung)
 
@@ -756,7 +756,7 @@ Auf dem Host ist das kein Problem da cptr nur intern erreichbar ist.
 
 ### Cloudflare Tunnel (Loesung fuer externen Zugriff)
 
-Auf dem Host (janhet) laeuft bereits ein Cloudflare Tunnel.
+Auf dem Host  laeuft bereits ein Cloudflare Tunnel.
 Das ist die sichere Loesung fuer externen Zugriff:
 
 ```
