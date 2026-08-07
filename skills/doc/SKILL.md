@@ -127,3 +127,71 @@ After creating or updating a document:
 - `examples/task-good.md` — annotated good Runbook example
 - `examples/task-bad.md` — annotated bad Runbook example
 - `examples/process-doc-example.md` — professional example (GitHub Technical Writer)
+
+---
+
+## Autonomous Mode — Branch & PR Workflow
+
+When doing a documentation review or overhaul, always use a branch:
+
+```bash
+git checkout -b docs/okf-review
+# work on all documents
+git push origin docs/okf-review
+# open Pull Request on GitHub
+```
+
+**Never push documentation changes directly to `main`.**
+The PR is the QS gate — the human reviews the diff once at the end.
+
+### What the agent decides autonomously
+
+Follow these rules exactly — no asking, no proposing, just do:
+
+| Task | Rule |
+|------|------|
+| Set frontmatter | All fields derivable from content → set them |
+| Fix title | Apply doc-structure.md rule exactly — no interpretation |
+| Add missing sections | Restructure existing content — never invent new content |
+| Fix links in index.md / README.md | Always update after any rename |
+
+### What the agent must escalate
+
+Stop and report — do not proceed:
+
+| Situation | Why |
+|-----------|-----|
+| Content appears outdated or factually wrong | Human must decide |
+| Two topics in one file — split needed | Human must decide |
+| `status: current` questionable | Human must decide |
+| Content would need to be rewritten, not restructured | Out of scope |
+
+### What the agent must never do
+
+- Delete or shorten existing content
+- Change commands, paths, or technical details
+- Invent content that is not in the original
+- Set `status: current` without verifying the content is actually current
+- Push directly to `main`
+
+### End report format
+
+After completing all documents, deliver exactly this:
+
+```
+## OKF Review — Abschlussbericht
+
+### Geändert
+| Datei | Was geändert |
+|-------|-------------|
+
+### Nicht geändert
+| Datei | Warum |
+|-------|-------|
+
+### Eskalation erforderlich
+| Datei | Problem |
+|-------|---------|
+```
+
+Then wait for human review and merge decision.
