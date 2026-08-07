@@ -64,7 +64,16 @@ tags: [llama, debian, host]
 
 - Plain words, no prefixes: `llama` not `tech-llama`
 - Derived from actual content — not invented
+- **Tags describe content, not type.** Never use generic words like
+  `navigation`, `overview`, `index`, `documentation`, `guide` —
+  these describe what the document *is*, not what it is *about*.
+  That information is already in the `type` field.
+  Wrong: `[navigation, overview, infrastruktur]`
+  Right: `[kvm, webserver, incus, cloudflare]`
+- Ask: "What would someone search for to find this document?"
+  Use those words as tags — specific technologies, tools, concepts.
 - Technology names: `debian`, `llama`, `nginx`, `cloudflare`, `python`,
-  `chromadb`, `incus`, `sqlite`, `langchain`, `fastapi`
-- Infrastructure: `host`, `container`, `webserver`, `network`, `tunnel`
+  `chromadb`, `incus`, `sqlite`, `langchain`, `fastapi`, `granite`,
+  `zero-trust`, `ufw`, `ssh`, `firewall`
+- Infrastructure: `kvm`, `host`, `container`, `webserver`, `network`, `tunnel`
 - Domain: `security`, `benchmark`, `backup`, `email`, `monitoring`
