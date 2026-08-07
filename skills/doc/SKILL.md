@@ -22,6 +22,19 @@ If unsure: `Runbook` for instructions, `Reference` for explanations, `Decision` 
 - Push directly to `main`
 - Use a `type` not in the list above
 
+**Rule conflict — always resolve in this order:**
+When two rules conflict, the higher rule wins:
+
+1. Never delete content ← highest priority
+2. Never invent content
+3. Apply correct structure (Runbook/Reference/Decision)
+
+If applying structure would require deleting content:
+keep the content as-is, skip the structural change,
+and escalate with explanation.
+Example: "Content cannot be restructured as Runbook without
+losing original text — escalating for human decision." 
+
 **Always:**
 - Create a branch for any documentation change
 - Open a PR — never merge yourself
