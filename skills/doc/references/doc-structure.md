@@ -1,5 +1,23 @@
 # doc-structure — Dokumentstruktur und Sprachstandard
 
+## ⚠ DITA ist abgelöst — diese Begriffe sind verboten
+
+**Niemals verwenden:** `Task`, `Concept`, `Guide`, `Walkthrough`
+
+DITA war das frühere Strukturkonzept — es ist ersetzt durch
+Diátaxis + Google Style Guide. Die erlaubten OKF-Typen stehen
+ausschließlich in `okf-schema.md`.
+
+| DITA (verboten) | OKF (korrekt) |
+|-----------------|---------------|
+| Task | `Runbook` |
+| Concept | `Reference` oder `Decision` |
+| Reference | `Observation` oder `Tracker` |
+| Guide | nicht existent |
+
+---
+
+
 ## Sprachstandard
 
 **[Google Developer Documentation Style Guide](https://developers.google.com/style)**
