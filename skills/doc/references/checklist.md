@@ -10,6 +10,12 @@ Kein Dokument bekommt einen Stempel bevor alle Punkte geprüft sind.
 - [ ] Behandelt das Dokument genau ein Thema?
 - [ ] Gibt es bereits ein Dokument zu diesem Thema?
       → Falls ja: erweitern statt neu erstellen
+- [ ] Ist der Body-Inhalt konsistent mit dem deklarierten `type`?
+      Log → nur datierte Einträge im Format [YYYY-MM-DD HH:mm]
+      Runbook → hat Voraussetzungen, Schritte, Ergebnis
+      Reference → erklärt, keine ausführbaren Schritte
+      Decision → hat Kontext, Optionen, Entscheidung, Trade-offs
+      Kein fremder, undatierter oder anderssprachiger Inhalt im Body
 
 ## Titel
 
