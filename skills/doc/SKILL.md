@@ -1,3 +1,9 @@
+---
+name: doc
+description: "Use this skill whenever a documentation task is involved: creating new documents, updating existing ones, applying OKF frontmatter, reviewing document quality, or navigating the documentation structure of a project. Triggers: 'dokumentiere das', 'doc das', 'schreib das auf', 'aktualisiere die Doku', 'was haben wir dazu dokumentiert?', or any task that produces or modifies a .md file. Follows OKF (Open Knowledge Format), Google Developer Documentation Style Guide, and Diátaxis structure principles."
+license: MIT
+---
+
 # doc — Documentation Skill
 
 ## Description
