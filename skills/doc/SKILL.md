@@ -6,12 +6,27 @@ license: MIT
 
 # doc — Documentation Skill
 
-## Description
+## Hard Rules — Read First
 
-Use this skill whenever a documentation task is involved:
-creating new documents, updating existing ones, applying OKF
-frontmatter, reviewing document quality, or navigating the
-documentation structure of a project.
+**Allowed `type` values — no others:**
+`Overview` · `Log` · `Tracker` · `Runbook` · `Decision` · `Reference` · `Observation` · `Index`
+
+Never invent a new type. `Concept`, `Task`, `Guide`, `Walkthrough` do not exist.
+If unsure: `Runbook` for instructions, `Reference` for explanations, `Decision` for architecture choices.
+
+**Never:**
+- Delete or shorten existing content
+- Change commands, paths, or technical details
+- Invent content not in the original
+- Set `status: current` without verifying content is actually current
+- Push directly to `main`
+- Use a `type` not in the list above
+
+**Always:**
+- Create a branch for any documentation change
+- Open a PR — never merge yourself
+- Update `index.md` and folder `README.md` after any rename
+- Read `references/okf-schema.md` before setting any frontmatter
 
 ---
 
@@ -20,169 +35,77 @@ documentation structure of a project.
 Load this skill when the user says or implies:
 - "dokumentiere das", "doc das", "schreib das auf"
 - "aktualisiere die Doku", "füge das zur Doku hinzu"
-- "was haben wir dazu dokumentiert?"
 - any task that produces or modifies a `.md` file
 
 ---
 
-## Step 1 — Orient Before You Write
+## Workflow
 
-Before creating or modifying any document, read the project
-structure first:
+### Step 1 — Orient
+1. Read `docs/index.md` or `doc/index.md`
+2. Read the relevant folder `README.md`
+3. Does a document on this topic already exist? → extend it, don't duplicate
 
-1. Read `docs/index.md` or `doc/index.md` — understand what
-   already exists
-2. Read the relevant `README.md` in the target folder
-3. Ask: does a document on this topic already exist?
-   - YES → extend or update it, do not create a duplicate
-   - NO  → continue to Step 2
+### Step 2 — Quality Gate
+Before setting frontmatter:
+- [ ] Content complete enough to be useful?
+- [ ] Title specific? (not "LLaMA", not "Netzwerk")
+- [ ] Content current and accurate?
+- [ ] One topic only?
+- [ ] Parent document exists? → link from parent to this document
 
----
+If any NO → fix content first, then set frontmatter.
 
-## Step 2 — Quality Gate
+### Step 3 — Choose Type
+See `references/okf-schema.md` — allowed types only.
 
-Before setting any frontmatter, answer these questions about
-the content:
+| Content | type |
+|---------|------|
+| Step-by-step instructions | `Runbook` |
+| Architecture decision with trade-offs | `Decision` |
+| Explanation, best practices, inventory | `Reference` |
+| Test results, measurements | `Observation` |
+| Ongoing collection | `Tracker` |
+| Project entry point | `Overview` |
+| Folder navigation | `Index` |
+| Chronological log | `Log` |
 
-- [ ] Is the content complete enough to be useful?
-- [ ] Is the title clear and specific? (DITA rule: Task titles
-      use Verb + Object, Concept titles use Noun + Description)
-- [ ] Is the content still accurate and current?
-- [ ] Is this one topic only — no mixing of concerns?
-- [ ] Does it belong to an existing parent document?
-      If yes: add a link from the parent to this document.
+### Step 4 — Title Rules
+**Runbook:** Verb + Object → "LLaMA-Server auf dem KVM-Host starten"
+**Reference/Decision:** Noun + Description → "RAM-Architektur: KVM-Host Speicheraufteilung"
+**Never:** "Walkthrough Netzwerk", "LLaMA", "Setup"
 
-If any answer is NO — fix the content first, then set frontmatter.
-Never stamp a weak document.
-
----
-
-## Step 3 — Choose the Right Type
-
-| Content is... | DITA type | OKF `type` | Template |
-|---------------|-----------|------------|----------|
-| Step-by-step instructions | Task | `Runbook` | `templates/task.md` |
-| Explanation, architecture, decision | Concept | `Reference` or `Decision` | `templates/concept.md` |
-| Structured lookup data, tables, lists | Reference | `Observation` or `Tracker` | `templates/reference.md` |
-| Project entry point | — | `Overview` or `Index` | — |
-| Chronological log | — | `Log` | — |
-
----
-
-## Step 4 — Title Rules (DITA light)
-
-**Task / Runbook:**
-> Verb + Object + optional Context
-> ✓ "LLaMA-Server auf dem KVM-Host starten"
-> ✓ "Cloudflare-Tunnel zwischen Host und Webserver einrichten"
-> ✗ "LLaMA" — zu vage
-> ✗ "Walkthrough Netzwerk" — keine Handlung, kein Objekt
-
-**Concept / Reference / Decision:**
-> Noun + Description
-> ✓ "Cloudflare-Tunnel: Netzwerktopologie zwischen Host und Webserver"
-> ✓ "Granite 4.0: Modellauswahl und Limitierungen"
-> ✗ "Infos zu Cloudflare" — zu vage
-
-**Log / Tracker / Overview:**
-> Einfaches Substantiv, selbsterklärend
-> ✓ "Admin-Logbuch", "Bekannte Probleme", "Projektübersicht"
-
----
-
-## Step 5 — Set Frontmatter
-
-Use the schema from `references/okf-schema.md`.
-
-Rules:
-- Frontmatter values always in English
-- Body, headings, explanations always in German
-- One blank line between closing `---` and first heading
+### Step 5 — Frontmatter
+Full schema: `references/okf-schema.md`
 - `updated_at` = today
-- `stale_after` = today + 6 months for Runbooks,
-  today + 12 months for Reference/Decision
-- `tags`: plain words, no prefixes, derived from actual content
-  Examples: `[llama, debian, incus, nginx, cloudflare, python]`
-- Log, Tracker, Overview, Index: no `stale_after`
+- `stale_after` = +6 months (Runbook), +12 months (Reference/Decision)
+- `tags` = from actual content, not type description
+  Wrong: `[navigation, overview]` · Right: `[kvm, incus, cloudflare]`
+
+### Step 6 — Link Structure
+1. `index.md` updated?
+2. Folder `README.md` updated?
+3. Parent concept document links here?
 
 ---
 
-## Step 6 — Link Into the Structure
+## Autonomous Mode
 
-After creating or updating a document:
+**Decide without asking:**
+- Set frontmatter when all fields are clear from content
+- Fix title per Step 4 rules
+- Restructure existing content into required sections — never invent
+- Update links after rename
 
-1. Does `docs/index.md` or `doc/index.md` list this file?
-   → If not: add it to the correct group
-2. Does the parent folder have a `README.md`?
-   → If yes: add a link to this document there
-3. Does a parent concept document exist?
-   → If yes: add a Markdown link from parent to this document
-4. Does `PROJECT.md` or `README.md` (root) need updating?
-   → Only if this is a significant new document
-
----
-
-## References
-
-- `references/okf-schema.md` — full frontmatter schema
-- `references/doc-structure.md` — title and structure rules (Diátaxis + Google Style)
-- `references/checklist.md` — quality checklist
-- `templates/task.md` — Runbook template
-- `templates/concept.md` — Reference/Decision template
-- `templates/reference.md` — Observation/Tracker template
-- `examples/task-good.md` — annotated good Runbook example
-- `examples/task-bad.md` — annotated bad Runbook example
-- `examples/process-doc-example.md` — professional example (GitHub Technical Writer)
+**Escalate — stop and report:**
+- Content appears outdated or factually wrong
+- Two topics in one file — split needed?
+- `status: current` questionable
+- Content needs rewriting, not restructuring
 
 ---
 
-## Autonomous Mode — Branch & PR Workflow
-
-When doing a documentation review or overhaul, always use a branch:
-
-```bash
-git checkout -b docs/okf-review
-# work on all documents
-git push origin docs/okf-review
-# open Pull Request on GitHub
-```
-
-**Never push documentation changes directly to `main`.**
-The PR is the QS gate — the human reviews the diff once at the end.
-
-### What the agent decides autonomously
-
-Follow these rules exactly — no asking, no proposing, just do:
-
-| Task | Rule |
-|------|------|
-| Set frontmatter | All fields derivable from content → set them |
-| Fix title | Apply doc-structure.md rule exactly — no interpretation |
-| Add missing sections | Restructure existing content — never invent new content |
-| Fix links in index.md / README.md | Always update after any rename |
-
-### What the agent must escalate
-
-Stop and report — do not proceed:
-
-| Situation | Why |
-|-----------|-----|
-| Content appears outdated or factually wrong | Human must decide |
-| Two topics in one file — split needed | Human must decide |
-| `status: current` questionable | Human must decide |
-| Content would need to be rewritten, not restructured | Out of scope |
-
-### What the agent must never do
-
-- Delete or shorten existing content
-- Change commands, paths, or technical details
-- Invent content that is not in the original
-- Set `status: current` without verifying the content is actually current
-- Push directly to `main`
-
-### End report format
-
-After completing all documents, deliver exactly this:
+## End Report Format
 
 ```
 ## OKF Review — Abschlussbericht
@@ -200,4 +123,13 @@ After completing all documents, deliver exactly this:
 |-------|---------|
 ```
 
-Then wait for human review and merge decision.
+Then wait. Do not merge.
+
+---
+
+## References
+- `references/okf-schema.md` — full schema, allowed values
+- `references/doc-structure.md` — title and structure rules
+- `references/checklist.md` — quality checklist
+- `examples/task-good.md` — good Runbook example
+- `examples/task-bad.md` — bad Runbook example
