@@ -119,8 +119,11 @@ After creating or updating a document:
 ## References
 
 - `references/okf-schema.md` — full frontmatter schema
-- `references/dita-light.md` — title and structure rules
+- `references/doc-structure.md` — title and structure rules (Diátaxis + Google Style)
 - `references/checklist.md` — quality checklist
 - `templates/task.md` — Runbook template
 - `templates/concept.md` — Reference/Decision template
 - `templates/reference.md` — Observation/Tracker template
+- `examples/task-good.md` — annotated good Runbook example
+- `examples/task-bad.md` — annotated bad Runbook example
+- `examples/process-doc-example.md` — professional example (GitHub Technical Writer)
