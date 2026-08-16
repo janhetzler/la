@@ -250,3 +250,36 @@ läuft ohne menschlichen Trigger. State ist in DB persistent.
 - LangGraph: https://langchain-ai.github.io/langgraph/
 - Arize Phoenix: https://github.com/Arize-ai/phoenix
 - APScheduler: https://apscheduler.readthedocs.io
+
+
+---
+
+## Sicherheit: Prompt Injection Schutz
+
+**Kontext:** Agenten die externe Quellen konsumieren (Researcher via mcp_fetch,
+mcp_git) sind ungeschützt gegen Prompt Injection — präparierte Webinhalte oder
+Commit-Messages könnten Instructions in den Agenten-Kontext einschleusen.
+
+**Ansatz: sanitize_tool_output() als zentrale Filterfunktion**
+
+Sitzt in `agents/server/tools.py` als Wrapper um jeden MCP-Tool-Call.
+Greift bevor Tool-Output in den Agenten-Kontext gelangt.
+
+**Regelwerk (Regex + Heuristik):**
+
+- Bekannte Injection-Pattern blocken:
+  `ignore previous`, `ignore all instructions`, `disregard`, `new instruction`,
+  `system:`, `<|im_start|>`, `<|im_end|>`, `[INST]`, `<<SYS>>`
+- HTML-Tags strippen — nur Plaintext in den Agenten
+- Maximale Output-Länge begrenzen (z.B. 8000 Zeichen) — kein unkontrollierter
+  Kontext-Overflow
+- Verdächtigen Content markieren statt still verwerfen:
+  `[FILTERED: suspicious pattern detected]`
+
+**Grenzen dieses Ansatzes:**
+Regex schützt vor bekannten Patterns. Kreative Umgehungen (Base64,
+andere Sprachen, indirekter Kontext) sind nicht abgedeckt. Ziel ist
+eine sinnvolle erste Verteidigungslinie, kein vollständiger Schutz.
+
+**Einzuplanen in:** Phase 1 — vor Phase 2 Umbau, da MCP-Tool-Calls
+bereits jetzt aktiv sind.
