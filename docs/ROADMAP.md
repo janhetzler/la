@@ -1,782 +1,252 @@
 ---
 type: Decision
 status: current
-updated_at: 2026-07-30
-stale_after: 2026-10-30
+updated_at: 2026-08-16
+stale_after: 2027-02-16
 environment: all
 components: []
 ---
-# ROADMAP — host/la (Chief of Staff)
+# ROADMAP — janhetzler/la
 
-**Letzte Aktualisierung:** 2026-07-16  
-**Basis:** xaviervasques/chief-of-staff  
-**Ziel:** Lokaler Multi-Agenten-Stack auf Host (AMD EPYC, 10 GB RAM)
-
----
-
-## Architektur-Entscheidungen (final)
-
-| Komponente | Original | Ersatz | Grund |
-|---|---|---|---|
-| Vektordatenbank | Qdrant (Docker) | ChromaDB (embedded) | kein Container, weniger RAM |
-| LLM-Backend | Ollama | llama-server (ik_llama.cpp) | bereits auf janhet, mehr Kontrolle |
-| LLM-Client | langchain-ollama | langchain-openai | OpenAI-kompatibler Endpoint |
-| Embeddings | torch + transformers | LiteLLM → llama-server :8081 | 3.2 GB Einsparung |
-| Observability | — | Arize Phoenix | Tracing, RAG-Eval, CI-Tests |
-| Frontend | Open WebUI | VS Code 1.127 (code-server) | Language Model API, Agent Customizations |
-| Audio/Meeting | recorder.py, whisper.cpp | entfernt | kein Audio auf vServer |
-| Token-Proxy | — | llmtrim (Phase 2+3) | Kontext-Kontrolle |
+**Letzte Aktualisierung:** 2026-08-16
+**Basis:** xaviervasques/chief-of-staff
+**Ziel:** Selbstlernende, selbstverbessernde lokale Agentenplattform
 
 ---
 
-## Stack-Übersicht
+## Architektur-Vision
 
 ```
-code-server (VS Code 1.127)
-    └── Language Model API → LiteLLM :4000
-                                └── llama-server :8080 (Granite4-tiny-h)
-                                └── llama-server :8081 (Granite-embedding-30m)
-                                └── [Cloud-Escalation] Anthropic/OpenAI (via llmtrim)
+Mensch
+    ↓
+Orchestrator  ←──── Scheduler / Task-Queue (SQLite)
+    ↓
+Supervisor (DSPy)  ←──── Planungs-DB / Memory Agent
+    ↓
+LangGraph Graph  ←──── Checkpointing (SQLite)
+    ├── Agenten-Module (DSPy)
+    ├── Deterministische Module (reines Python)
+    └── Code Agent → neue Module bauen und testen
 
-FastAPI Agent-Server :8002 (LangGraph)
-    ├── Supervisor
-    ├── Researcher  → ChromaDB (embedded)
-    ├── Comms
-    ├── Code
-    ├── Notes
-    ├── Handoff
-    └── Meta
-
-Arize Phoenix :6006 (Observability)
+Continuous Improvement Loop:
+Phoenix Traces → Metriken → Genetic-Pareto Evolution → bessere Prompts/Module
 ```
 
----
+### Prinzipien
 
-## Port-Übersicht
-
-| Port | Dienst |
-|---|---|
-| 8080 | llama-server (Granite4-tiny-h, Reasoning) |
-| 8081 | llama-server (Granite-embedding-30m) |
-| 4000 | LiteLLM (zentraler Proxy) |
-| 8002 | FastAPI Agent-Server |
-| 6006 | Arize Phoenix |
-| 8443 | code-server (VS Code) |
+- **LA bleibt die Basis** — Infrastruktur (LiteLLM, Phoenix, ChromaDB, MCP,
+  FastAPI) bleibt unangetastet. Nur der Kern wird umgebaut.
+- **Vorhandene Frameworks** — nichts wird neu erfunden. DSPy, LangGraph,
+  APScheduler, SQLite sind ausgereifte Lösungen.
+- **Modellflexibilität** — Granite-Tiny oder Granite-350m sind jederzeit
+  per LiteLLM-Config wechselbar, kein Stack-Neustart nötig.
+- **HF Space als Entwicklungsumgebung** — Sandbox ist deprecated.
+  Alle Tests und Entwicklung im HF Space mit echtem Tool-Calling.
 
 ---
 
-## Modelle
+## Architektur-Entscheidungen
 
-| Modell | Zweck | Format | Erwartete t/s (janhet) |
+| Komponente | Bisher | Neu | Grund |
 |---|---|---|---|
-| Granite4-tiny-h (7B MoE Hybrid) | Reasoning, alle Agenten | IQ4_XS | ~35-45 t/s |
-| Granite4-micro-h (3B Hybrid) | Supervisor-Routing | Q4_K_M | ~60-80 t/s |
-| Granite-embedding-30m | RAG-Embeddings | Q4 | sehr schnell |
+| Supervisor | Router (ein Agent) | DSPy-Programm + LangGraph-Graph | Planung, Parallelität, Persistenz |
+| Agenten | LangChain create_agent | DSPy-Module | Optimierbar, testbar, komponierbar |
+| Routing | Heuristik + LLM-Fallback | DSPy Supervisor plant Ausführungsgraph | Mehrere Agenten parallel möglich |
+| Persistenz | keine | LangGraph Checkpointing (SQLite) | Plan überlebt Fehler und Neustarts |
+| Zeitsteuerung | keine | Orchestrator + APScheduler | Wiederkehrende und zeitgesteuerte Tasks |
+| Task-Queue | keine | SQLite (Planungs-DB) | Tasks einreihen, State verfolgen |
+| Memory | keine | Memory Agent (ChromaDB + Planungs-DB) | Supervisor kennt laufende Pläne |
+| Prompt-Optimierung | manuell / Trial-and-Error | Genetic-Pareto Evolution via DSPy | Systematisch, messbar |
+| Tests | strukturell falsch (6/6 nie echt) | Saubere Metriken + kontinuierliches Testen | Grundlage für Optimierung |
+| Neue Agenten | manuell | Code Agent baut und testet selbstständig | Autonomer Loop |
+| Determinismus | alles LLM | LLM oder reines Python je nach Aufgabe | Schneller, zuverlässiger wo möglich |
+
+---
+
+## Stack-Übersicht (Ziel)
+
+```
+cptr / opencomputer (Port 7860) — Frontend
+    ↓
+Orchestrator
+    ├── Scheduler (APScheduler)
+    ├── Task-Queue (SQLite)
+    └── State-Monitor
+
+    ↓
+Supervisor (DSPy)
+    ├── Plan-Phase: Ausführungsplan erstellen + in Planungs-DB persistieren
+    ├── Context-Phase: Memory Agent liest relevante Infos
+    └── Execute-Phase: LangGraph Graph
+
+        LangGraph Graph
+            ├── Researcher Agent (DSPy-Modul)
+            ├── Comms Agent (DSPy-Modul)
+            ├── Notes Agent (DSPy-Modul)
+            ├── Code Agent (DSPy-Modul) → kann neue Module schreiben
+            ├── Handoff Agent (DSPy-Modul)
+            ├── Memory Agent (DSPy-Modul) — liest Planungs-DB + ChromaDB
+            └── Deterministische Module (reines Python)
+
+Infrastruktur (unverändert):
+    ├── LiteLLM :4000 (Gateway, Modellwechsel ohne Neustart)
+    ├── llama-server :8080 (Granite-Tiny, --jinja)
+    ├── llama-server :8081 (Granite-Embedding-30m)
+    ├── Phoenix :6006 (Tracing, Metriken, Basis für Optimierung)
+    ├── ChromaDB (Vektorspeicher)
+    └── MCP (git, fetch)
+
+Continuous Improvement Loop:
+    Phoenix Traces → Metriken → Genetic-Pareto Evolution → bessere Module
+```
 
 ---
 
 ## Phasen
 
-### Phase 1 — Stack deployen (AKTUELL)
-**Ziel:** Alles läuft auf janhet, Agenten antworten, Phoenix tracet
+### Phase 1 — Fundament: Saubere Tests + BUG-027 (AKTUELL)
 
-- [ ] `git pull` auf janhet
-- [ ] Python venv + `requirements-janhet.txt` installieren
-- [ ] llama-server mit Granite4-tiny-h starten
-- [ ] llama-server mit Granite-embedding-30m starten (Port 8081)
-- [ ] LiteLLM mit `litellm_config_janhet.yaml` starten
-- [ ] Phoenix starten
-- [ ] Agent-Server starten (Port 8002)
-- [ ] Tests: `python3 tests/run_tests.py`
-- [ ] VS Code 1.127: LiteLLM als Language Model Provider eintragen
+**Ziel:** Ehrliche Testergebnisse als Basis für alles weitere.
+Kein Umbau ohne funktionierenden Researcher.
 
-**Erfolgskriterium:** Alle 6 Agenten antworten, Phoenix zeigt Traces
+**Warum zuerst:** Genetic-Pareto Evolution und DSPy-Optimierung brauchen
+ein Evaluierungs-Signal. Solange unsere Tests strukturell falsch sind,
+optimieren wir ins Nichts.
 
----
+- [ ] BUG-027 lösen: ExceptionGroup im Researcher — vollständigen Traceback
+      mit eigenem Code-Frame sichern (Phoenix Traces, nicht Log-Stückwerk)
+- [ ] Testlauf überarbeiten: „Maximale Tool-Runden erreicht" = FAIL,
+      inhaltliche Antwort = Pflicht
+- [ ] Metriken definieren: was ist eine gute Researcher-Antwort,
+      was ist korrektes Tool-Calling, was ist korrektes Routing
+- [ ] Researcher-Prompt anpassen: mcp_git für Repo-Inhalte,
+      nicht ChromaDB
 
-### Phase 2 — llmtrim für Cloud-Calls
-**Ziel:** Cloud-Escalation via LiteLLM wird durch llmtrim komprimiert
-
-**Voraussetzung:** Phase 1 vollständig abgeschlossen + Phoenix-Daten vorhanden
-
-- [ ] llmtrim installieren (`npm install -g @llmtrim/cli && llmtrim setup`)
-- [ ] systemd Service: llmtrim als Daemon
-- [ ] LiteLLM systemd Service: `HTTPS_PROXY` + `NODE_EXTRA_CA_CERTS` setzen
-- [ ] Cloud-Provider in `litellm_config_janhet.yaml` eintragen
-- [ ] Complexity Router in LiteLLM konfigurieren (lokal vs. Cloud)
-- [ ] Testen: Cloud-Call → Phoenix zeigt Trace → llmtrim status zeigt Ersparnis
-
-**Erfolgskriterium:** Cloud-Calls gehen durch llmtrim, lokale Calls unverändert
+**Erfolgskriterium:** Researcher liefert inhaltlich korrekte Antwort
+auf „Was steht in ROADMAP.md?" — verifiziert via Phoenix Trace.
 
 ---
 
-### Phase 3 — Interne Kontext-Kompression
-**Ziel:** Supervisor-Logik komprimiert Kontext vor lokalen LLM-Calls
+### Phase 2 — Supervisor: DSPy + LangGraph Graph
 
-**Voraussetzung:** Phase 2 abgeschlossen + Phoenix-Traces zeigen wo Bloat entsteht
+**Voraussetzung:** Phase 1 abgeschlossen, Researcher funktioniert.
 
-- [ ] Phoenix-Analyse: welche Agenten produzieren längste Outputs?
-- [ ] Conversation-History-Kompression im Supervisor
-- [ ] RAG-Chunk-Optimierung basierend auf Phoenix-Retrieval-Daten
-- [ ] Tool-Output-Kompression in LangGraph Tool-Nodes
-- [ ] Erneute Phoenix-Messung: Vorher/Nachher-Vergleich
+**Ziel:** Supervisor wird zum echten Planungs- und Ausführungssystem.
 
-**Erfolgskriterium:** Messbare Reduktion der Token-Counts in Phoenix ohne Qualitätsverlust
+- [ ] DSPy installieren und in requirements.txt aufnehmen
+- [ ] Supervisor als DSPy-Programm umbauen:
+      Plan-Phase (welche Agenten, welche Reihenfolge, welche Inputs)
+- [ ] LangGraph: Supervisor wird zum echten Graphen mit Kanten und Knoten
+- [ ] LangGraph Checkpointing: Planungs-DB (SQLite) einrichten
+- [ ] Parallele Ausführung: mehrere Agenten gleichzeitig wenn unabhängig
+- [ ] Human-in-the-Loop: Plan wird angezeigt, Mensch bestätigt vor Ausführung
+- [ ] Memory Agent: liest Planungs-DB + ChromaDB, liefert Kontext für Planung
 
----
-
-## Was entfernt wurde
-
-| Datei/Komponente | Grund |
-|---|---|
-| `agents/notes/recorder.py` | kein Audio auf vServer |
-| `agents/notes/process.py` | kein whisper.cpp |
-| `specialists/main.py` | whisper.cpp Wrapper |
-| `models/whisper/` | kein Whisper |
-| `CoS.workflow/` | macOS Automator |
-| `install.bat` | Windows |
-| `torch`, `transformers`, `sounddevice`, `soundfile` | nicht benötigt |
-| `langchain-ollama`, `qdrant-client`, `llama-index-vector-stores-qdrant` | ersetzt |
-| Open WebUI | ersetzt durch VS Code 1.127 |
-| Postgres | nur für LiteLLM-Logging, nicht benötigt |
+**Erfolgskriterium:** „Recherchiere LangGraph und schreib mir eine
+Zusammenfassung als Mail" — ein Aufruf, Researcher + Comms parallel,
+eine Antwort. Plan in DB persistent.
 
 ---
 
-## Wichtige Hinweise für neue Sessions
+### Phase 3 — Agenten: DSPy-Module + Skills
 
-1. **Zwei requirements-Dateien:**
-   - `requirements.txt` — bereinigt, ohne Versionen für neue Pakete
-   - `requirements-janhet.txt` — vollständig gepinnt, für janhet und Sandbox
+**Voraussetzung:** Phase 2 abgeschlossen.
 
-2. **llmtrim ist KEIN Reverse-Proxy** — funktioniert als HTTPS MITM-Proxy
-   via `HTTPS_PROXY` Umgebungsvariable. Nicht als URL in LiteLLM eintragen.
+**Ziel:** Alle Agenten werden zu DSPy-Modulen. Skills werden zu Submodulen.
 
-3. **ik_llama.cpp statt mainline** — für IQK-Quants und Mamba-Hybrid-Support.
-   TheTom Fork für TurboQuant wenn Kontext > 15.000 Token.
+- [ ] Agenten-Signaturen definieren (DSPy Signature für jeden Agenten)
+- [ ] Agenten als dspy.Module umbauen — Researcher zuerst als Pilot
+- [ ] Skills als DSPy-Submodule: dynamisch je nach Aufgabe injiziert
+- [ ] Deterministische Module: wo kein LLM nötig ist, reines Python
+- [ ] Code Agent erweitert: kann neue DSPy-Module schreiben und testen
+- [ ] Agent-Registry dynamisch: neue Module werden automatisch erkannt
 
-4. **Phoenix skip_dep_check** — bereits in `agents/server/telemetry.py` eingebaut.
-
-5. **ChromaDB Collections:**
-   - `documents` — PDFs, DOCX
-   - `research` — Web-Research-Ergebnisse
-   - `personal` — private Notizen
-   - `notes` — Meeting-Notizen (falls später relevant)
-
-6. **VS Code Integration:**
-   - LiteLLM :4000 als OpenAI-kompatibler Language Model Provider
-   - Jeden Agenten als eigenes "Modell" eintragen
-   - Später: Chat Participants via schlanke Extension
+**Erfolgskriterium:** Neuer Agent = neue .py Datei, keine manuelle
+Registrierung nötig. Code Agent schreibt einen einfachen neuen Agenten
+selbstständig.
 
 ---
 
-## Bekannte Lösung, noch nicht implementiert: MCP Tool-Calling für kleine Modelle
+### Phase 4 — Orchestrator: Zeitsteuerung + Task-Queue
 
-**Stand:** 2026-07-16. Betrifft: `agents/server/researcher_v2.py`
+**Voraussetzung:** Phase 3 abgeschlossen.
 
-Das kleine Granite-350m-Modell (Sandbox) kann MCP-Tools (git_log, fetch etc.)
-zuverlässig aufrufen — das wurde bereits erfolgreich isoliert getestet
-(Commit `ae471a6`). Der Ansatz ist im Code vorhanden, aber **nicht in den
-Produktivpfad des Researcher-Agenten eingebaut.** Deshalb schlägt MCP im
-regulären Agenten-Betrieb mit dem 350m-Modell fehl, obwohl die Lösung
-bereits existiert.
+**Ziel:** System initiiert selbst, wartet nicht nur auf menschlichen Input.
 
-**Das Problem:** `researcher_v2.py` nutzt `create_agent()` aus LangGraph,
-das intern `bind_tools()` verwendet — also das Standard-OpenAI-
-Function-Calling-Format. Das 350m-Modell kann dieses Format nicht
-zuverlässig bedienen.
+- [ ] APScheduler installieren
+- [ ] Task-Queue in SQLite (Planungs-DB erweitern)
+- [ ] Orchestrator als Schicht über dem Supervisor
+- [ ] Zeitgesteuerte Tasks: Cron-ähnliche Konfiguration
+- [ ] Wiederkehrende Tasks: Intervall-basiert
+- [ ] State-Monitor: was läuft, was wartet, was ist fertig
+- [ ] Orchestrator-API: Tasks einreihen, Status abfragen
 
-**Die bereits erprobte Lösung:** Tools nicht über `bind_tools()` einbinden,
-sondern über das **native Granite XML-Tool-Format**, erzeugt mit der bereits
-vorhandenen Funktion `format_tools_for_model()` aus `tool_formatter.py`:
-
-```python
-system_prompt = format_tools_for_model([tool_def], model_name="granite-tiny")
-llm.invoke([SystemMessage(content=system_prompt), HumanMessage(...)])
-```
-
-Der Prompt enthält dann `<tools>...</tools>`, und das Modell antwortet mit
-`<tool_call>{"name": ..., "arguments": ...}</tool_call>` — zuverlässig
-erkennbar per `parse_tool_call_from_response()`.
-
-**Zusätzlich nötiger Fix:** Wenn Tools über `get_tools_by_names()` aus MCP
-geladen werden, liefert `tool.args_schema` ein Dict statt eines Pydantic-
-Objekts. Der Aufruf `.schema()` schlägt dann fehl — stattdessen
-`dict(tool.args_schema)` verwenden.
-
-**Was konkret zu tun ist, um das nachzuziehen:**
-1. In `researcher_v2.py`: `create_agent()`/`bind_tools()` durch einen
-   manuellen LangGraph-Agenten ersetzen, der `format_tools_for_model()`
-   für den System-Prompt nutzt.
-2. `args_schema`-Fix (`dict(...)` statt `.schema()`) beim MCP-Tool-Loading
-   übernehmen.
-3. Erneut mit `scripts/sandbox/start_full.py` oder gezielt gegen den
-   Researcher-Agenten testen (git_log, fetch).
-
-**Warum das wichtig ist:** Ohne diesen Umbau funktioniert MCP-Tool-Calling
-nur in isolierten Tests, nicht im echten Agenten-Betrieb — auf dem Host mit
-einem größeren Modell (Granite-4.0-H-Tiny) mag `bind_tools()` funktionieren,
-aber für die Sandbox und kleinere Modelle ist dieser Umbau die Voraussetzung
-für funktionierendes MCP.
+**Erfolgskriterium:** „Jeden Montag 08:00 Statusreport aus JOURNAL.md"
+läuft ohne menschlichen Trigger. State ist in DB persistent.
 
 ---
 
----
+### Phase 5 — Continuous Improvement: Genetic-Pareto Evolution
 
-## Naechster Schritt: inspect_meta.py — Meta-Agent Diagnose (2026-07-31)
+**Voraussetzung:** Phase 4 abgeschlossen, Metriken aus Phase 1 vorhanden.
 
-**Hintergrund:** BUG-024 neu bewertet — LLM-Router funktioniert korrekt.
-Der Supervisor gibt 6-Zeichen-Antworten weil der Meta-Agent zu kurze
-Antworten generiert, nicht weil das Routing falsch ist.
+**Ziel:** System verbessert sich selbst kontinuierlich.
 
-**Aufgabe:** inspect_meta.py bauen (analog inspect_notes.py, inspect_supervisor.py)
-und Meta-Agent Prompt + Antwort-Verhalten tracen.
+- [ ] DSPy-Optimierer einrichten (MIPROv2 als Basis)
+- [ ] Genetic-Pareto Evolution: mehrere Optimierungsziele gleichzeitig
+      (Antwortqualität, Token-Effizienz, Tool-Calling-Zuverlässigkeit)
+- [ ] Phoenix Traces als Trainingsdaten: automatisch aus laufendem Betrieb
+- [ ] Optimierungsloop als Orchestrator-Task: läuft im Hintergrund
+- [ ] Vergleich: alte vs. neue Prompts/Module — Pareto-Front visualisieren
+- [ ] Automatisches Deployment verbesserter Module nach Validierung
 
-**Hypothese:** Meta-Agent Prompt ist zu kurz oder max_tokens zu niedrig.
-
----
-
-## Offene Aufgabe: Keine hardcodierten Config-Werte (BUG-025)
-
-**Stand:** Offen (2026-07-30)
-
-Collection-Namen, Pfade und andere Config-Werte gehoeren in config.py —
-nicht als hardcoded Strings in Agent-Code. Konkret: CHROMA_NOTES_COLLECTION
-als neue Variable in config.py, notes.py darauf umstellen.
-
-Siehe BUG-025 in BUGS.md.
+**Erfolgskriterium:** Researcher-Qualität verbessert sich messbar über
+4 Wochen Betrieb ohne manuellen Eingriff.
 
 ---
 
-## Offene Architektur-Aufgabe: Keine hardcodierten Pfade
+## Offene Bugs (vor Phase 2 zu lösen)
 
-**Stand:** 2026-07-17
-
-Aktuell sind in mehreren Dateien Pfade hardcodiert — z.B. `/tmp/chroma_la`,
-`mcp/sandbox/mcp.json`, `/tmp/litellm.db`. Das funktioniert solange wir nur
-eine Umgebung haben, bricht aber sobald Dienste auf unterschiedlichen Hosts
-oder in unterschiedlichen Containern laufen.
-
-**Ziel:** Alle Pfade und umgebungsspezifische Werte werden ausschließlich
-über Umgebungsvariablen gesetzt. Der Code selbst weiß nicht wo er läuft.
-
-**Betrifft:**
-- `agents/server/config.py` — zentrale Stelle, dort alle Pfade als `os.getenv()`
-- `agents/server/tools.py` — `MCP_CONFIG_PATH` statt hardcodiertem Pfad
-- `scripts/sandbox/start_full.py` — Env-Variablen explizit setzen
-- `scripts/sandbox/start_quick.py` — Env-Variablen explizit setzen
-- `deploy/systemd/litellm.service.template` — `DATABASE_URL` als Env-Variable
-- `docker/entrypoint.sh` — Env-Variablen für Docker-Pfade
-
-**Umgebungsvariablen (geplant):**
-
-| Variable | Sandbox | Host | Docker |
-|----------|---------|------|--------|
-| `CHROMA_PATH` | `/tmp/chroma_la` | `/home/user/chroma` | `/app/data/chroma` |
-| `LITELLM_DB_PATH` | `/tmp/litellm.db` | `/home/user/litellm.db` | `/app/data/litellm.db` |
-| `MCP_CONFIG_PATH` | `mcp/sandbox/mcp.json` | `mcp/host/mcp.json` | `mcp/docker/mcp.json` |
-| `LITELLM_KEY` | `sk-local-dev` | via Secret | via Secret |
-
-**Voraussetzung:** Phase 1 (Stack läuft stabil auf Host) abgeschlossen.
+| Bug | Priorität | Beschreibung |
+|-----|-----------|--------------|
+| BUG-027 | KRITISCH | Researcher ExceptionGroup — Phase 1 |
+| BUG-020 | mittel | Researcher EISDIR (read_text_file auf Verzeichnis) |
+| BUG-026 | niedrig | Hardcodierter llama-server Pfad in start_full.py |
+| mcp.json Pfad | mittel | tools.py hardcodiert — Umgebungsvariable fehlt |
 
 ---
 
-## Offene Aufgabe: LiteLLM Authentifizierung
+## Was entfernt / deprecated ist
 
-**Stand:** 2026-07-17
-
-LiteLLM 1.92.0 unterstuetzt `master_key` nur mit PostgreSQL als Backend.
-SQLite wird nicht unterstuetzt. Aktuell laeuft LiteLLM ohne `database_url` --
-wenn Request-Key == master_key prueft LiteLLM keine DB (kein DB-Check noetig).
-
-Das ist fuer die Sandbox akzeptabel (nur localhost), aber nicht fuer den Host.
-
-**Optionen fuer den Host:**
-1. LiteLLM auf eine aeltere Version downgraden die SQLite unterstuetzt
-2. PostgreSQL als LiteLLM-Backend -- separater Dienst, hoehere Komplexitaet
-3. Auth auf Netzwerk-Ebene loesen (Cloudflare Tunnel, nginx) statt in LiteLLM
-
-**Voraussetzung:** Erst angehen wenn Stack stabil auf Host laeuft.
+| Was | Grund |
+|-----|-------|
+| Sandbox (docs/SANDBOX.md) | Deprecated — HF Space ist die Entwicklungsumgebung |
+| llmtrim / Bifrost | Statisch gelinkt, nicht erweiterbar — kein Mehrwert |
+| Heuristisches Routing (router_heuristic.py) | Wird von DSPy Supervisor übernommen |
+| Manuelle Prompt-Dateien (.md) | Werden zu DSPy-Signaturen |
 
 ---
 
-## Geplant: Prompt-Management und generischer Agent-Loader
+## Infrastruktur bleibt unverändert
 
-**Stand:** 2026-07-17
-**Voraussetzung:** Stack laeuft stabil, Baseline-Tests abgeschlossen
-
-### Ziel
-
-Agenten werden nicht mehr in Python hartkodiert sondern aus Konfiguration
-zusammengebaut. Ein neuer Agent = eine neue .md Datei mit YAML-Frontmatter,
-kein Python anfassen.
-
-### Kernkonzept: YAML-Frontmatter in .md Dateien
-
-Jede Agent-Datei kombiniert Metadaten (YAML) und System-Prompt (Markdown)
-in einer einzigen Datei. Beispiel prompts/agents/comms.md:
-
-    ---
-    name: comms
-    description: E-Mails, Nachrichten, Kurzberichte. Kein RAG, keine Suche.
-    tools: []
-    temperature: 0.3
-    ---
-    Du bist der Kommunikations-Spezialist.
-    {{ project_context }}
-    {{ user_profile }}
-
-Vorteile:
-- Konfiguration und Prompt in einer Datei
-- supervisor.py liest description aus Frontmatter und baut Router-Prompt dynamisch
-- agent_loader.py liest tools und bindet sie via bind_tools()
-- Template-Injection: {{ project_context }} wird via String-Replace befuellt
-- Neuer Agent: einfach neue .md Datei anlegen, Router weiss sofort davon
-
-### Neue Struktur
-
-    prompts/
-    - shared/
-      - user_profile.md
-      - project_context.md
-    - agents/
-      - router.md
-      - comms.md
-      - code.md
-      - notes.md
-      - researcher.md
-      - handoff.md
-
-### Hybrides Design
-
-Reine Text-Agenten (comms, code) werden zu reiner Konfiguration:
-Python-Datei entfaellt, agent_loader.py baut Agent aus .md.
-
-Logik-Agenten (notes, researcher, handoff) behalten Python:
-Wegen custom Tools und RAG-Logik — lesen aber Prompt aus .md.
-
-Infrastruktur bleibt unveraendert:
-tool_formatter.py, tools.py, telemetry.py, config.py.
-
-Neu: agent_loader.py (parst Frontmatter, baut Agent) und
-supervisor.py liest alle agents/*.md dynamisch.
-
-### Modell-spezifische Prompts
-
-Steuerung ueber Umgebungsvariable PROMPT_MODEL.
-Separate Unterordner fuer Modell-Varianten (z.B. granite-350m/).
-
-### Reihenfolge (Strangler-Fig-Pattern)
-
-1. prompts/ Struktur anlegen, Prompts aus Code extrahieren
-2. Code liest Prompts aus .md Dateien (keine Funktionsaenderung)
-3. agent_loader.py bauen
-4. supervisor.py dynamisieren
-5. server.py laedt Agenten dynamisch
-
+| Komponente | Port | Status |
+|---|---|---|
+| llama-server (Granite-Tiny, --jinja) | 8080 | aktiv |
+| llama-server (Granite-Embedding-30m) | 8081 | aktiv |
+| LiteLLM | 4000 | aktiv |
+| Phoenix | 6006 | aktiv, Tracing verifiziert |
+| Agent Server (FastAPI) | 8002 | aktiv |
+| cptr / opencomputer | 7860 | aktiv, Frontend |
+| ChromaDB | embedded | aktiv |
+| MCP (git, fetch) | stdio | aktiv |
 
 ---
-
-## Offene Aufgabe: Ressourcenmessung in Testlaeufen
-
-**Stand:** 2026-07-18
-
-Aktuell messen unsere Testlaeufe nur ob Tests OK/FAIL sind und wie lange sie dauern.
-RAM-Verbrauch und CPU-Last werden nicht erfasst.
-
-**Ziel:** Jeder Testlauf dokumentiert automatisch:
-- RAM vor Stack-Start
-- RAM nach jedem Service-Start (llama-server, Embedding, Phoenix, LiteLLM, Agent Server)
-- Peak-RAM waehrend der Tests
-- CPU-Last waehrend der Tests
-- Alles in den TESTRESULTS.md dokumentiert
-
-**Implementierung:**
--  in  erganzen
-- Ressourcenmessung in  und  einbauen
--  startet alle Dienste + Notes-Agent Test + Ressourcenmessung
-
-**Voraussetzung:** Stack laeuft stabil.
-## Naechster Schritt: HF Docker Space Deployment
-
-**Ziel:** ghcr.io/janhetzler/la:latest auf einem vorbereiteten
-Hugging Face Docker Space lauffaehig machen und oeffentlich bereitstellen.
-
-**Voraussetzungen:**
-- HF Docker Space exponiert genau Port 7860 nach aussen
-- Agent Server (intern :8002) muss auf 7860 gemappt werden
-  (PORT=7860 Umgebungsvariable in entrypoint.sh oder nginx vorschalten)
-- GitHub Token fuer Modell-Download als HF Space Secret hinterlegen
-- GLIBC-Kompatibilitaet: llama-server b9895 (Debian 12 / glibc 2.34+)
-  sollte mit HF Docker Space (Ubuntu 22.04) kompatibel sein
-
-**Erkenntnisse aus HF Jupyter Space Experiment (2026-07-31):**
-- Jupyter Space ungeeignet (GLIBC 2.31 Konflikt, Port 7860 belegt)
-- Docker Space loest alle bekannten Probleme durch native Container-Isolation
-- PYTHONPATH=/app:/app/agents/server muss in entrypoint.sh gesetzt sein
-
-**Status:** Bereit — Deploy-Chat vorbereitet.
-
-## Offene Untersuchung: Nicht-Determinismus bei temperature=0 (350m)
-
-inspect_meta.py zeigt stark variierende Ausgaben zwischen Laeufen trotz
-temperature=0 und frischem Stack. Erwartung waere deterministisches Verhalten.
-Moegliche Ursache: Floating-Point-Nicht-Determinismus auf CPU-Ebene
-(Thread-Scheduling, NUMA-Effekte). Zu untersuchen mit reproduzierbarem
-Test unter identischen Bedingungen — Vergleich mit Granite-Tiny (4B) auf Host.
 
 ## Referenzen
 
-- Fork: https://github.com/janhetzler/la
+- Repo: https://github.com/janhetzler/la
 - Original: https://github.com/xaviervasques/chief-of-staff
-- llmtrim: https://github.com/fkiene/llmtrim
-- ik_llama.cpp: https://github.com/ikawrakow/ik_llama.cpp (Spiegel: Codeberg ikawrakow/illama)
+- DSPy: https://dspy.ai
+- LangGraph: https://langchain-ai.github.io/langgraph/
 - Arize Phoenix: https://github.com/Arize-ai/phoenix
-- VS Code 1.127 Release Notes: https://code.visualstudio.com/updates/v1_127
-
-
----
-
-## Evaluierung: Bifrost als LiteLLM-Ersatz (2026-07-19)
-
-**Status:** Teilweise evaluiert, Plugin-Problem offen
-
-**Was funktioniert:**
-- Bifrost v1.6.4 als Gateway vor llama-server
-- Custom OpenAI-kompatibler Provider via API registrieren
-- Routing zu lokalem llama-server
-
-**Was nicht funktioniert:**
-- Custom Go Plugins (statische NPX-Binary)
-- Bifrost OSS kompilieren (fehlende Enterprise-Pakete)
-
-**Alternativen fuer llmtrim-Integration:**
-1. Python FastAPI-Wrapper: empfaengt Request, piped durch llmtrim compress, leitet weiter
-2. llmtrim als MCP-Server:  -- Tools: llmtrim_compress, llmtrim_compress_text
-3. llmtrim Upstream-Proxy: LLMTRIM_UPSTREAM_PROXY vor Bifrost schalten
-
-**Naechste Schritte:**
-- [ ] Python FastAPI-Wrapper als HTTP-Proxy implementieren (einfachste Loesung)
-- [ ] llmtrim MCP-Server evaluieren
-- [ ] Bifrost Enterprise kontaktieren wegen dynamischer Binary
-
-
----
-
-## Heuristisches Routing (Idee aus 2026-07-20)
-
-### Problem
-Das 350m Modell routet unzuverlaessig — selbst mit Grammar Constraint
-und Few-Shot-Beispielen landet "write an email" bei `code` statt `comms`.
-
-### Loesung: Pre-Filter vor LLM-Call
-
-**Stufe 1 — Emoji-Routing (0ms):**
-```python
-EMOJI_ROUTING = {
-    "📧": "comms", "💻": "code",
-    "🔍": "researcher", "📝": "notes", "🔄": "handoff"
-}
-```
-
-**Stufe 2 — Keyword-Heuristik (0ms):**
-```python
-ROUTING_KEYWORDS = {
-    "comms":      ["email", "mail", "write", "message", "draft", "letter"],
-    "code":       ["python", "debug", "script", "function", "bug", "github"],
-    "notes":      ["note", "save", "remember", "meeting", "vault"],
-    "researcher": ["search", "find", "web", "news", "latest", "research"],
-    "handoff":    ["claude", "chatgpt", "complex", "analyse", "deep"],
-}
-```
-
-**Stufe 3 — LLM (nur bei kein Match):**
-Nur wenn Stufe 1 und 2 keinen Match liefern → LLM-Call wie bisher.
-
-### Testergebnis (2026-07-20, Docker Container)
-```
-comms        (keyword score 3) <- write an email to my boss       ✅
-comms        (keyword score 1) <- ich möchte eine Mail schreiben  ✅
-code         (keyword score 4) <- debug my python script          ✅
-notes        (keyword score 2) <- save this note: Docker Test     ✅
-researcher   (keyword score 3) <- search for latest AI news       ✅
-comms        (emoji)           <- 📧 write to John                ✅
-LLM          (kein Match)      <- Can you help me?                ✅
-handoff      (keyword score 1) <- Prepare a prompt for Claude.ai  ✅
-```
-
-**8/8 korrekt** — loest 80% der Routing-Fehler ohne LLM-Call.
-
-### Implementierung
-- Neue Datei: `agents/server/router_heuristic.py`
-- Aenderung: `agents/server/supervisor.py` — Pre-Filter vor `router_llm.ainvoke()`
-- Kein neues Modell, kein neues Image noetig
-
-### Status
-Getestet im Docker Container (2026-07-20). Implementierung ausstehend.
-
----
-
-## Smoke Test beim Container-Start (geplant)
-
-### Idee
-`entrypoint.sh` fuehrt nach dem Stack-Start automatisch einen Smoke Test
-durch -- bevor "Ready" gemeldet wird. Ergebnis klar sichtbar in der Konsole.
-
-### Was getestet wird
-1. llama-server antwortet auf /v1/models
-2. LiteLLM antwortet auf /health
-3. Agent Server antwortet auf /health
-4. Echter LLM-Call funktioniert (granite-tiny, max 3 Tokens)
-5. Agent Server gibt sinnvolle Antwort (agent-local, max 10 Tokens)
-
-### Erwartete Konsolen-Ausgabe
-```
-=== SMOKE TEST ===
-✅ llama-server OK
-✅ LiteLLM OK
-✅ Agent Server OK
-✅ LLM-Call OK
-✅ Agent-Call OK
-=== SMOKE TEST DONE — Stack bereit ===
-```
-
-### Implementierung
-- Aenderung: `docker/entrypoint.sh` -- Smoke Test Block nach Stack-Start
-- Optional: Exit-Code 1 wenn Smoke Test fehlschlaegt (fuer CI/CD)
-
-### Status
-Geplant. Implementierung ausstehend.
-
----
-
-## llama-server Multi-Modell-Betrieb via --models-preset (getestet 2026-07-20)
-
-### Erkenntnis
-llama-server b9895 kann **mehrere Modelle gleichzeitig** laden und servieren
-ueber eine einzige `.ini` Konfigurationsdatei (`--models-preset`).
-Getestet und funktionsfaehig mit unserer Binary-Version.
-
-### Konfiguration (models.ini)
-```ini
-[defaults]
-threads = 2
-
-[granite-1b]
-model = /data/models/granite-4.0-h-1b-Q4_K_M.gguf
-ctx-size = 16384
-jinja = true
-
-[granite-350m]
-model = /data/models/granite-4.0-h-350m-Q6_K.gguf
-ctx-size = 16384
-jinja = true
-```
-
-### Start-Befehl
-```bash
-/opt/llama/llama-server \
-  --models-preset /data/models.ini \
-  --host 0.0.0.0 --port 8080
-```
-
-### Was das fuer uns bedeutet
-- Reasoning-Modell (1B) und Router-Modell (350m) koennen gleichzeitig laufen
-- Ein einziger llama-server Prozess statt zwei separate Prozesse
-- LiteLLM kann per Modellname zwischen beiden wechseln
-- Router nutzt 350m (schneller), Agenten nutzen 1B (besser)
-
-### Relevanz fuer Heuristisches Routing
-Kombiniert mit dem geplanten Keyword/Emoji-Pre-Filter:
-- Klare Faelle → Heuristik (kein LLM-Call)
-- Unklare Faelle → 350m Router (schnell, guenstig)
-- Agent-Ausfuehrung → 1B Modell (qualitativ besser)
-
-### Status
-Getestet. Implementierung in Dockerfile und entrypoint.sh ausstehend.
-
----
-
-## Vollstaendiges Tool-Calling Monitoring via Phoenix (geplant)
-
-### Problem
-
-Phoenix monitort aktuell nur LangChain-LLM-Calls. Direkte Tool-Aufrufe
-(`save_note.invoke()`), ChromaDB-Schreiboperationen (`collection.add()`)
-und Embedding-Calls (`_embed_query()` via httpx) sind nicht sichtbar.
-
-Das bedeutet: wir sehen ob das Modell einen Tool-Call generiert,
-aber nicht ob das Tool erfolgreich ausgefuehrt wurde.
-
-### Ziel
-
-Vollstaendige Sichtbarkeit des kompletten Tool-Calling-Zyklus:
-1. LLM generiert <tool_call> → sichtbar in Phoenix ✅
-2. Tool wird aufgerufen → nicht sichtbar ❌
-3. Embedding berechnet → nicht sichtbar ❌
-4. ChromaDB schreibt → nicht sichtbar ❌
-5. Tool-Response an LLM → nicht sichtbar ❌
-
-### Moegliche Loesungsansaetze
-
-- OpenTelemetry Spans manuell in save_note(), search_meetings(),
-  _embed_query() einbauen
-- ChromaDB Client mit Tracing-Wrapper umhuellen
-- Eigene Span-Hierarchie: Agent-Call → Tool-Call → DB-Call
-
-### Status
-
-Konzept. Implementierung noch nicht ausgearbeitet.
-Prioritaet: niedrig — erst nach Host-Deployment.
-
----
-
-## Neue Zielarchitektur: opencomputer + LA Stack (2026-07-24)
-
-### Vision
-
-`janhetzler/opencomputer` (Fork von open-webui/computer) ersetzt LiteLLM
-als Gateway und stellt die vollstaendige GUI bereit.
-
-### Neue Architektur
-
-```
-Browser
-  ↓
-opencomputer (cptr, Port 7860) -- GUI + API Gateway
-  ├── llama-server :8080 (Granite-Tiny, --jinja, --embeddings)
-  ├── Agent Server :8002 (Supervisor + 6 Agenten)
-  │     └── Phoenix Tracing (direkt eingebaut, nicht via LiteLLM)
-  └── ChromaDB
-```
-
-### Was wegfaellt
-
-- LiteLLM komplett (ersetzt durch opencomputer Gateway)
-- litellm_config.yaml
-- LiteLLM Readiness-Checks
-
-### Was bleibt / sich aendert
-
-- Agent Server spricht direkt mit llama-server
-- Phoenix via OpenTelemetry direkt im Agent Server
-- MCP-Server direkt in opencomputer konfigurierbar (mcp_stdio)
-- Agent Server als OpenAPI Tool-Server in opencomputer
-
-### Warum opencomputer
-
-- FastAPI + Python — gleiche Technologie wie unser Agent Server
-- Open Source — erweiterbar
-- Vollstaendig automatisierbar via REST API
-- Eingebauter API-Gateway (/v1) — ersetzt LiteLLM
-- MCP (Stdio + HTTP) nativ unterstuetzt
-- Sub-Agenten Konzept — unsere 6 Agenten als Sub-Agenten
-- Terminal, Git, Dateiverwaltung im Browser
-
-### Repositories
-
-- `janhetzler/la` — Agent Stack (Supervisor, Agenten, ChromaDB)
-- `janhetzler/opencomputer` — GUI + Gateway (Fork von open-webui/computer)
-
-### Status
-
-Konzept bestaetigt 2026-07-24. Implementierung ausstehend.
-
----
-
-## SSE Streaming fuer Agent Server (fuer opencomputer Integration)
-
-### Problem
-
-`cptr` (opencomputer) erwartet Server-Sent Events (SSE) vom Chat-Endpoint:
-- `Content-Type: text/event-stream`
-- Chunks im Format: `data: {"choices":[{"delta":{"content":"..."}}]}`
-- Abschluss: `data: [DONE]`
-
-Unser Agent Server gibt aktuell eine vollstaendige JSON-Antwort zurueck
-wenn der Agent fertig ist -- kein Streaming.
-
-### Zwei Optionen
-
-**Option A — Fake-Streaming (einfach, schnell):**
-Antwort kommt vollstaendig vom Agenten, wird dann als einzelner
-SSE-Chunk verpackt und mit `[DONE]` abgeschlossen.
-- Kein echtes Token-Streaming
-- cptr zeigt Antwort sofort an wenn fertig
-- ~20 Zeilen Code in server.py
-
-**Option B — Echtes Streaming (besser, aufwaendiger):**
-llama-server streamt Token fuer Token → Agent Server leitet durch → cptr.
-- Echtes Echtzeit-Streaming in der UI
-- Groesserer Umbau in supervisor.py + server.py
-- Alle Agenten muessen streaming-faehig sein
-
-### Empfehlung
-
-Option A zuerst — beweist Integration mit cptr.
-Option B als naechsten Schritt wenn Option A stabil laeuft.
-
-### Implementierung Option A
-
-In `agents/server/server.py` beim `/v1/chat/completions` Endpoint:
-
-```python
-from fastapi.responses import StreamingResponse
-
-async def stream_response(content: str):
-    chunk = {"choices": [{"delta": {"content": content}, "finish_reason": None}]}
-    yield f"data: {json.dumps(chunk)}\n\n"
-    done_chunk = {"choices": [{"delta": {}, "finish_reason": "stop"}]}
-    yield f"data: {json.dumps(done_chunk)}\n\n"
-    yield "data: [DONE]\n\n"
-
-return StreamingResponse(
-    stream_response(result),
-    media_type="text/event-stream"
-)
-```
-
-### Status
-
-Geplant. Implementierung ausstehend — nach opencomputer Integration.
-
----
-
-## Sicherheit: opencomputer auf dem Host 
-
-### Setup-Token (Ersteinrichtung)
-
-Beim ersten Start generiert cptr automatisch einen einmaligen Setup-Token:
-`http://localhost:7860/?token=STARTUP_TOKEN`
-
-Dieser erscheint in der Konsole und muss sofort genutzt werden um
-den ersten Admin-User anzulegen. Danach laeuft alles via JWT-Sessions.
-
-**Wichtig:** Der Setup-Token darf nie nach aussen exponiert sein.
-Auf dem Host ist das kein Problem da cptr nur intern erreichbar ist.
-
-### Cloudflare Tunnel (Loesung fuer externen Zugriff)
-
-Auf dem Host  laeuft bereits ein Cloudflare Tunnel.
-Das ist die sichere Loesung fuer externen Zugriff:
-
-```
-Internet → Cloudflare Tunnel (TLS, Auth) → Host intern → cptr :7860
-```
-
-**Vorteile:**
-- Kein offener Port auf dem Host
-- TLS automatisch via Cloudflare
-- Cloudflare Access kann zusaetzliche Auth-Schicht hinzufuegen
-- Setup-Token nur intern erreichbar -- kein Sicherheitsrisiko
-
-### Deployment-Reihenfolge auf dem Host
-
-1. cptr starten (intern, kein externer Zugriff)
-2. Setup-Token aus Log lesen
-3. Admin-User anlegen via localhost
-4. API-Key erstellen fuer externe Clients
-5. Cloudflare Tunnel aktivieren -- erst dann externer Zugriff
-
-### Status
-
-Konzept definiert. Implementierung beim Host-Deployment.
+- APScheduler: https://apscheduler.readthedocs.io
