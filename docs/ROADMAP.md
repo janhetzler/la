@@ -283,3 +283,88 @@ eine sinnvolle erste Verteidigungslinie, kein vollständiger Schutz.
 
 **Einzuplanen in:** Phase 1 — vor Phase 2 Umbau, da MCP-Tool-Calls
 bereits jetzt aktiv sind.
+
+---
+
+## Wissensfundament: opennotebook-lite Kern + OKF
+
+### Motivation
+
+LA hat bisher zwei getrennte Wissensprobleme:
+
+1. **RAG ist rudimentär** — `ingest.py` ist ein Schnellschuss, ChromaDB-Collections
+   sind flach, kein Relevanz-Threshold, kein strukturiertes Dokument-Management
+2. **Wissen ist nicht vertrauenswürdig** — Agenten können nicht beurteilen ob
+   gefundene Informationen aktuell, korrekt oder veraltet sind
+
+Beide Probleme werden gemeinsam gelöst: der Kern von `janhetzler/opennotebook-lite`
+wird in LA integriert, und alle Dokumente folgen OKF v0.2.
+
+### Was integriert wird
+
+Der Kern von `janhetzler/opennotebook-lite` ersetzt die bisherige LA-RAG-Schicht:
+
+| Komponente | Bisher (LA) | Neu (opennotebook-lite Kern) |
+|---|---|---|
+| Datenbank | keine | SQLite + SQLAlchemy async (WAL) |
+| Ingestion | rudimentäres ingest.py | PDF, TXT, MD, HTML, JSON mit sauberem Chunking (400/50) |
+| Vektorsuche | flache ChromaDB-Collections | ChromaDB mit Relevanz-Threshold gegen Halluzinationen |
+| Dokument-Organisation | keine | Notebook-Struktur (Wissensdomänen) |
+| Background Tasks | keine | Async Embedding-Verarbeitung |
+
+### SQLite als gemeinsame Datenbank
+
+SQLite wird die zentrale persistente Schicht für das gesamte System:
+
+```
+SQLite (eine Datei, WAL-Modus)
+    ├── Notebooks + Dokumente     (Wissensbasis, aus opennotebook-lite)
+    ├── Task-Queue                (Orchestrator — Phase 4)
+    ├── Planungs-DB               (Supervisor LangGraph Checkpointing — Phase 2)
+    └── Agenten-Registry          (neue Module, Versionierung)
+```
+
+Kein zusätzlicher Dienst, kein Netzwerk-Overhead — SQLite mit WAL ist für
+unsere Last mehr als ausreichend und passt zum Local-First-Prinzip.
+
+### OKF v0.2 als Wissensformat
+
+OKF ist in LA bereits eingeführt (docs/OKF.md, GitHub Actions). Was noch
+fehlt ist der lebendige Teil — Agenten die OKF nicht nur lesen sondern
+aktiv damit arbeiten.
+
+**OKF-native Ingestion:**
+- Frontmatter-Felder (`type`, `status`, `stale_after`, `updated_at`)
+  werden beim Indexieren ausgewertet — nicht ignoriert
+- Stale-Dokumente (`stale_after` überschritten, `status: stale`) werden
+  bei der Vektorsuche niedriger gewichtet oder explizit markiert
+- Agenten sehen Freshness und Trust als Teil des Suchergebnisses
+
+**Agenten schreiben OKF:**
+- Neue Agenten-Module die der Code Agent erzeugt → OKF-Dokument
+  mit `type: Reference`, Provenance, `updated_at`
+- Testergebnisse → OKF-Dokument mit `type: Observation`
+- Optimierte Prompts (Genetic-Pareto) → OKF-Dokument mit
+  Provenance-Kette (aus welchem Vorgänger entstanden)
+
+**Code Agent + Wissensbasis:**
+Wenn ein Agent einen anderen Agenten verbessern oder neu bauen soll,
+sucht er in ChromaDB nach relevanten Patterns und liest OKF-Frontmatter:
+- `status: current` → vertrauenswürdig
+- `status: stale` → mit Vorsicht verwenden
+- `status: deprecated` → nicht verwenden
+- Provenance-Kette → nachvollziehen woher das Wissen stammt
+
+### Einordnung in die Phasen
+
+Diese Integration ist Voraussetzung für Phase 3 (DSPy-Module) und
+Phase 5 (Continuous Improvement) — beide brauchen eine vertrauenswürdige,
+strukturierte Wissensbasis.
+
+**Einzuplanen zwischen Phase 2 und Phase 3.**
+
+### Referenzen
+
+- `janhetzler/opennotebook-lite` — Quell-Repo
+- `janhetzler/knowledge-catalog/okf/SPEC.md` — OKF v0.2 Spezifikation
+- `janhetzler/la/docs/OKF.md` — OKF-Anwendung in LA
